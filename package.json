@@ -1,0 +1,30 @@
+{
+  "name": "tra-cuu-ket-qua-hoc-sinh",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "netlify dev",
+    "dev:vite": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "kiem-tra": "node --env-file=.env scripts/kiem-tra-ket-noi.mjs",
+    "tao-template": "node scripts/tao-template.mjs"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.0"
+  },
+  "devDependencies": {
+    "@netlify/functions": "^2.8.2",
+    "@types/node": "^22.20.2",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "google-auth-library": "^9.15.0",
+    "typescript": "^5.7.2",
+    "vite": "^5.4.11",
+    "xlsx": "^0.18.5"
+  }
+}

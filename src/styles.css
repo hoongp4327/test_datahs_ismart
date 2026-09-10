@@ -1,0 +1,288 @@
+:root {
+  --ink:        #0f172a;
+  --ink-2:      #334155;
+  --ink-3:      #64748b;
+  --line:       #e2e8f0;
+  --line-soft:  #f1f5f9;
+  --bg:         #f6f8fb;
+  --card:       #ffffff;
+  --brand:      #1d4ed8;
+  --brand-600:  #2563eb;
+  --brand-50:   #eff6ff;
+  --brand-100:  #dbeafe;
+  --ok:         #059669;
+  --warn:       #d97706;
+  --danger:     #dc2626;
+  --radius:     14px;
+  --shadow:     0 1px 2px rgba(15, 23, 42, .04), 0 8px 24px -12px rgba(15, 23, 42, .12);
+  --maxw:       880px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Be Vietnam Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--brand); }
+
+/* ============================== Layout ============================== */
+.page { min-height: 100vh; display: flex; flex-direction: column; }
+.container { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
+
+.topbar {
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+  padding: 14px 0;
+}
+.topbar-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: -.01em; }
+.brand-mark {
+  width: 32px; height: 32px; border-radius: 9px;
+  background: var(--brand); color: #fff;
+  display: grid; place-items: center; font-size: 15px; font-weight: 700;
+}
+.topbar-link { font-size: 13.5px; color: var(--ink-3); text-decoration: none; font-weight: 500; }
+.topbar-link:hover { color: var(--brand); }
+
+/* ============================== Tra cuu ============================== */
+.lookup-wrap { flex: 1; display: grid; place-items: center; padding: 56px 0 72px; }
+.lookup-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 40px;
+  width: 100%;
+  max-width: 480px;
+}
+.lookup-card h1 { font-size: 24px; margin: 0 0 8px; letter-spacing: -.02em; }
+.lookup-card p.sub { margin: 0 0 26px; color: var(--ink-3); font-size: 14.5px; }
+
+.field label {
+  display: block; font-size: 13px; font-weight: 600;
+  color: var(--ink-2); margin-bottom: 7px;
+}
+.field input {
+  width: 100%; padding: 12px 14px;
+  border: 1px solid var(--line); border-radius: 10px;
+  font: inherit; font-size: 15.5px; letter-spacing: .04em;
+  background: #fff; color: var(--ink);
+  transition: border-color .15s, box-shadow .15s;
+}
+.field input::placeholder { letter-spacing: normal; color: #94a3b8; }
+.field input:focus {
+  outline: none; border-color: var(--brand-600);
+  box-shadow: 0 0 0 3px var(--brand-100);
+}
+
+.btn {
+  width: 100%; margin-top: 18px; padding: 12px 18px;
+  background: var(--brand); color: #fff;
+  border: 0; border-radius: 10px;
+  font: inherit; font-weight: 600; font-size: 15px;
+  cursor: pointer; transition: background .15s;
+}
+.btn:hover:not(:disabled) { background: #1a44b8; }
+.btn:disabled { opacity: .6; cursor: not-allowed; }
+
+.alert {
+  margin-top: 18px; padding: 11px 14px;
+  background: #fef2f2; border: 1px solid #fecaca;
+  color: #991b1b; border-radius: 10px; font-size: 14px;
+}
+.hint { margin-top: 20px; font-size: 12.5px; color: var(--ink-3); text-align: center; }
+
+/* ============================== Bao cao ============================== */
+.report { flex: 1; padding: 28px 0 56px; }
+
+.report-title { text-align: center; margin: 6px 0 22px; }
+.report-title h1 {
+  font-size: 21px; margin: 0; letter-spacing: -.01em; text-transform: uppercase;
+}
+.report-title .rule {
+  width: 52px; height: 3px; background: var(--brand);
+  border-radius: 2px; margin: 12px auto 0;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.card-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, #fbfcfe, #f8fafc);
+}
+.card-head .num {
+  min-width: 24px; height: 24px; border-radius: 7px;
+  background: var(--brand-50); color: var(--brand);
+  display: grid; place-items: center;
+  font-size: 12px; font-weight: 700;
+}
+.card-head h2 {
+  margin: 0; font-size: 14.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .04em;
+}
+.card-body { padding: 20px; }
+
+/* --- Thong tin hoc sinh --- */
+.student { display: flex; gap: 18px; align-items: flex-start; }
+.avatar {
+  width: 62px; height: 62px; flex: none; border-radius: 50%;
+  background: var(--brand-50); color: var(--brand);
+  display: grid; place-items: center;
+  font-size: 22px; font-weight: 700; letter-spacing: -.02em;
+}
+.student-name { font-size: 19px; font-weight: 700; margin: 2px 0 12px; letter-spacing: -.01em; }
+.meta-grid {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 24px;
+}
+.meta-item { display: flex; gap: 8px; font-size: 14px; min-width: 0; }
+.meta-item .k { color: var(--ink-3); flex: none; }
+.meta-item .v { font-weight: 600; color: var(--ink-2); overflow-wrap: anywhere; }
+
+/* --- Chi so tinh than hoc tap --- */
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+.stat {
+  border: 1px solid var(--line); border-radius: 11px;
+  padding: 14px 16px; background: #fcfdff;
+}
+.stat .k { font-size: 12.5px; color: var(--ink-3); margin-bottom: 3px; }
+.stat .v { font-size: 21px; font-weight: 700; letter-spacing: -.02em; }
+
+.quote {
+  border-left: 3px solid var(--brand-100);
+  background: var(--line-soft);
+  border-radius: 0 10px 10px 0;
+  padding: 13px 16px;
+  color: var(--ink-2);
+  font-size: 14.5px;
+}
+
+/* --- Hoc luc --- */
+.grade-row {
+  display: flex; align-items: center; gap: 12px;
+  flex-wrap: wrap; margin-bottom: 16px;
+}
+.grade-row .k { font-size: 14px; color: var(--ink-3); }
+.badge {
+  display: inline-block; padding: 5px 13px; border-radius: 999px;
+  font-size: 14px; font-weight: 700;
+  background: var(--brand-50); color: var(--brand); border: 1px solid var(--brand-100);
+}
+.badge.g-a { background: #ecfdf5; color: var(--ok);     border-color: #a7f3d0; }
+.badge.g-b { background: #eff6ff; color: var(--brand);  border-color: #bfdbfe; }
+.badge.g-c { background: #fffbeb; color: var(--warn);   border-color: #fde68a; }
+.badge.g-d { background: #fef2f2; color: var(--danger); border-color: #fecaca; }
+
+.sub-title {
+  font-size: 13px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .05em; color: var(--ink-3);
+  margin: 22px 0 12px; padding-top: 18px; border-top: 1px solid var(--line);
+}
+.detail-list { display: grid; gap: 12px; }
+.detail {
+  border: 1px solid var(--line); border-radius: 11px; padding: 15px 17px; background: #fff;
+}
+.detail h3 {
+  margin: 0 0 6px; font-size: 14.5px; font-weight: 700; color: var(--brand);
+  display: flex; align-items: center; gap: 8px;
+}
+.detail h3::before {
+  content: ""; width: 5px; height: 5px; border-radius: 50%;
+  background: var(--brand); flex: none;
+}
+.detail p { margin: 0; font-size: 14.5px; color: var(--ink-2); }
+
+/* --- Lo trinh --- */
+.roadmap {
+  display: flex; align-items: center; justify-content: center;
+  gap: 18px; flex-wrap: wrap;
+  padding: 22px 18px; margin-bottom: 16px;
+  border: 1px solid var(--line); border-radius: 12px; background: #fcfdff;
+}
+.road-block { text-align: center; }
+.road-block .pct { font-size: 27px; font-weight: 700; color: var(--brand); letter-spacing: -.03em; }
+.road-block .lbl { font-size: 13px; color: var(--ink-2); font-weight: 600; }
+.road-plus { font-size: 22px; color: var(--ink-3); font-weight: 300; }
+
+/* --- Nang luc dau ra --- */
+.level-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+.level-note { font-size: 12.5px; color: var(--ink-3); margin: 0 0 16px; }
+.skills { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.skill { border: 1px solid var(--line); border-radius: 11px; padding: 15px 17px; }
+.skill h4 {
+  margin: 0 0 9px; font-size: 14px; font-weight: 700; color: var(--ink);
+  padding-bottom: 8px; border-bottom: 1px dashed var(--line);
+}
+.skill ul { margin: 0; padding-left: 17px; }
+.skill li { font-size: 13.7px; color: var(--ink-2); margin-bottom: 5px; }
+.skill li:last-child { margin-bottom: 0; }
+
+/* --- Ky ten & footer --- */
+.sign { text-align: right; padding: 6px 4px 0; font-size: 14px; color: var(--ink-2); }
+.sign .date { font-style: italic; color: var(--ink-3); }
+.sign .org { font-weight: 700; margin-top: 4px; }
+
+.site-footer {
+  border-top: 1px solid var(--line); background: var(--card);
+  padding: 24px 0; font-size: 13px; color: var(--ink-3); text-align: center;
+}
+.site-footer strong { color: var(--ink-2); display: block; margin-bottom: 4px; }
+
+/* --- Trang thai --- */
+.state { text-align: center; padding: 80px 20px; color: var(--ink-3); }
+.spinner {
+  width: 30px; height: 30px; margin: 0 auto 14px;
+  border: 3px solid var(--line); border-top-color: var(--brand);
+  border-radius: 50%; animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.back-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13.5px; color: var(--ink-3); text-decoration: none;
+  font-weight: 500; margin-bottom: 14px;
+}
+.back-link:hover { color: var(--brand); }
+
+.actions { display: flex; justify-content: center; gap: 10px; margin-top: 22px; }
+.btn-ghost {
+  padding: 9px 18px; border-radius: 9px; font: inherit; font-size: 14px; font-weight: 600;
+  background: #fff; color: var(--ink-2); border: 1px solid var(--line);
+  cursor: pointer; text-decoration: none;
+}
+.btn-ghost:hover { border-color: var(--brand); color: var(--brand); }
+
+/* ============================== Responsive ============================== */
+@media (max-width: 640px) {
+  .lookup-card { padding: 28px 22px; }
+  .stats { grid-template-columns: 1fr; }
+  .meta-grid, .skills { grid-template-columns: 1fr; }
+  .student { gap: 14px; }
+  .avatar { width: 48px; height: 48px; font-size: 18px; }
+  .card-body { padding: 16px; }
+  .sign { text-align: left; }
+}
+
+/* ============================== In an ============================== */
+@media print {
+  body { background: #fff; }
+  .topbar, .actions, .back-link, .site-footer { display: none !important; }
+  .card { box-shadow: none; break-inside: avoid; }
+  .report { padding: 0; }
+}
