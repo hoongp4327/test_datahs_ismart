@@ -65,10 +65,26 @@ export function buildReport(row: Row, levels: Row[]) {
       hocLuc: row.hoc_luc,
       nhanXetTongQuan: row.nhan_xet_tong_quan,
       chiTiet: [
-        { tieuDe: "Từ vựng", noiDung: row.nx_tu_vung },
-        { tieuDe: "Cấu trúc / Ngữ pháp", noiDung: row.nx_ngu_phap },
-        { tieuDe: "Phát âm", noiDung: row.nx_phat_am },
-        { tieuDe: "Phản xạ", noiDung: row.nx_phan_xa },
+        {
+          tieuDe: "Từ vựng",
+          noiDung: row.nx_tu_vung,
+          diem: row.diem_tu_vung ? Number(row.diem_tu_vung) : undefined,
+        },
+        {
+          tieuDe: "Cấu trúc / Ngữ pháp",
+          noiDung: row.nx_ngu_phap,
+          diem: row.diem_ngu_phap ? Number(row.diem_ngu_phap) : undefined,
+        },
+        {
+          tieuDe: "Phát âm",
+          noiDung: row.nx_phat_am,
+          diem: row.diem_phat_am ? Number(row.diem_phat_am) : undefined,
+        },
+        {
+          tieuDe: "Phản xạ",
+          noiDung: row.nx_phan_xa,
+          diem: row.diem_phan_xa ? Number(row.diem_phan_xa) : undefined,
+        },
       ].filter((m) => m.noiDung),
     },
     loTrinh: {

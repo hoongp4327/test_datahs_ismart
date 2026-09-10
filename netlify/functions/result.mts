@@ -2,6 +2,7 @@ import { JWT } from "google-auth-library";
 import type { Context } from "@netlify/functions";
 import { buildReport, normalizeCode, timHocSinh, toObjects } from "../../shared/bao-cao";
 import { docQuaAppsScript, type SheetData } from "../../shared/apps-script";
+import { docQuaGoogleSheetPublic } from "../../shared/sheet-public";
 import duLieuMau from "../../shared/du-lieu-mau";
 
 /* ------------------------------------------------------------------ *
@@ -81,23 +82,36 @@ async function docQuaSheetsApi(): Promise<SheetData> {
 
 /**
  * Thứ tự ưu tiên nguồn dữ liệu:
- *   1. Apps Script  (chỉ cần dán URL — không cần Google Cloud)
+ *   1. Apps Script  (chỉ cần dán URL)
  *   2. Sheets API   (service account)
- *   3. Dữ liệu mẫu  (chưa cấu hình gì — để xem giao diện)
+ *   3. Google Sheet trực tiếp (qua link chia sẻ công khai)
+ *   4. Dữ liệu mẫu  (chưa cấu hình gì)
  */
 async function fetchSheet(lamMoi = false): Promise<SheetData> {
   const nguong = lamMoi ? SAN_LAM_MOI : MEMORY_TTL;
   if (cache && Date.now() - cache.at < nguong) return cache.data;
 
-  if (!coAppsScript() && !coServiceAccount()) {
-    console.warn("[result] Chưa cấu hình nguồn dữ liệu — đang dùng dữ liệu mẫu.");
-    return duLieuMau as SheetData;
-  }
-
   try {
-    const data = coAppsScript()
-      ? await docQuaAppsScript(APPS_SCRIPT_URL, APPS_SCRIPT_TOKEN)
-      : await docQuaSheetsApi();
+    let data: SheetData;
+    if (coAppsScript()) {
+      try {
+        data = await docQuaAppsScript(APPS_SCRIPT_URL, APPS_SCRIPT_TOKEN);
+      } catch (err) {
+        if (SHEET_ID) {
+          console.warn(`[result] Apps Script lỗi (${(err as Error).message}), fallback đọc qua Google Sheet ID: ${SHEET_ID}`);
+          data = await docQuaGoogleSheetPublic(SHEET_ID, TAB_RESULTS, TAB_LEVELS);
+        } else {
+          throw err;
+        }
+      }
+    } else if (coServiceAccount()) {
+      data = await docQuaSheetsApi();
+    } else if (SHEET_ID) {
+      data = await docQuaGoogleSheetPublic(SHEET_ID, TAB_RESULTS, TAB_LEVELS);
+    } else {
+      console.warn("[result] Chưa cấu hình nguồn dữ liệu — đang dùng dữ liệu mẫu.");
+      return duLieuMau as SheetData;
+    }
     cache = { at: Date.now(), data };
     return data;
   } catch (err) {

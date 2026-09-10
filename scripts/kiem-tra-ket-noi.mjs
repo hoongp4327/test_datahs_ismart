@@ -61,38 +61,108 @@ async function quaAppsScript() {
   const text = await res.text();
 
   if (text.includes("<title>Sign in") || text.includes("accounts.google.com/ServiceLogin")) {
-    thoat(
-      "Apps Script yêu cầu đăng nhập.",
-      'Deploy lại với "Who has access" = Anyone (không phải "Anyone with Google account").'
+    throw new Error(
+      'Apps Script yêu cầu đăng nhập — Deploy lại với "Who has access" = Anyone.'
     );
   }
   if (!res.ok) {
-    thoat(`Apps Script trả về lỗi ${res.status}.`, text.slice(0, 200));
+    if (res.status === 403) {
+      throw new Error("Apps Script trả về lỗi 403 (Chưa phân quyền 'Anyone' hoặc bị quản trị viên Workspace chặn)");
+    }
+    throw new Error(`Apps Script trả về lỗi ${res.status}: ${text.slice(0, 100)}`);
   }
 
   let json;
   try {
     json = JSON.parse(text);
   } catch {
-    thoat(
-      "Apps Script không trả về JSON.",
-      "Thường do script báo lỗi. Mở Apps Script → Executions để xem chi tiết. " +
-        `Nội dung nhận được: ${text.slice(0, 150)}`
+    throw new Error(
+      "Apps Script không trả về JSON: " + text.slice(0, 120)
     );
   }
 
   if (json.error === "UNAUTHORIZED") {
-    thoat(
-      "Apps Script từ chối token.",
-      "APPS_SCRIPT_TOKEN trong .env phải trùng đúng chuỗi TOKEN trong Code.gs. " +
-        "Nếu vừa sửa Code.gs, nhớ Deploy → Manage deployments → Edit → Version: New version."
+    throw new Error(
+      "APPS_SCRIPT_TOKEN trong .env không khớp chuỗi TOKEN trong Code.gs."
     );
   }
   if (json.error) {
-    thoat(`Apps Script báo lỗi: ${json.error}`);
+    throw new Error(`Apps Script báo lỗi: ${json.error}`);
   }
 
   return { results: json.results ?? [], levels: json.levels ?? [] };
+}
+
+/* ------------------------------------------------------------------ *
+ * Cách 1b: Google Sheet trực tiếp (Public Sheet qua ID)
+ * ------------------------------------------------------------------ */
+function parseCsv(text) {
+  const lines = [];
+  let row = [];
+  let entry = "";
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    const next = text[i + 1];
+    if (c === '"') {
+      if (inQuotes && next === '"') {
+        entry += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (c === "," && !inQuotes) {
+      row.push(entry);
+      entry = "";
+    } else if ((c === "\r" || c === "\n") && !inQuotes) {
+      if (c === "\r" && next === "\n") i++;
+      row.push(entry);
+      entry = "";
+      if (row.length > 1 || (row.length === 1 && row[0] !== "")) lines.push(row);
+      row = [];
+    } else {
+      entry += c;
+    }
+  }
+  if (entry || row.length > 0) {
+    row.push(entry);
+    lines.push(row);
+  }
+  return lines;
+}
+
+async function quaGoogleSheetPublic() {
+  console.log(`${OK} Chế độ: Đọc trực tiếp Google Sheet ID (Public Sheet)`);
+  console.log(`${OK} GOOGLE_SHEET_ID: ${sheetId}`);
+
+  const urlKq = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabResults)}`;
+  const urlBac = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabLevels)}`;
+
+  let resKq, resBac;
+  try {
+    [resKq, resBac] = await Promise.all([
+      fetch(urlKq, { redirect: "follow" }),
+      fetch(urlBac, { redirect: "follow" }),
+    ]);
+  } catch (err) {
+    thoat(`Không kết nối được Google Sheet: ${err.message}`);
+  }
+
+  if (!resKq.ok) {
+    thoat(`Không đọc được tab "${tabResults}": HTTP ${resKq.status}`);
+  }
+  if (!resBac.ok) {
+    thoat(`Không đọc được tab "${tabLevels}": HTTP ${resBac.status}`);
+  }
+
+  const textKq = await resKq.text();
+  const textBac = await resBac.text();
+
+  if (textKq.includes("<html") && textKq.includes("accounts.google.com")) {
+    thoat("Sheet chưa mở quyền xem công khai.", "Vào Google Sheet → Share → Bất kỳ ai có liên kết → Người xem.");
+  }
+
+  return { results: parseCsv(textKq), levels: parseCsv(textBac) };
 }
 
 /* ------------------------------------------------------------------ *
@@ -181,19 +251,33 @@ async function quaSheetsApi() {
 /* ------------------------------------------------------------------ *
  * Chạy
  * ------------------------------------------------------------------ */
-if (!appsScriptUrl && !email && !rawKey) {
+if (!appsScriptUrl && !sheetId && (!email || !rawKey)) {
   thoat(
     "Chưa cấu hình nguồn dữ liệu nào trong .env.",
-    "Điền APPS_SCRIPT_URL + APPS_SCRIPT_TOKEN (cách Apps Script), " +
-      "hoặc GOOGLE_SERVICE_ACCOUNT_EMAIL + GOOGLE_PRIVATE_KEY (cách service account)."
+    "Điền GOOGLE_SHEET_ID (cách đọc trực tiếp từ link công khai), hoặc APPS_SCRIPT_URL (cách Apps Script)."
   );
 }
 
-if (appsScriptUrl && (email || rawKey)) {
-  console.log(`${WARN} Có cả 2 cấu hình — Apps Script được ưu tiên, service account bị bỏ qua.\n`);
+let duLieu;
+if (appsScriptUrl) {
+  try {
+    duLieu = await quaAppsScript();
+  } catch (err) {
+    if (sheetId) {
+      console.log(`\n${WARN} Apps Script chưa truy cập được (${err.message}).`);
+      console.log(`${WARN} Chuyển sang kiểm tra đọc trực tiếp qua GOOGLE_SHEET_ID...\n`);
+      duLieu = await quaGoogleSheetPublic();
+    } else {
+      thoat(err.message);
+    }
+  }
+} else if (email && rawKey) {
+  duLieu = await quaSheetsApi();
+} else if (sheetId) {
+  duLieu = await quaGoogleSheetPublic();
 }
 
-const { results, levels } = appsScriptUrl ? await quaAppsScript() : await quaSheetsApi();
+const { results, levels } = duLieu;
 
 /* --- Kiểm tra cấu trúc sheet --- */
 if (!results.length) {

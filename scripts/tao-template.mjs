@@ -199,35 +199,57 @@ const BAC = ["Bậc 1-", "Bậc 1", "Bậc 2", "Bậc 1", "Bậc 3", "Bậc 1-",
 
 const at = (arr, i) => arr[i % arr.length];
 
-const rows = HOC_SINH.map((ten, i) => ({
-  ma_hoc_sinh: `HS${String(i + 1).padStart(3, "0")}`,
-  ho_ten: ten,
-  giao_vien: at(GIAO_VIEN, i),
-  lich_hoc: at(LICH, i),
-  lop: `D.${(i % 5) + 1}C.${310000 + i * 137}`,
-  video_url: `https://example.com/video/buoi-hoc-${i + 1}`,
-  so_cup: String(28 + ((i * 7) % 45)),
-  gio_tay: String((i * 3) % 9),
-  tra_loi_dung: `${(i % 8) + 2}/${10}`,
-  nhan_xet_tinh_than: at(NX_TINH_THAN, i),
-  hoc_luc: at(HOC_LUC, i),
-  nhan_xet_tong_quan: at(NX_TONG_QUAN, i),
-  nx_tu_vung: at(NX_TU_VUNG, i),
-  nx_ngu_phap: at(NX_NGU_PHAP, i),
-  nx_phat_am: at(NX_PHAT_AM, i),
-  nx_phan_xa: at(NX_PHAN_XA, i),
-  pct_co_ban: "100%",
-  pct_nang_cao: `${10 + (i % 4) * 5}%`,
-  nhan_xet_lo_trinh: at(NX_LO_TRINH, i),
-  bac_nang_luc: at(BAC, i),
-  ngay_cap: `Hà Nội, ngày ${(i % 28) + 1} tháng 3 năm 2026`,
-}));
+function tinhDiemKyNang(hocLucStr, index, offset) {
+  const code = (hocLucStr || "B").charAt(0).toUpperCase();
+  let base = 7.5;
+  if (code === "A") base = 9.0;
+  else if (code === "B") base = 7.8;
+  else if (code === "C") base = 6.2;
+  else if (code === "D") base = 4.8;
+
+  // Điểm số phân hóa nhẹ theo kỹ năng và học sinh
+  const diff = ((index * 3 + offset) % 7 - 3) * 0.2;
+  const score = Math.max(1, Math.min(10, base + diff));
+  return score.toFixed(1);
+}
+
+const rows = HOC_SINH.map((ten, i) => {
+  const hl = at(HOC_LUC, i);
+  return {
+    ma_hoc_sinh: `HS${String(i + 1).padStart(3, "0")}`,
+    ho_ten: ten,
+    giao_vien: at(GIAO_VIEN, i),
+    lich_hoc: at(LICH, i),
+    lop: `D.${(i % 5) + 1}C.${310000 + i * 137}`,
+    video_url: `https://example.com/video/buoi-hoc-${i + 1}`,
+    so_cup: String(28 + ((i * 7) % 45)),
+    gio_tay: String((i * 3) % 9),
+    tra_loi_dung: `${(i % 8) + 2}/${10}`,
+    nhan_xet_tinh_than: at(NX_TINH_THAN, i),
+    hoc_luc: hl,
+    nhan_xet_tong_quan: at(NX_TONG_QUAN, i),
+    nx_tu_vung: at(NX_TU_VUNG, i),
+    nx_ngu_phap: at(NX_NGU_PHAP, i),
+    nx_phat_am: at(NX_PHAT_AM, i),
+    nx_phan_xa: at(NX_PHAN_XA, i),
+    diem_tu_vung: tinhDiemKyNang(hl, i, 2),
+    diem_ngu_phap: tinhDiemKyNang(hl, i, 4),
+    diem_phat_am: tinhDiemKyNang(hl, i, 1),
+    diem_phan_xa: tinhDiemKyNang(hl, i, 5),
+    pct_co_ban: "100%",
+    pct_nang_cao: `${10 + (i % 4) * 5}%`,
+    nhan_xet_lo_trinh: at(NX_LO_TRINH, i),
+    bac_nang_luc: at(BAC, i),
+    ngay_cap: `Hà Nội, ngày ${(i % 28) + 1} tháng 3 năm 2026`,
+  };
+});
 
 const COT_KETQUA = [
   "ma_hoc_sinh", "ho_ten", "giao_vien", "lich_hoc", "lop", "video_url",
   "so_cup", "gio_tay", "tra_loi_dung", "nhan_xet_tinh_than",
   "hoc_luc", "nhan_xet_tong_quan",
   "nx_tu_vung", "nx_ngu_phap", "nx_phat_am", "nx_phan_xa",
+  "diem_tu_vung", "diem_ngu_phap", "diem_phat_am", "diem_phan_xa",
   "pct_co_ban", "pct_nang_cao", "nhan_xet_lo_trinh",
   "bac_nang_luc", "ngay_cap",
 ];
@@ -256,7 +278,18 @@ wsBac["!cols"] = [{ wch: 12 }, { wch: 70 }, { wch: 70 }, { wch: 70 }, { wch: 70 
 XLSX.utils.book_append_sheet(wb, wsBac, "BacNangLuc");
 
 const xlsxPath = join(OUT, "Template_KetQua_HocSinh.xlsx");
-XLSX.writeFile(wb, xlsxPath);
+try {
+  XLSX.writeFile(wb, xlsxPath);
+  console.log(`Đã tạo: ${xlsxPath}`);
+} catch (err) {
+  if (err.code === "EBUSY") {
+    const altPath = join(OUT, "Template_KetQua_HocSinh_Moi.xlsx");
+    XLSX.writeFile(wb, altPath);
+    console.warn(`File chính đang mở trong ứng dụng khác. Đã lưu bản cập nhật tại: ${altPath}`);
+  } else {
+    throw err;
+  }
+}
 
 // CSV dự phòng (UTF-8 BOM để Excel/Sheets đọc đúng tiếng Việt)
 const BOM = "﻿";

@@ -1,4 +1,8 @@
-export type MucNhanXet = { tieuDe: string; noiDung: string };
+export type MucNhanXet = {
+  tieuDe: string;
+  noiDung: string;
+  diem?: number;
+};
 
 export type BaoCao = {
   maHocSinh: string;
