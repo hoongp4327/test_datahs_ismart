@@ -17,7 +17,7 @@ function apiGiaLap(env: Record<string, string>): Plugin {
    * Khi đang phát triển thì thấy ngay dữ liệu vừa sửa quan trọng hơn tốc độ,
    * nên TTL ở đây cố tình ngắn hơn nhiều so với production (mục CACHE_TTL_SECONDS).
    */
-  const TTL = Number(env.DEV_CACHE_TTL_SECONDS || 30) * 1000;
+  const TTL = Number(env.DEV_CACHE_TTL_SECONDS ?? 5) * 1000;
   let cache: { at: number; data: Promise<SheetData> } | null = null;
 
   const layDuLieu = (boQuaCache: boolean) => {

@@ -22,19 +22,25 @@ cắt ở 10 giây, nên hai cơ chế bảo vệ:
 
 - Client tự bỏ cuộc sau **8 giây** thay vì để Netlify cắt ngang request.
 - Gọi Google thất bại mà trong cache còn dữ liệu cũ → **trả dữ liệu cũ**, không báo lỗi cho
-  phụ huynh. Dữ liệu chỉ cũ vài phút, tốt hơn nhiều so với một trang lỗi.
+  phụ huynh. Dữ liệu cũ một chút vẫn tốt hơn nhiều so với một trang lỗi.
 
-Ngoài ra toàn bộ thiết kế xoay quanh việc *hiếm khi phải gọi Apps Script*:
+Cách xử lý: **không cache kết quả**, thay vào đó đọc dữ liệu sẵn trong lúc người dùng
+chưa cần đến:
 
 | Lớp | Cơ chế | Tác dụng |
 |---|---|---|
-| CDN edge | `max-age=300, stale-while-revalidate=1200` | Đa số lượt truy cập không chạm tới Google. Hết hạn vẫn trả bản cũ **ngay** rồi làm mới ngầm → không ai phải chờ |
-| Function memory | Cache toàn bộ sheet 5 phút trong RAM container | Đo được **~1–2 ms** cho lượt tra cứu tiếp theo |
-| Warm-up | Trang tra cứu ping API ngay khi vừa mở | Người dùng gõ mã mất vài giây — vừa đủ để cache ấm trước khi bấm nút |
+| Warm-up | Trang tra cứu ping API ngay khi vừa mở | Đọc dữ liệu mới trong lúc người dùng đang gõ mã — đo được **3,4 s chạy nền**, rồi lượt tra cứu thật chỉ **1 ms** |
+| Function memory | Giữ dữ liệu vừa đọc trong RAM, mặc định 60 giây | Gộp request khi nhiều phụ huynh tra cùng lúc |
 | Frontend | Gọi API **trước** khi chuyển trang, truyền data qua router state | Trang kết quả hiện tức thì, không gọi API lần hai |
+| Trả dữ liệu cũ khi lỗi | Google chậm/sập mà RAM còn dữ liệu → dùng tạm bản cũ | Không hiện trang lỗi cho phụ huynh |
 
-> **Độ trễ dữ liệu:** sửa sheet xong, web hiện dữ liệu mới sau tối đa **5 phút**.
-> Đổi bằng biến `CACHE_TTL_SECONDS` (mục 5), không cần sửa code.
+> **Không cache ở trình duyệt và CDN** (`Cache-Control: no-store`). Mỗi lần tải trang đều
+> hỏi lại máy chủ, nên sửa sheet xong là tra cứu ra ngay — chỉ còn cache RAM 60 giây,
+> đổi bằng `CACHE_TTL_SECONDS` (mục 5).
+>
+> Bản đầu có cache CDN 5 phút nhưng đã bỏ: CDN lưu theo từng URL nên mỗi mã học sinh là
+> một bản riêng, với lưu lượng của một trung tâm thì hầu như lần nào cũng trượt cache —
+> gần như không nhanh hơn mà lại giữ dữ liệu cũ.
 >
 > Nếu sau này thấy Apps Script chậm, chuyển sang service account chỉ là đổi biến môi
 > trường — code hỗ trợ sẵn cả hai (mục 4).
@@ -125,8 +131,8 @@ Function hỗ trợ cả hai. Nếu khai `APPS_SCRIPT_URL` thì cách A được
 | Tốc độ người dùng cảm nhận | ~1–2 ms | ~1–2 ms |
 | Giới hạn | ~20.000 lượt gọi/ngày | Hạn mức Sheets API, cao hơn nhiều |
 
-Apps Script chậm hơn hẳn khi gọi trực tiếp, nhưng nhờ 2 lớp cache ở mục 1 thì người dùng
-gần như không bao giờ chạm tới nó — nên chênh lệch này không phản ánh vào trải nghiệm thật.
+Apps Script chậm hơn hẳn khi gọi trực tiếp, nhưng nhờ cơ chế warm-up ở mục 1, độ chậm đó
+rơi vào lúc người dùng đang gõ mã — không phản ánh vào trải nghiệm thật.
 
 Với một trung tâm, **cách A là đủ và đơn giản hơn nhiều**. Chỉ chọn B khi lưu lượng rất lớn
 hoặc công ty bắt buộc quản lý credentials tập trung.
@@ -190,8 +196,8 @@ Trên Netlify: **Site settings → Environment variables** → thêm từng bi�
 
 | Biến | Giá trị |
 |---|---|
-| `CACHE_TTL_SECONDS` | Cache trên Netlify, mặc định `300` (5 phút). Cũng là độ trễ tối đa từ lúc sửa sheet đến lúc web cập nhật — xem mục 11 |
-| `DEV_CACHE_TTL_SECONDS` | Cache của dev server, mặc định `30`. Đặt `0` để luôn đọc mới khi đang phát triển |
+| `CACHE_TTL_SECONDS` | Cache RAM của function, mặc định `60`. Đặt `0` để mỗi lượt tra cứu đều đọc thẳng Google — đúng tuyệt đối nhưng mỗi lượt chậm ~3 s |
+| `DEV_CACHE_TTL_SECONDS` | Cache của dev server, mặc định `5` |
 
 > Nếu không khai gì cả, function tự động chạy bằng dữ liệu mẫu và ghi cảnh báo vào log —
 > website vẫn hoạt động, chỉ là không lấy dữ liệu thật.
@@ -396,36 +402,34 @@ sửa code.
 
 ## 11. Sửa Google Sheet mà website không đổi
 
-**Đây là hành vi cố ý, không phải lỗi.** Dữ liệu đi qua nhiều lớp cache để website không phải
-gọi Apps Script (chậm 3-30 giây) ở mỗi lượt truy cập.
+Sửa sheet xong thì tra cứu ra ngay — trình duyệt và CDN đều không cache (`no-store`).
+Chỉ còn **cache RAM 60 giây** trong function, và request warm-up của trang tra cứu đã làm
+mới nó trong lúc bạn gõ mã, nên thực tế gần như không bao giờ gặp dữ liệu cũ.
 
-| Nơi chạy | Cache | Sau bao lâu thấy dữ liệu mới |
-|---|---|---|
-| `npm run dev:vite` | 30 giây | Chờ 30 s rồi tải lại trang, hoặc thêm `&nocache=1` vào URL API |
-| Netlify (production) | `CACHE_TTL_SECONDS`, mặc định 300 giây | Tối đa 5 phút |
+Nếu vẫn thấy dữ liệu cũ, chẩn đoán theo thứ tự:
 
-Cách xử lý theo tình huống:
-
-- **Đang phát triển, muốn thấy ngay:** mở `http://localhost:5173/api/result?code=HS001&nocache=1`
-  một lần để nạp lại cache, rồi quay về trang web. Hoặc đặt `DEV_CACHE_TTL_SECONDS=0` trong `.env`.
-- **Trên production, muốn nhanh hơn:** giảm `CACHE_TTL_SECONDS` (ví dụ `60`) trong
-  Netlify → Site settings → Environment variables, rồi **Deploys → Trigger deploy**.
-  Đổi lại Apps Script bị gọi nhiều hơn, tăng rủi ro gặp lúc nó chậm.
-- **Cần cập nhật tức thì ngay lúc đó:** Netlify → **Deploys → Trigger deploy → Clear cache and
-  deploy site**. Xoá sạch cache CDN và khởi động lại function.
-
-### Kiểm tra dữ liệu đã ra tới đâu
+**Bước 1 — dữ liệu đã ra khỏi Google chưa?**
 
 ```bash
 npm run kiem-tra
 ```
 
-Script gọi thẳng Apps Script, **không qua cache** — nên nó luôn cho thấy dữ liệu thật đang có
-trong sheet. Nếu `npm run kiem-tra` đã thấy dữ liệu mới mà web chưa đổi thì chắc chắn là cache,
-cứ chờ hết hạn.
+Script gọi thẳng Apps Script, **không qua cache**, nên nó luôn cho thấy dữ liệu thật.
 
-Nếu `npm run kiem-tra` cũng thấy dữ liệu cũ thì vấn đề nằm ở phía Google:
+- **Thấy dữ liệu mới** → vấn đề ở phía website, sang bước 2.
+- **Thấy dữ liệu cũ** → vấn đề ở phía Google:
+  - Sửa nhầm file sheet khác — đối chiếu ID trong `.env` với URL sheet đang mở.
+  - Vừa sửa `Code.gs` nhưng chưa **Deploy → Manage deployments → Edit → Version: New version**.
+  - Dữ liệu nằm ở tab khác `KetQua`.
+  - Dòng mới nằm dưới một dòng trống — Apps Script đọc theo vùng liền mạch, đừng để cách quãng.
 
-- Sửa nhầm file sheet khác — đối chiếu `GOOGLE_SHEET_ID` trong `.env` với URL sheet đang mở.
-- Vừa sửa `Code.gs` nhưng chưa **Deploy → Manage deployments → Edit → Version: New version**.
-- Dữ liệu nằm ở tab khác `KetQua`.
+**Bước 2 — chờ hết cache RAM.**
+
+| Nơi chạy | Cache RAM | Cách lấy mới ngay |
+|---|---|---|
+| `npm run dev:vite` | 5 giây | Thêm `&nocache=1` vào URL API |
+| Netlify | `CACHE_TTL_SECONDS`, mặc định 60 giây | Chờ 1 phút, hoặc **Deploys → Trigger deploy** để khởi động lại function |
+
+Muốn tuyệt đối không bao giờ có dữ liệu cũ: đặt `CACHE_TTL_SECONDS=0`. Đổi lại mỗi lượt
+tra cứu đều phải chờ Apps Script ~3 giây (và có lúc lâu hơn), warm-up không còn tác dụng.
+Chỉ nên làm nếu độ chính xác tuyệt đối quan trọng hơn tốc độ.

@@ -16,11 +16,15 @@ const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL ?? "";
 const APPS_SCRIPT_TOKEN = process.env.APPS_SCRIPT_TOKEN ?? "";
 
 /**
- * Thời gian giữ cache trong bộ nhớ của function (giây).
- * Apps Script mất ~2-5s cho lần gọi nguội, nên để dài hơn Sheets API.
- * Đây cũng chính là độ trễ tối đa từ lúc sửa sheet đến lúc web hiện dữ liệu mới.
+ * Thời gian giữ cache trong bộ nhớ của function (giây), cũng là độ trễ tối đa
+ * từ lúc sửa sheet đến lúc web hiện dữ liệu mới.
+ *
+ * Cố tình để ngắn: đây là công cụ tra cứu, dữ liệu đúng quan trọng hơn nhanh.
+ * Cache ở đây chỉ còn hai việc — hứng lúc nhiều phụ huynh tra cùng lúc, và làm
+ * chỗ dựa cho request warm-up của trang tra cứu.
+ * Đặt 0 để mỗi lượt tra cứu đều đọc thẳng từ Google (chậm ~3 s mỗi lượt).
  */
-const TTL_GIAY = Number(process.env.CACHE_TTL_SECONDS || 300);
+const TTL_GIAY = Number(process.env.CACHE_TTL_SECONDS ?? 60);
 const MEMORY_TTL = TTL_GIAY * 1000;
 
 /** Cache sống cùng warm container -> bỏ qua vòng gọi Google Sheets API. */
@@ -89,7 +93,7 @@ async function fetchSheet(): Promise<SheetData> {
     return data;
   } catch (err) {
     // Google chậm hoặc lỗi: thà trả dữ liệu cũ còn hơn báo lỗi cho phụ huynh.
-    // Cache hết hạn vẫn dùng được — dữ liệu chỉ cũ vài phút.
+    // Cache hết hạn vẫn dùng được — thà dữ liệu cũ một chút còn hơn trang lỗi.
     if (cache) {
       const tuoi = Math.round((Date.now() - cache.at) / 1000);
       console.warn(`[result] ${(err as Error).message} — dùng cache cũ ${tuoi}s.`);
@@ -102,18 +106,21 @@ async function fetchSheet(): Promise<SheetData> {
 /* ------------------------------------------------------------------ *
  * Handler
  * ------------------------------------------------------------------ */
-const json = (body: unknown, status: number, cacheable: boolean) =>
+const json = (body: unknown, status: number) =>
   new Response(JSON.stringify(body), {
     status,
     headers: {
       "Content-Type": "application/json; charset=utf-8",
-      // CDN của Netlify giữ bản sao ở edge -> request sau gần như tức thì.
-      // stale-while-revalidate: hết hạn vẫn trả bản cũ ngay rồi làm mới ngầm,
-      // nên người dùng không bao giờ phải chờ Apps Script khởi động.
-      "Netlify-CDN-Cache-Control": cacheable
-        ? `public, max-age=${TTL_GIAY}, stale-while-revalidate=${TTL_GIAY * 4}`
-        : "no-store",
-      "Cache-Control": cacheable ? `public, max-age=${Math.round(TTL_GIAY / 2)}` : "no-store",
+      // Không cache ở trình duyệt lẫn CDN: mỗi lần tải trang phải hỏi lại máy chủ.
+      //
+      // Trước đây có cache ở cả hai nơi. Nhược điểm: CDN lưu theo từng URL nên mỗi
+      // mã học sinh là một bản riêng — với lưu lượng của một trung tâm thì hầu như
+      // lần nào cũng trượt cache, tức là gần như không nhanh hơn, mà lại giữ dữ liệu
+      // cũ tới 5 phút. Bỏ đi thì tra cứu luôn ra dữ liệu mới.
+      //
+      // Việc gộp request khi đông người vẫn còn, do cache trong RAM của function.
+      "Netlify-CDN-Cache-Control": "no-store",
+      "Cache-Control": "no-store",
     },
   });
 
@@ -121,7 +128,7 @@ export default async (req: Request, _context: Context) => {
   const code = normalizeCode(new URL(req.url).searchParams.get("code") ?? "");
 
   if (!code) {
-    return json({ error: "MISSING_CODE", message: "Vui lòng nhập mã học sinh." }, 400, false);
+    return json({ error: "MISSING_CODE", message: "Vui lòng nhập mã học sinh." }, 400);
   }
 
   try {
@@ -134,18 +141,16 @@ export default async (req: Request, _context: Context) => {
           error: "NOT_FOUND",
           message: "Không tìm thấy kết quả cho mã học sinh này. Vui lòng kiểm tra lại.",
         },
-        404,
-        false
+        404
       );
     }
 
-    return json({ data: buildReport(row, levels) }, 200, true);
+    return json({ data: buildReport(row, levels) }, 200);
   } catch (err) {
     console.error("[result]", err);
     return json(
       { error: "SERVER_ERROR", message: "Hệ thống đang bận, vui lòng thử lại sau ít phút." },
-      500,
-      false
+      500
     );
   }
 };
