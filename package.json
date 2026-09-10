@@ -12,6 +12,7 @@
     "tao-template": "node scripts/tao-template.mjs"
   },
   "dependencies": {
+    "google-auth-library": "^9.15.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.30.0"
@@ -22,7 +23,6 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
-    "google-auth-library": "^9.15.0",
     "typescript": "^5.7.2",
     "vite": "^5.4.11",
     "xlsx": "^0.18.5"
