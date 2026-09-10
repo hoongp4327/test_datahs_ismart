@@ -27,6 +27,14 @@ const APPS_SCRIPT_TOKEN = process.env.APPS_SCRIPT_TOKEN ?? "";
 const TTL_GIAY = Number(process.env.CACHE_TTL_SECONDS ?? 60);
 const MEMORY_TTL = TTL_GIAY * 1000;
 
+/**
+ * Request có `refresh=1` (trang web gửi mỗi lần tải trang) sẽ bỏ qua cache và
+ * đọc mới. Nhưng vẫn giữ một mức sàn để một cú F5 liên tục không bắn hàng loạt
+ * lượt gọi vào Apps Script — và để React StrictMode gọi effect hai lần chỉ tốn
+ * một lượt đọc.
+ */
+const SAN_LAM_MOI = 3_000;
+
 /** Cache sống cùng warm container -> bỏ qua vòng gọi Google Sheets API. */
 let cache: { at: number; data: SheetData } | null = null;
 
@@ -77,8 +85,9 @@ async function docQuaSheetsApi(): Promise<SheetData> {
  *   2. Sheets API   (service account)
  *   3. Dữ liệu mẫu  (chưa cấu hình gì — để xem giao diện)
  */
-async function fetchSheet(): Promise<SheetData> {
-  if (cache && Date.now() - cache.at < MEMORY_TTL) return cache.data;
+async function fetchSheet(lamMoi = false): Promise<SheetData> {
+  const nguong = lamMoi ? SAN_LAM_MOI : MEMORY_TTL;
+  if (cache && Date.now() - cache.at < nguong) return cache.data;
 
   if (!coAppsScript() && !coServiceAccount()) {
     console.warn("[result] Chưa cấu hình nguồn dữ liệu — đang dùng dữ liệu mẫu.");
@@ -125,14 +134,17 @@ const json = (body: unknown, status: number) =>
   });
 
 export default async (req: Request, _context: Context) => {
-  const code = normalizeCode(new URL(req.url).searchParams.get("code") ?? "");
+  const params = new URL(req.url).searchParams;
+  const code = normalizeCode(params.get("code") ?? "");
+  // Trang web gửi refresh=1 mỗi lần tải trang -> đọc lại dữ liệu mới nhất.
+  const lamMoi = params.has("refresh");
 
   if (!code) {
     return json({ error: "MISSING_CODE", message: "Vui lòng nhập mã học sinh." }, 400);
   }
 
   try {
-    const { results, levels } = await fetchSheet();
+    const { results, levels } = await fetchSheet(lamMoi);
     const row = timHocSinh(results, code);
 
     if (!row) {

@@ -12,8 +12,9 @@ export default function Lookup() {
 
   useEffect(() => {
     inputRef.current?.focus();
-    // Đánh thức serverless function để lần tra cứu đầu tiên không bị cold start.
-    fetch("/api/result?code=__warmup").catch(() => {});
+    // Đọc sẵn dữ liệu mới nhất ngay khi vừa mở trang, trong lúc người dùng còn
+    // đang gõ mã. Nhờ vậy lượt tra cứu vừa tức thì vừa không bao giờ là dữ liệu cũ.
+    fetch("/api/result?code=__warmup&refresh=1").catch(() => {});
   }, []);
 
   async function tim(e: React.FormEvent) {

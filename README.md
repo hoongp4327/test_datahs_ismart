@@ -29,14 +29,15 @@ chưa cần đến:
 
 | Lớp | Cơ chế | Tác dụng |
 |---|---|---|
-| Warm-up | Trang tra cứu ping API ngay khi vừa mở | Đọc dữ liệu mới trong lúc người dùng đang gõ mã — đo được **3,4 s chạy nền**, rồi lượt tra cứu thật chỉ **1 ms** |
-| Function memory | Giữ dữ liệu vừa đọc trong RAM, mặc định 60 giây | Gộp request khi nhiều phụ huynh tra cùng lúc |
+| Đọc mới mỗi lần tải trang | Trang web gửi `refresh=1` khi vừa mở, function bỏ qua cache và đọc lại sheet | Dữ liệu vừa sửa 1 giây trước cũng hiện ra. Chạy nền trong lúc người dùng gõ mã, nên lượt tra cứu thật chỉ **1 ms** |
+| Function memory | Giữ dữ liệu vừa đọc trong RAM, mặc định 60 giây | Phục vụ các lượt tra cứu tiếp theo trong cùng phiên xem, và gộp request khi nhiều người tra cùng lúc |
 | Frontend | Gọi API **trước** khi chuyển trang, truyền data qua router state | Trang kết quả hiện tức thì, không gọi API lần hai |
 | Trả dữ liệu cũ khi lỗi | Google chậm/sập mà RAM còn dữ liệu → dùng tạm bản cũ | Không hiện trang lỗi cho phụ huynh |
 
-> **Không cache ở trình duyệt và CDN** (`Cache-Control: no-store`). Mỗi lần tải trang đều
-> hỏi lại máy chủ, nên sửa sheet xong là tra cứu ra ngay — chỉ còn cache RAM 60 giây,
-> đổi bằng `CACHE_TTL_SECONDS` (mục 5).
+> **Sửa sheet xong là tra cứu ra ngay.** Không cache ở trình duyệt và CDN
+> (`Cache-Control: no-store`), và mỗi lần tải trang đều gửi `refresh=1` để đọc lại sheet.
+> Cache RAM 60 giây chỉ phục vụ các lượt tra cứu tiếp theo trong cùng phiên xem, không
+> ảnh hưởng độ tươi. Có mức sàn 3 giây để F5 liên tục không bắn hàng loạt lượt gọi.
 >
 > Bản đầu có cache CDN 5 phút nhưng đã bỏ: CDN lưu theo từng URL nên mỗi mã học sinh là
 > một bản riêng, với lưu lượng của một trung tâm thì hầu như lần nào cũng trượt cache —

@@ -13,11 +13,11 @@ import duLieuMau from "./shared/du-lieu-mau";
  */
 function apiGiaLap(env: Record<string, string>): Plugin {
   /**
-   * Cache ngắn — chỉ để tránh gọi Apps Script dồn dập khi Vite hot-reload.
-   * Khi đang phát triển thì thấy ngay dữ liệu vừa sửa quan trọng hơn tốc độ,
-   * nên TTL ở đây cố tình ngắn hơn nhiều so với production (mục CACHE_TTL_SECONDS).
+   * Độ tươi của dữ liệu do refresh=1 lo (trang web gửi mỗi lần tải trang), nên
+   * TTL ở đây chỉ còn giữ dữ liệu trong một phiên xem — để ngắn chỉ làm chậm
+   * mà không tươi hơn. Đặt bằng production.
    */
-  const TTL = Number(env.DEV_CACHE_TTL_SECONDS ?? 5) * 1000;
+  const TTL = Number(env.DEV_CACHE_TTL_SECONDS ?? 60) * 1000;
   let cache: { at: number; data: Promise<SheetData> } | null = null;
 
   /** Trả về [dữ liệu, mô tả nguồn] để log cho biết đang đọc mới hay lấy từ cache. */
@@ -46,8 +46,8 @@ function apiGiaLap(env: Record<string, string>): Plugin {
       server.middlewares.use("/api/result", async (req, res) => {
         const url = new URL(req.url ?? "", "http://localhost");
         const code = normalizeCode(url.searchParams.get("code") ?? "");
-        // Thêm &nocache=1 để lấy dữ liệu mới ngay, không chờ cache hết hạn.
-        const boQuaCache = url.searchParams.has("nocache");
+        // refresh=1 (trang web gửi mỗi lần tải trang) hoặc nocache=1 (gõ tay để thử).
+        const boQuaCache = url.searchParams.has("refresh") || url.searchParams.has("nocache");
         res.setHeader("Content-Type", "application/json; charset=utf-8");
         // Giống production: trình duyệt không được giữ lại kết quả tra cứu.
         res.setHeader("Cache-Control", "no-store");

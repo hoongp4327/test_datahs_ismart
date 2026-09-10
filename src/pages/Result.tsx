@@ -30,7 +30,8 @@ export default function Result() {
     let huy = false;
     (async () => {
       try {
-        const res = await fetch(`/api/result?code=${encodeURIComponent(ma)}`);
+        // Mở bằng link trực tiếp thì không có bước gõ mã để đọc sẵn, nên đọc mới tại đây.
+        const res = await fetch(`/api/result?code=${encodeURIComponent(ma)}&refresh=1`);
         const json = (await res.json()) as { data?: BaoCao; message?: string };
         if (huy) return;
 
