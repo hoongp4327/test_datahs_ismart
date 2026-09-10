@@ -20,8 +20,11 @@ function apiGiaLap(env: Record<string, string>): Plugin {
   const TTL = Number(env.DEV_CACHE_TTL_SECONDS ?? 5) * 1000;
   let cache: { at: number; data: Promise<SheetData> } | null = null;
 
-  const layDuLieu = (boQuaCache: boolean) => {
-    if (!boQuaCache && cache && Date.now() - cache.at < TTL) return cache.data;
+  /** Trả về [dữ liệu, mô tả nguồn] để log cho biết đang đọc mới hay lấy từ cache. */
+  const layDuLieu = (boQuaCache: boolean): [Promise<SheetData>, string] => {
+    if (!boQuaCache && cache && Date.now() - cache.at < TTL) {
+      return [cache.data, `cache ${Math.round((Date.now() - cache.at) / 1000)}s`];
+    }
 
     const data = env.APPS_SCRIPT_URL
       ? docQuaAppsScript(env.APPS_SCRIPT_URL, env.APPS_SCRIPT_TOKEN ?? "")
@@ -30,7 +33,7 @@ function apiGiaLap(env: Record<string, string>): Plugin {
     // Lỗi thì bỏ cache để lần sau thử lại thay vì nhớ mãi lỗi cũ.
     data.catch(() => (cache = null));
     cache = { at: Date.now(), data };
-    return data;
+    return [data, "nạp mới"];
   };
 
   return {
@@ -46,6 +49,8 @@ function apiGiaLap(env: Record<string, string>): Plugin {
         // Thêm &nocache=1 để lấy dữ liệu mới ngay, không chờ cache hết hạn.
         const boQuaCache = url.searchParams.has("nocache");
         res.setHeader("Content-Type", "application/json; charset=utf-8");
+        // Giống production: trình duyệt không được giữ lại kết quả tra cứu.
+        res.setHeader("Cache-Control", "no-store");
 
         if (!code) {
           res.statusCode = 400;
@@ -54,8 +59,16 @@ function apiGiaLap(env: Record<string, string>): Plugin {
         }
 
         try {
-          const { results, levels } = await layDuLieu(boQuaCache);
+          const batDau = Date.now();
+          const [choDuLieu, nguonDuLieu] = layDuLieu(boQuaCache);
+          const { results, levels } = await choDuLieu;
           const row = timHocSinh(results, code);
+
+          // In ra để thấy rõ đang đọc mới hay lấy từ cache, và sheet có bao nhiêu dòng.
+          server.config.logger.info(
+            `  [api] ${code}  ${row ? "→ " + row.ho_ten : "→ KHÔNG THẤY"}` +
+              `  (${nguonDuLieu}, ${results.length} dòng, ${Date.now() - batDau} ms)`
+          );
 
           if (!row) {
             res.statusCode = 404;
