@@ -2,6 +2,7 @@ import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import { buildReport, normalizeCode, timHocSinh } from "./shared/bao-cao";
 import { docQuaAppsScript, type SheetData } from "./shared/apps-script";
+import { docQuaGoogleSheetPublic } from "./shared/sheet-public";
 import duLieuMau from "./shared/du-lieu-mau";
 
 /**
@@ -21,15 +22,40 @@ function apiGiaLap(env: Record<string, string>): Plugin {
   let cache: { at: number; data: Promise<SheetData> } | null = null;
 
   /** Trả về [dữ liệu, mô tả nguồn] để log cho biết đang đọc mới hay lấy từ cache. */
-  const layDuLieu = (boQuaCache: boolean): [Promise<SheetData>, string] => {
+  const layDuLieu = (boQuaCache: boolean, server: any): [Promise<SheetData>, string] => {
     if (!boQuaCache && cache && Date.now() - cache.at < TTL) {
       return [cache.data, `cache ${Math.round((Date.now() - cache.at) / 1000)}s`];
     }
 
-    const data = env.APPS_SCRIPT_URL
-      ? docQuaAppsScript(env.APPS_SCRIPT_URL, env.APPS_SCRIPT_TOKEN ?? "")
-      : Promise.resolve(duLieuMau as SheetData);
+    const docDuLieu = async (): Promise<SheetData> => {
+      if (env.APPS_SCRIPT_URL) {
+        try {
+          return await docQuaAppsScript(env.APPS_SCRIPT_URL, env.APPS_SCRIPT_TOKEN ?? "");
+        } catch (err) {
+          if (env.GOOGLE_SHEET_ID) {
+            server.config.logger.warn(
+              `  [api] Apps Script trả về lỗi (${(err as Error).message}), chuyển sang nạp từ Google Sheet ID: ${env.GOOGLE_SHEET_ID}`
+            );
+            return await docQuaGoogleSheetPublic(
+              env.GOOGLE_SHEET_ID,
+              env.SHEET_TAB_RESULTS || "KetQua",
+              env.SHEET_TAB_LEVELS || "BacNangLuc"
+            );
+          }
+          throw err;
+        }
+      }
+      if (env.GOOGLE_SHEET_ID) {
+        return await docQuaGoogleSheetPublic(
+          env.GOOGLE_SHEET_ID,
+          env.SHEET_TAB_RESULTS || "KetQua",
+          env.SHEET_TAB_LEVELS || "BacNangLuc"
+        );
+      }
+      return duLieuMau as SheetData;
+    };
 
+    const data = docDuLieu();
     // Lỗi thì bỏ cache để lần sau thử lại thay vì nhớ mãi lỗi cũ.
     data.catch(() => (cache = null));
     cache = { at: Date.now(), data };
@@ -60,7 +86,7 @@ function apiGiaLap(env: Record<string, string>): Plugin {
 
         try {
           const batDau = Date.now();
-          const [choDuLieu, nguonDuLieu] = layDuLieu(boQuaCache);
+          const [choDuLieu, nguonDuLieu] = layDuLieu(boQuaCache, server);
           const { results, levels } = await choDuLieu;
           const row = timHocSinh(results, code);
 
