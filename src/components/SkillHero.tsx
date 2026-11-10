@@ -1,217 +1,170 @@
-import { useEffect, useState } from "react";
 import type { BaoCao, KyNangKetQua } from "../types";
+import Icon from "./Icon";
 import { giaoDienKyNang } from "./kyNangGiaoDien";
 import { hienSoDem, useDemSo } from "./motion";
 
 /**
- * Khối mở đầu của báo cáo: Level + thang Level bên trái, radar 4 kỹ năng cỡ lớn bên phải.
+ * Khối kết quả chính: bên trái Level + tổng điểm + thang Level (nền xanh), bên phải
+ * radar 4 kỹ năng trong khung sáng.
  *
- * Kịch bản chuyển động khi mở trang (thời điểm tính từ lúc trang hiện ra):
- *     0 ms   khối nền trượt lên
- *   120 ms   các vòng lưới radar hiện dần từ trong ra
- *   300 ms   đa giác điểm nở từ tâm  ←  chuyển động chính
- *   300 ms   tổng điểm đếm lên, cùng nhịp với đa giác
- *   500 ms   kim trên thang Level trượt tới tổng điểm
- *   650 ms   4 đỉnh và nhãn kỹ năng hiện lần lượt, cách nhau 70 ms
- * Liên tục: quầng sáng nền trôi rất chậm, quầng quanh mỗi đỉnh "thở".
+ * Nhãn kỹ năng quanh radar là HTML (lưới 3×3), không phải chữ trong SVG — SVG co lại
+ * trên điện thoại thì chữ bên trong cũng co theo tới mức không đọc được.
+ *
+ * Kịch bản chuyển động khi mở trang:
+ *   0–500 ms   các vòng lưới hiện dần từ trong ra
+ *   300 ms     đa giác điểm nở từ tâm, tổng điểm đếm lên cùng nhịp
+ *   400 ms     huy hiệu Level bật lên
+ *   500 ms     kim trên thang Level trượt tới tổng điểm
+ *   650 ms     4 đỉnh và 4 nhãn kỹ năng hiện lần lượt
  */
 
-/* ------------------------------ Radar ------------------------------ */
+/* ---------------------------------- Radar ---------------------------------- */
 
-/* Bán kính lớn, lề vừa đủ cho nhãn — radar chiếm phần lớn khung vẽ. */
-const R = 182;
-const LE_NGANG = 122; // chỗ cho nhãn trái/phải (tên kỹ năng dài nhất ~95px)
-const LE_DOC = 78; // chỗ cho nhãn trên/dưới (2 dòng)
-const CX = R + LE_NGANG;
-const CY = R + LE_DOC;
-const RONG = 2 * CX;
-const CAO = 2 * CY;
-/** Hướng 4 trục: trên, phải, dưới, trái — theo thứ tự Listening, Reading, Writing, Speaking. */
+const C = 200; // tâm
+const R = 168; // bán kính vòng ngoài = điểm tối đa
+/** Trên, phải, dưới, trái — theo thứ tự Listening, Reading, Writing, Speaking. */
 const HUONG: [number, number][] = [
   [0, -1],
   [1, 0],
   [0, 1],
   [-1, 0],
 ];
+const VI_TRI_NHAN = ["top", "right", "bottom", "left"];
 
-function viTriNhan(i: number) {
-  switch (i) {
-    case 0:
-      return { x: CX, y: CY - R - 46, anchor: "middle" as const };
-    case 1:
-      return { x: CX + R + 26, y: CY - 6, anchor: "start" as const };
-    case 2:
-      return { x: CX, y: CY + R + 42, anchor: "middle" as const };
-    default:
-      return { x: CX - R - 26, y: CY - 6, anchor: "end" as const };
-  }
-}
-
-/**
- * Màn hình hẹp: SVG co lại thì chữ nhãn bên trong cũng co theo, xuống còn ~8px. Nên trên
- * điện thoại radar cắt sát vòng tròn để to hết cỡ, nhãn chuyển ra chú thích HTML bên dưới.
- */
-function useManHinhHep(px = 600) {
-  const q = `(max-width: ${px}px)`;
-  const [hep, setHep] = useState(
-    () => typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia(q).matches
-  );
-  useEffect(() => {
-    if (typeof window.matchMedia !== "function") return;
-    const m = window.matchMedia(q);
-    const capNhat = () => setHep(m.matches);
-    capNhat();
-    m.addEventListener("change", capNhat);
-    return () => m.removeEventListener("change", capNhat);
-  }, [q]);
-  return hep;
-}
-
-const LE_GON = 30; // lề quanh vòng tròn ở chế độ gọn
-
-function RadarLon({ kyNang, diemToiDa, gon }: { kyNang: KyNangKetQua[]; diemToiDa: number; gon: boolean }) {
+function Radar({ kyNang, diemToiDa }: { kyNang: KyNangKetQua[]; diemToiDa: number }) {
   const dinh = kyNang.map((k, i) => {
     const r = ((k.diem ?? 0) / diemToiDa) * R;
-    return [CX + HUONG[i][0] * r, CY + HUONG[i][1] * r] as const;
+    return [C + HUONG[i][0] * r, C + HUONG[i][1] * r] as const;
   });
   const points = dinh.map((p) => p.join(",")).join(" ");
-  const moTaCho = kyNang.map((k) => `${k.ten} ${k.diem ?? "chưa có"}/${diemToiDa}`).join(", ");
 
   return (
-    <svg
-      className="bc-radar"
-      viewBox={
-        gon
-          ? `${CX - R - LE_GON} ${CY - R - LE_GON} ${2 * (R + LE_GON)} ${2 * (R + LE_GON)}`
-          : `0 0 ${RONG} ${CAO}`
-      }
-      style={{ ["--cx" as string]: `${CX}px`, ["--cy" as string]: `${CY}px` }}
-      role="img"
-      aria-label={`Biểu đồ radar 4 kỹ năng: ${moTaCho}`}
-    >
+    <svg className="radar-svg" viewBox="0 0 400 400" aria-hidden="true">
       <defs>
-        <radialGradient id="bc-radar-to" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#E8501B" stopOpacity="0.7" />
-          <stop offset="100%" stopColor="#E8501B" stopOpacity="0.28" />
-        </radialGradient>
-        <filter id="bc-radar-sang" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="9" />
+        <linearGradient id="radar-to" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#FFB067" />
+          <stop offset="100%" stopColor="#F2603A" />
+        </linearGradient>
+        <filter id="radar-bong" x="-30%" y="-30%" width="160%" height="160%">
+          <feDropShadow dx="0" dy="8" stdDeviation="10" floodColor="#F2603A" floodOpacity="0.35" />
         </filter>
       </defs>
 
-      {/* Lưới: 4 vòng tròn ứng với 5 / 10 / 15 / 20 điểm */}
       {[0.25, 0.5, 0.75, 1].map((k, i) => (
-        <g key={k} className="bc-vong" style={{ ["--tre" as string]: `${120 + i * 60}ms` }}>
-          {/* Mỗi vòng phủ một lớp mờ — chồng lên nhau thành các dải sáng dần về tâm */}
-          <circle cx={CX} cy={CY} r={R * k} className="bc-vong-dai" />
-          <circle cx={CX} cy={CY} r={R * k} className={k === 1 ? "bc-vong-ngoai" : "bc-vong-trong"} />
-          <text x={CX + R * k * 0.7071 + 4} y={CY - R * k * 0.7071 - 4} className="bc-vong-so">
+        <g key={k} className="radar-vong" style={{ ["--tre" as string]: `${i * 70}ms` }}>
+          <circle cx={C} cy={C} r={R * k} className={k === 1 ? "vong-ngoai" : "vong-trong"} />
+          <text x={C + R * k * 0.7071 + 6} y={C - R * k * 0.7071 - 4} className="vong-so">
             {diemToiDa * k}
           </text>
         </g>
       ))}
 
       {HUONG.map(([dx, dy], i) => (
-        <line key={i} x1={CX} y1={CY} x2={CX + dx * (R + 10)} y2={CY + dy * (R + 10)} className="bc-truc" />
+        <line key={i} x1={C - dx * (R + 8)} y1={C - dy * (R + 8)} x2={C} y2={C} className="radar-truc" />
       ))}
 
-      {/* Đa giác điểm: một lớp quầng sáng mờ phía sau + lớp chính */}
-      <g className="bc-da-giac">
-        <polygon points={points} className="bc-da-giac-sang" filter="url(#bc-radar-sang)" />
-        <polygon points={points} className="bc-da-giac-chinh" fill="url(#bc-radar-to)" />
+      <g className="radar-da-giac">
+        <polygon points={points} fill="url(#radar-to)" filter="url(#radar-bong)" className="da-giac" />
       </g>
 
-      {kyNang.map((k, i) => {
-        const gd = giaoDienKyNang(k.key);
-        const [x, y] = dinh[i];
-        const nhan = viTriNhan(i);
-        const tre = { ["--tre" as string]: `${650 + i * 70}ms` };
-        return (
-          <g key={k.key}>
-            <g className="bc-dinh" style={tre}>
-              <circle cx={x} cy={y} r="15" fill={gd.mau} className="bc-dinh-quang" />
-              <circle cx={x} cy={y} r="7.5" fill={gd.mau} className="bc-dinh-diem" />
-            </g>
-            {gon ? (
-              // Chế độ gọn: chỉ ký hiệu L/R/W/S ở đầu trục; tên và điểm nằm trong chú thích bên dưới
-              <text
-                x={CX + HUONG[i][0] * (R + 18)}
-                y={CY + HUONG[i][1] * (R + 18) + 7}
-                textAnchor="middle"
-                className="bc-radar-chu bc-radar-nhan"
-                style={{ ...tre, fill: gd.tenToi }}
-              >
-                {gd.kyHieu}
-              </text>
-            ) : (
-              <g className="bc-radar-nhan" style={tre}>
-                <text x={nhan.x} y={nhan.y} textAnchor={nhan.anchor} className="bc-radar-ten">
-                  {k.ten}
-                </text>
-                <text x={nhan.x} y={nhan.y + 27} textAnchor={nhan.anchor} className="bc-radar-diem">
-                  <tspan fill={gd.tenToi}>{k.diem ?? "—"}</tspan>
-                  <tspan className="bc-radar-max">/{diemToiDa}</tspan>
-                </text>
-              </g>
-            )}
-          </g>
-        );
-      })}
+      {dinh.map(([x, y], i) => (
+        <circle
+          key={kyNang[i].key}
+          cx={x}
+          cy={y}
+          r="8"
+          className="radar-dinh"
+          style={{ ["--tre" as string]: `${650 + i * 70}ms` }}
+        />
+      ))}
     </svg>
   );
 }
 
-/* ---------------------------- Thang Level ---------------------------- */
+function NhanKyNang({ k, diemToiDa, thuTu }: { k: KyNangKetQua; diemToiDa: number; thuTu: number }) {
+  const gd = giaoDienKyNang(k.key);
+  return (
+    <div
+      className={`radar-nhan radar-nhan-${VI_TRI_NHAN[thuTu]}`}
+      style={{ ["--tre" as string]: `${650 + thuTu * 70}ms` }}
+    >
+      <span className="o-icon" style={{ background: gd.nen, color: gd.mau }}>
+        <Icon ten={gd.icon} size={24} />
+      </span>
+      <span className="radar-nhan-chu">
+        <strong>{k.ten}</strong>
+        <span className="radar-nhan-diem">
+          <b style={{ color: gd.mau }}>{k.diem ?? "—"}</b>/{diemToiDa}
+        </span>
+      </span>
+    </div>
+  );
+}
 
-/**
- * Thanh 0–80 chia đúng theo các mốc trong tab ThangLevel của sheet, kim chỉ vào tổng
- * điểm. Cho phụ huynh thấy con đang ở đâu trong mức, còn cách mức sau bao xa.
- */
-function ThangLevelBar({
-  thang,
-  tong,
-  tongToiDa,
-  levelHienTai,
-  tongDangDem,
-}: {
-  thang: BaoCao["thangLevel"];
-  tong: number | null;
-  tongToiDa: number;
-  levelHienTai: string | undefined;
-  tongDangDem: string;
-}) {
+/* -------------------------------- Huy hiệu Level -------------------------------- */
+
+function HuyHieu({ ten }: { ten: string | undefined }) {
+  const chu = ten ?? "—";
+  return (
+    <div className="huy-hieu">
+      <img src="/images/nguyet-que.webp" alt="" className="nguyet-que nguyet-que-trai" />
+      <div className="huy-hieu-khien">
+        <svg viewBox="0 0 200 150" aria-hidden="true">
+          <defs>
+            <linearGradient id="khien-to" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#FF9A3D" />
+              <stop offset="100%" stopColor="#EE5A1F" />
+            </linearGradient>
+          </defs>
+          <path
+            d="M24 8h152q16 0 16 16v66q0 12-10 18l-74 36q-8 4-16 0l-74-36Q8 102 8 90V24Q8 8 24 8Z"
+            fill="url(#khien-to)"
+            stroke="#FFD08A"
+            strokeWidth="4"
+          />
+        </svg>
+        <span className={`huy-hieu-chu${chu.length > 3 ? " is-dai" : ""}`}>{chu}</span>
+      </div>
+      <img src="/images/nguyet-que.webp" alt="" className="nguyet-que nguyet-que-phai" />
+    </div>
+  );
+}
+
+/* --------------------------------- Thang Level --------------------------------- */
+
+function ThangLevel({ bc, tongDangDem }: { bc: BaoCao; tongDangDem: string }) {
+  const thang = bc.thangLevel;
   if (!thang.length) return null;
-  const phanTram = (d: number) => Math.min(100, Math.max(0, (d / tongToiDa) * 100));
-  const doan = thang.map((m, i) => {
-    const den = Math.min(thang[i + 1]?.tu ?? tongToiDa, tongToiDa);
-    return { ...m, trai: phanTram(m.tu), rong: phanTram(den) - phanTram(m.tu) };
-  });
-  const moc = [...thang.map((m) => m.tu), tongToiDa].filter((v, i, a) => a.indexOf(v) === i);
+  const pt = (d: number) => Math.min(100, Math.max(0, (d / bc.tongToiDa) * 100));
+  const moc = [...thang.map((m) => m.tu), bc.tongToiDa].filter((v, i, a) => a.indexOf(v) === i);
 
   return (
-    <div className="bc-thang">
-      <div className="bc-thang-ray">
-        <div className="bc-thang-cac-doan">
-          {doan.map((d) => (
-            <div
-              key={d.ten}
-              className={`bc-thang-doan${d.ten === levelHienTai ? " is-hien-tai" : ""}`}
-              style={{ left: `${d.trai}%`, width: `${d.rong}%` }}
-              title={`${d.ten}: từ ${d.tu} điểm`}
-            >
-              <span>{d.ten}</span>
-            </div>
-          ))}
+    <div className="thang">
+      <div className="thang-ray">
+        <div className="thang-cac-doan">
+          {thang.map((m, i) => {
+            const den = Math.min(thang[i + 1]?.tu ?? bc.tongToiDa, bc.tongToiDa);
+            return (
+              <span
+                key={m.ten}
+                className={`thang-doan${m.ten === bc.level?.ten ? " is-hien-tai" : ""}`}
+                style={{ left: `${pt(m.tu)}%`, width: `${pt(den) - pt(m.tu)}%` }}
+                title={`${m.ten}: từ ${m.tu} điểm`}
+              >
+                {m.ten}
+              </span>
+            );
+          })}
         </div>
-        {tong !== null ? (
-          <div className="bc-thang-kim" style={{ left: `${phanTram(tong)}%` }} aria-hidden="true">
-            <span className="bc-thang-kim-so">{tongDangDem}</span>
-          </div>
+        {bc.tongDiem !== null ? (
+          <span className="thang-kim" style={{ left: `${pt(bc.tongDiem)}%` }} aria-hidden="true">
+            <span className="thang-kim-so">{tongDangDem}</span>
+          </span>
         ) : null}
       </div>
-      <div className="bc-thang-moc" aria-hidden="true">
+      <div className="thang-moc" aria-hidden="true">
         {moc.map((m) => (
-          <span key={m} style={{ left: `${phanTram(m)}%` }}>
+          <span key={m} style={{ left: `${pt(m)}%` }}>
             {m}
           </span>
         ))}
@@ -220,65 +173,58 @@ function ThangLevelBar({
   );
 }
 
-/* ------------------------------- Hero ------------------------------- */
+/* ---------------------------------- Khối chính ---------------------------------- */
 
 export default function SkillHero({ bc }: { bc: BaoCao }) {
+  const tongDangDem = hienSoDem(useDemSo(bc.tongDiem, 300, 900), bc.tongDiem);
   const duDiem = bc.tongDiem !== null;
-  const gon = useManHinhHep();
-  const tongDem = hienSoDem(useDemSo(bc.tongDiem, 300, 900), bc.tongDiem);
+  const moTaRadar = bc.kyNang.map((k) => `${k.ten} ${k.diem ?? "chưa có"}/${bc.diemToiDa}`).join(", ");
 
   return (
-    <section className="bc-hero" aria-label="Kết quả 4 kỹ năng và Level tương ứng">
-      <div className="bc-hero-nen" aria-hidden="true" />
-
-      <div className="bc-hero-trai">
-        <div className="bc-eyebrow">Level tương ứng</div>
-        <div className={`bc-level${bc.level ? "" : " is-chua-co"}`}>
-          {bc.level?.ten ?? "Đang cập nhật"}
+    <section className="hero" aria-label="Kết quả 4 kỹ năng và Level tương ứng">
+      <div className="hero-trai">
+        <div className="hero-nhan">
+          LEVEL TƯƠNG ỨNG
+          <svg viewBox="0 0 30 30" className="tia" aria-hidden="true">
+            <path d="M8 22 14 6M16 24l10-12" />
+          </svg>
         </div>
-        <div className="bc-tong">
-          <span className="bc-tong-so">{tongDem}</span>
-          <span className="bc-tong-max">/ {bc.tongToiDa} điểm</span>
-        </div>
-        {bc.level?.moTa ? <p className="bc-level-mo-ta">{bc.level.moTa}</p> : null}
 
-        <ThangLevelBar
-          thang={bc.thangLevel}
-          tong={bc.tongDiem}
-          tongToiDa={bc.tongToiDa}
-          levelHienTai={bc.level?.ten}
-          tongDangDem={tongDem}
-        />
+        <HuyHieu ten={bc.level?.ten} />
+
+        <div className="hero-tong">
+          <b>{tongDangDem}</b>
+          <span>/ {bc.tongToiDa} điểm</span>
+        </div>
+
+        <p className="hero-mo-ta">
+          {bc.level?.moTa ??
+            (duDiem ? "" : "Chưa đủ điểm cả 4 kỹ năng nên chưa xếp Level. Trung tâm sẽ cập nhật khi giáo viên chấm xong.")}
+        </p>
+
+        <ThangLevel bc={bc} tongDangDem={tongDangDem} />
+
+        <svg className="hero-song" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 70C70 40 130 95 210 80S330 30 400 60V120H0Z" fill="#2B7BD8" opacity="0.55" />
+          <path d="M0 92C60 70 120 110 190 100S300 72 360 90 400 96 400 96V120H0Z" fill="#F7A23A" />
+        </svg>
       </div>
 
-      <div className="bc-hero-phai">
+      <div className="hero-phai">
+        <img src="/images/chong-sach.webp" alt="" className="hero-sach" />
         {duDiem ? (
-          <div className="bc-radar-khung">
-            <RadarLon kyNang={bc.kyNang} diemToiDa={bc.diemToiDa} gon={gon} />
-            {gon ? (
-              <ul className="bc-chu-giai">
-                {bc.kyNang.map((k) => {
-                  const gd = giaoDienKyNang(k.key);
-                  return (
-                    <li key={k.key}>
-                      <span className="bc-chu-giai-ky-hieu" style={{ color: gd.tenToi }}>
-                        {gd.kyHieu}
-                      </span>
-                      <span className="bc-chu-giai-ten">{k.ten}</span>
-                      <b style={{ color: gd.tenToi }}>
-                        {k.diem ?? "—"}
-                        <small>/{bc.diemToiDa}</small>
-                      </b>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : null}
+          <div className="radar" role="img" aria-label={`Biểu đồ 4 kỹ năng: ${moTaRadar}`}>
+            <div className="radar-chart">
+              <Radar kyNang={bc.kyNang} diemToiDa={bc.diemToiDa} />
+            </div>
+            {bc.kyNang.map((k, i) => (
+              <NhanKyNang key={k.key} k={k} diemToiDa={bc.diemToiDa} thuTu={i} />
+            ))}
           </div>
         ) : (
-          <div className="bc-chua-du">
-            <strong>Chưa đủ điểm cả 4 kỹ năng</strong>
-            <span>Biểu đồ và Level sẽ hiện khi giáo viên chấm xong. Trung tâm sẽ cập nhật sớm.</span>
+          <div className="radar-trong">
+            <strong>Biểu đồ sẽ hiện khi đủ điểm 4 kỹ năng</strong>
+            <span>Giáo viên đang hoàn tất phần chấm điểm.</span>
           </div>
         )}
       </div>

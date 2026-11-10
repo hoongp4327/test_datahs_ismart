@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { SiteFooter, Topbar } from "../components/Layout";
+import Icon from "../components/Icon";
 import Report from "../components/Report";
 import type { BaoCao } from "../types";
 
@@ -23,7 +24,7 @@ export default function Result() {
   useEffect(() => {
     if (sanCo) return;
     if (!ma) {
-      setTt({ loai: "loi", message: "Thiếu mã học sinh trong đường dẫn." });
+      setTt({ loai: "loi", message: "Đường dẫn thiếu mã học sinh." });
       return;
     }
 
@@ -34,17 +35,19 @@ export default function Result() {
         const res = await fetch(`/api/result?code=${encodeURIComponent(ma)}&refresh=1`);
         const json = (await res.json()) as { data?: BaoCao; message?: string };
         if (huy) return;
-
         if (!res.ok || !json.data) {
           setTt({
             loai: "loi",
-            message: json.message || "Không tìm thấy kết quả cho mã học sinh này.",
+            message:
+              res.status === 404
+                ? "Không tìm thấy mã học sinh này."
+                : json.message || "Chưa tải được kết quả. Thử lại sau ít phút.",
           });
           return;
         }
         setTt({ loai: "xong", baoCao: json.data });
       } catch {
-        if (!huy) setTt({ loai: "loi", message: "Không kết nối được máy chủ." });
+        if (!huy) setTt({ loai: "loi", message: "Không kết nối được. Kiểm tra mạng rồi thử lại." });
       }
     })();
 
@@ -54,48 +57,41 @@ export default function Result() {
   }, [ma, sanCo]);
 
   useEffect(() => {
-    if (tt.loai === "xong") document.title = `Kết quả học tập — ${tt.baoCao.hoTen}`;
+    if (tt.loai === "xong") document.title = `${tt.baoCao.hoTen} — Báo cáo năng lực`;
   }, [tt]);
 
   return (
     <div className="page">
       <Topbar />
-      <main className="report">
-        <div className="container">
-          <Link to="/" className="back-link">
-            ← Tra cứu mã khác
-          </Link>
+      <main className="result">
+        {tt.loai === "dang-tai" ? (
+          <div className="state" role="status">
+            <span className="spinner" aria-hidden="true" />
+            Đang tải kết quả…
+          </div>
+        ) : null}
 
-          {tt.loai === "dang-tai" ? (
-            <div className="state">
-              <div className="spinner" />
-              Đang tải kết quả...
+        {tt.loai === "loi" ? (
+          <div className="state">
+            <p>{tt.message}</p>
+            <Link to="/" className="btn-cam">
+              <Icon ten="arrowLeft" size={18} />
+              Nhập lại mã
+            </Link>
+          </div>
+        ) : null}
+
+        {tt.loai === "xong" ? (
+          <>
+            <Report bc={tt.baoCao} />
+            <div className="actions">
+              <button className="btn-pill" onClick={() => window.print()}>
+                <Icon ten="printer" size={18} />
+                In hoặc lưu PDF
+              </button>
             </div>
-          ) : null}
-
-          {tt.loai === "loi" ? (
-            <div className="state">
-              <p style={{ fontSize: 16, color: "var(--ink-2)" }}>{tt.message}</p>
-              <Link to="/" className="btn-ghost" style={{ display: "inline-block", marginTop: 12 }}>
-                Quay lại tra cứu
-              </Link>
-            </div>
-          ) : null}
-
-          {tt.loai === "xong" ? (
-            <>
-              <Report bc={tt.baoCao} />
-              <div className="actions">
-                <button className="btn-ghost" onClick={() => window.print()}>
-                  In / Lưu PDF
-                </button>
-                <Link to="/" className="btn-ghost">
-                  Tra cứu mã khác
-                </Link>
-              </div>
-            </>
-          ) : null}
-        </div>
+          </>
+        ) : null}
       </main>
       <SiteFooter />
     </div>
