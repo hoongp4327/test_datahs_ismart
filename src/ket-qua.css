@@ -1,7 +1,7 @@
 /* ==========================================================================
    Giao diện báo cáo iSMART — nền trời sáng, khối Level xanh đậm, radar trong
-   khung sáng, thẻ kỹ năng có icon. Ảnh minh hoạ (linh vật, nền mây, chồng sách,
-   nguyệt quế) tạo bằng Higgsfield, nằm trong public/images.
+   khung sáng, thẻ kỹ năng có icon. Ảnh: Isaac (linh vật chính thức, isaac.png); nền mây, chồng sách,
+   nguyệt quế tạo bằng Higgsfield. Tất cả nằm trong public/images.
 
    CHỈ dành cho trang kết quả. Trang tra cứu dùng styles.css riêng.
    Hai file cùng được nạp toàn cục, nên ở đây:

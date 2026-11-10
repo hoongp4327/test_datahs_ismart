@@ -116,7 +116,7 @@ export default function Report({ bc }: { bc: BaoCao }) {
         <svg className="swoosh" viewBox="0 0 120 14" aria-hidden="true">
           <path d="M4 10C34 2 86 2 116 10" />
         </svg>
-        <img src="/images/mascot-doc-sach.webp" alt="" className="tieu-de-mascot" />
+        <img src="/images/isaac.png" alt="" className="tieu-de-mascot" />
       </header>
 
       {/* Học sinh */}
