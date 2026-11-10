@@ -4,8 +4,26 @@
     {
       "name": "web",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev:vite", "--", "--port", "5180"],
+      "runtimeArgs": [
+        "run",
+        "dev:vite",
+        "--",
+        "--port",
+        "5180"
+      ],
       "port": 5180
+    },
+    {
+      "name": "web-mau",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev:mau",
+        "--",
+        "--port",
+        "5181"
+      ],
+      "port": 5181
     }
   ]
 }

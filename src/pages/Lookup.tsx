@@ -65,7 +65,7 @@ export default function Lookup() {
               </h1>
 
               <p className="lookup-card-desc">
-                Nhập mã học sinh để xem báo cáo toàn diện buổi học, biểu đồ phân tích 4 kỹ năng Tiếng Anh và lộ trình phát triển cá nhân hóa.
+                Nhập mã học sinh để xem điểm 4 kỹ năng Tiếng Anh, Level tương ứng và lộ trình phát triển cá nhân hóa.
               </p>
 
               <form onSubmit={tim} noValidate className="lookup-card-form">
@@ -124,15 +124,15 @@ export default function Lookup() {
               <div className="lookup-feature-pills">
                 <div className="pill-item">
                   <span className="pill-icon">🏆</span>
-                  <span>Điểm cúp & Tương tác</span>
+                  <span>Điểm 4 kỹ năng</span>
                 </div>
                 <div className="pill-item">
                   <span className="pill-icon">📊</span>
-                  <span>Biểu đồ 4 Kỹ năng</span>
+                  <span>Level tương ứng</span>
                 </div>
                 <div className="pill-item">
                   <span className="pill-icon">🎯</span>
-                  <span>Chuẩn KNLNNVN</span>
+                  <span>Gợi ý luyện tập</span>
                 </div>
               </div>
 
@@ -162,21 +162,21 @@ export default function Lookup() {
 
           <div className="features-showcase-grid">
             <div className="feature-showcase-card card-trophy">
-              <div className="feature-icon-box">🏆</div>
-              <h3>Tinh Thần & Tương Tác</h3>
-              <p>Ghi nhận số cúp khen thưởng, tần suất giơ tay phát biểu và mức độ tập trung chủ động của con trong suốt buổi học.</p>
+              <div className="feature-icon-box">🎓</div>
+              <h3>Level Tương Ứng</h3>
+              <p>Tổng điểm 4 kỹ năng được quy đổi sang Level (Pre-A1, A1, A2, Pre-B1) kèm mô tả năng lực hiện tại của con.</p>
             </div>
 
             <div className="feature-showcase-card card-radar">
               <div className="feature-icon-box">📊</div>
               <h3>Đo Lường 4 Kỹ Năng Ngôn Ngữ</h3>
-              <p>Biểu đồ mạng nhện Radar và thước đo chuẩn hóa chi tiết cho Từ vựng, Cấu trúc / Ngữ pháp, Phát âm chuẩn IPA và Phản xạ.</p>
+              <p>Biểu đồ Radar và thước đo chi tiết cho Listening, Reading, Writing, Speaking — kèm nhận xét của giáo viên cho từng kỹ năng.</p>
             </div>
 
             <div className="feature-showcase-card card-path">
               <div className="feature-icon-box">🎯</div>
-              <h3>Lộ Trình & Chuẩn Đầu Ra</h3>
-              <p>Phân tích tỷ trọng kiến thức nền tảng và nâng cao, đối chiếu chuẩn xác với Khung năng lực ngoại ngữ 6 bậc Việt Nam.</p>
+              <h3>Lộ Trình & Gợi Ý Luyện Tập</h3>
+              <p>Tỷ trọng kiến thức nền tảng và nâng cao, cùng gợi ý luyện tập ở nhà cho từng kỹ năng để con tiến bộ đều.</p>
             </div>
           </div>
         </div>

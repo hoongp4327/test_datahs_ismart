@@ -2,9 +2,8 @@
  * Gọi web app Apps Script gắn trong Google Sheet.
  * Dùng chung giữa Netlify Function (production) và Vite dev server.
  */
-import { toObjects, type Row } from "./bao-cao";
-
-export type SheetData = { results: Row[]; levels: Row[] };
+import { toObjects, type SheetData } from "./bao-cao";
+import type { TenTab } from "./nguon-du-lieu";
 
 /**
  * Apps Script thường trả lời trong ~3 giây nhưng đo được những lần vọt lên 14-31 giây.
@@ -13,7 +12,11 @@ export type SheetData = { results: Row[]; levels: Row[] };
  */
 const TIMEOUT_MS = 8_000;
 
-export async function docQuaAppsScript(url: string, token: string): Promise<SheetData> {
+export async function docQuaAppsScript(
+  url: string,
+  token: string,
+  tab: TenTab
+): Promise<SheetData> {
   let res: Response;
   try {
     res = await fetch(`${url}?token=${encodeURIComponent(token)}`, {
@@ -38,7 +41,7 @@ export async function docQuaAppsScript(url: string, token: string): Promise<Shee
     );
   }
 
-  let json: { error?: string; results?: string[][]; levels?: string[][] };
+  let json: { error?: string; tabs?: Record<string, string[][]> };
   try {
     json = JSON.parse(text);
   } catch {
@@ -51,6 +54,13 @@ export async function docQuaAppsScript(url: string, token: string): Promise<Shee
   if (json.error) {
     throw new Error(`Apps Script báo lỗi: ${json.error}`);
   }
+  if (!json.tabs) {
+    throw new Error("Apps Script trả về định dạng cũ — dán lại Code.gs mới rồi deploy version mới.");
+  }
 
-  return { results: toObjects(json.results), levels: toObjects(json.levels) };
+  return {
+    ketQua: toObjects(json.tabs[tab.ketQua]),
+    moTa: toObjects(json.tabs[tab.moTa]),
+    thangLevel: toObjects(json.tabs[tab.thangLevel]),
+  };
 }

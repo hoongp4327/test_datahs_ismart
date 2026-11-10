@@ -5,6 +5,8 @@ export const ORG = {
   ten: "iSMART Education",
   vietTat: "iSMART",
   hoiDong: "Hội đồng kiểm soát chất lượng",
+  /** Địa danh ở dòng ký tên: "Hà Nội, ngày ... tháng ... năm ..." */
+  diaDiem: "Hà Nội",
   slogan: "Hệ thống báo cáo & đánh giá năng lực học viên",
   diaChi: "Hệ thống tra cứu trực tuyến dành cho phụ huynh",
   hotline: "1900 636 109",

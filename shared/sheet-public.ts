@@ -1,9 +1,12 @@
 /**
  * Đọc trực tiếp từ Google Sheet công khai qua giao diện CSV / gviz của Google.
  * Không cần Google Cloud, không cần Service Account, không phụ thuộc quyền hạn Apps Script.
+ *
+ * ⚠ Chỉ chạy được khi sheet để chế độ "Bất kỳ ai có đường liên kết" — tức là ai biết
+ * Sheet ID cũng tải được toàn bộ dữ liệu. Chỉ nên là đường dự phòng.
  */
-import { toObjects, type Row } from "./bao-cao";
-import type { SheetData } from "./apps-script";
+import { toObjects, type SheetData } from "./bao-cao";
+import type { TenTab } from "./nguon-du-lieu";
 
 export function parseCsv(text: string): string[][] {
   const lines: string[][] = [];
@@ -42,54 +45,42 @@ export function parseCsv(text: string): string[][] {
 
 const TIMEOUT_MS = 8_000;
 
-export async function docQuaGoogleSheetPublic(
-  sheetId: string,
-  tabResults = "KetQua",
-  tabLevels = "BacNangLuc"
-): Promise<SheetData> {
-  const urlKetQua = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(
-    tabResults
-  )}`;
-  const urlLevels = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(
-    tabLevels
-  )}`;
+async function docMotTab(sheetId: string, ten: string): Promise<string[][]> {
+  const url =
+    `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv` +
+    `&sheet=${encodeURIComponent(ten)}`;
 
-  let resKetQua: Response;
-  let resLevels: Response;
-
+  let res: Response;
   try {
-    [resKetQua, resLevels] = await Promise.all([
-      fetch(urlKetQua, { redirect: "follow", signal: AbortSignal.timeout(TIMEOUT_MS) }),
-      fetch(urlLevels, { redirect: "follow", signal: AbortSignal.timeout(TIMEOUT_MS) }),
-    ]);
+    res = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(TIMEOUT_MS) });
   } catch (err) {
     if ((err as Error).name === "TimeoutError") {
       throw new Error(`Google Sheet không phản hồi trong ${TIMEOUT_MS / 1000}s.`);
     }
     throw err;
   }
-
-  if (!resKetQua.ok) {
-    throw new Error(`Không đọc được tab "${tabResults}" từ Google Sheet: HTTP ${resKetQua.status}`);
-  }
-  if (!resLevels.ok) {
-    throw new Error(`Không đọc được tab "${tabLevels}" từ Google Sheet: HTTP ${resLevels.status}`);
+  if (!res.ok) {
+    throw new Error(`Không đọc được tab "${ten}" từ Google Sheet: HTTP ${res.status}`);
   }
 
-  const textKetQua = await resKetQua.text();
-  const textLevels = await resLevels.text();
-
-  if (textKetQua.includes("<html") && textKetQua.includes("accounts.google.com")) {
+  const text = await res.text();
+  if (text.includes("<html") && text.includes("accounts.google.com")) {
     throw new Error(
-      "Google Sheet chưa mở quyền xem công khai. Hãy mở Sheet → Chia sẻ (Share) → Bất kỳ ai có đường liên kết → Người xem."
+      "Google Sheet chưa mở quyền xem công khai, nên không đọc trực tiếp được."
     );
   }
+  return parseCsv(text);
+}
 
-  const rawKetQua = parseCsv(textKetQua);
-  const rawLevels = parseCsv(textLevels);
-
+export async function docQuaGoogleSheetPublic(sheetId: string, tab: TenTab): Promise<SheetData> {
+  const [ketQua, moTa, thangLevel] = await Promise.all([
+    docMotTab(sheetId, tab.ketQua),
+    docMotTab(sheetId, tab.moTa),
+    docMotTab(sheetId, tab.thangLevel),
+  ]);
   return {
-    results: toObjects(rawKetQua),
-    levels: toObjects(rawLevels),
+    ketQua: toObjects(ketQua),
+    moTa: toObjects(moTa),
+    thangLevel: toObjects(thangLevel),
   };
 }

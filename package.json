@@ -9,7 +9,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "kiem-tra": "node --env-file=.env scripts/kiem-tra-ket-noi.mjs",
-    "tao-template": "node scripts/tao-template.mjs"
+    "tao-template": "node scripts/tao-template.mjs",
+    "dev:mau": "vite --mode mau"
   },
   "dependencies": {
     "google-auth-library": "^9.15.0",

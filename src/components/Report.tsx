@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import type { BaoCao, MucNhanXet } from "../types";
+import type { BaoCao, KyNangKetQua } from "../types";
 import { ORG } from "./Layout";
 
 /* ---------------------------- Tiện ích & Avatar ---------------------------- */
@@ -54,15 +54,24 @@ function StudentAvatar({ name, code }: { name: string; code: string }) {
   );
 }
 
-function getGradeMeta(hocLuc: string) {
-  const letter = String(hocLuc ?? "").trim()[0]?.toUpperCase() || "B";
-  const map: Record<string, { cls: string; label: string; score: number }> = {
-    A: { cls: "g-a", label: "Xuất sắc", score: 9.2 },
-    B: { cls: "g-b", label: "Khá - Tốt", score: 7.8 },
-    C: { cls: "g-c", label: "Trung bình", score: 6.2 },
-    D: { cls: "g-d", label: "Cần cố gắng", score: 4.8 },
-  };
-  return map[letter] || { cls: "g-b", label: "Khá", score: 7.5 };
+/** Hiển thị điểm: số nguyên thì không kèm ",0"; chưa có điểm thì "—". */
+function hienDiem(d: number | null) {
+  if (d === null) return "—";
+  return Number.isInteger(d) ? String(d) : d.toFixed(1).replace(".", ",");
+}
+
+/**
+ * "05/11/2026" hoặc "2026-11-05" → "Hà Nội, ngày 5 tháng 11 năm 2026".
+ * Không nhận ra định dạng thì trả nguyên văn để không hiện sai ngày.
+ */
+function dongKyTen(ngayCham: string) {
+  const s = String(ngayCham ?? "").trim();
+  if (!s) return "";
+  const dmy = s.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/);
+  const ymd = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  const [d, m, y] = dmy ? [dmy[1], dmy[2], dmy[3]] : ymd ? [ymd[3], ymd[2], ymd[1]] : [];
+  if (!d) return `Ngày chấm: ${s}`;
+  return `${ORG.diaDiem}, ngày ${Number(d)} tháng ${Number(m)} năm ${y}`;
 }
 
 function Meta({ k, v, icon }: { k: string; v?: string; icon?: string }) {
@@ -103,87 +112,31 @@ function Card({
   );
 }
 
-/* --------------------------- Biểu đồ 4 kỹ năng Chuyên Nghiệp (Solid) --------------------------- */
+/* --------------------------- Giao diện từng kỹ năng --------------------------- */
 
-/** Biểu đồ mạng nhện (Radar Chart) + Thước đo năng lực 4 kỹ năng dạng Solid */
-function SkillsDashboardChart({
-  skills,
-  hocLuc,
-}: {
-  skills: MucNhanXet[];
-  hocLuc: string;
-}) {
-  const baseGrade = getGradeMeta(hocLuc);
+const GIAO_DIEN_KY_NANG: Record<string, { icon: string; mau: string; domain: string }> = {
+  listening: { icon: "🎧", mau: "#2563eb", domain: "domain-nghe" },
+  reading: { icon: "📖", mau: "#7c3aed", domain: "domain-doc" },
+  writing: { icon: "✍️", mau: "#d97706", domain: "domain-viet" },
+  speaking: { icon: "🗣️", mau: "#059669", domain: "domain-noi" },
+};
+const giaoDien = (key: string) =>
+  GIAO_DIEN_KY_NANG[key] ?? { icon: "✨", mau: "#2563eb", domain: "domain-nghe" };
 
-  const skillMeta: Record<
-    string,
-    { key: string; icon: string; solidColor: string; defaultOffset: number }
-  > = {
-    "từ vựng": { key: "tu-vung", icon: "📚", solidColor: "#2563eb", defaultOffset: 0.3 },
-    "cấu trúc / ngữ pháp": { key: "ngu-phap", icon: "📐", solidColor: "#7c3aed", defaultOffset: -0.2 },
-    "phát âm": { key: "phat-am", icon: "🎙️", solidColor: "#059669", defaultOffset: -0.4 },
-    "phản xạ": { key: "phan-xa", icon: "⚡", solidColor: "#d97706", defaultOffset: 0.1 },
-  };
+/* --------------------------- Biểu đồ 4 kỹ năng --------------------------- */
 
-  const chartData = skills.map((item) => {
-    const rawTitle = item.tieuDe.toLowerCase().trim();
-    const meta =
-      skillMeta[rawTitle] || {
-        key: "khac",
-        icon: "✨",
-        solidColor: "#2563eb",
-        defaultOffset: 0,
-      };
-
-    const score =
-      item.diem !== undefined && !isNaN(item.diem)
-        ? Math.min(10, Math.max(0, item.diem))
-        : Math.min(10, Math.max(2, Number((baseGrade.score + meta.defaultOffset).toFixed(1))));
-
-    let levelLabel = "Đạt";
-    let levelClass = "badge-c";
-    if (score >= 9.0) {
-      levelLabel = "Xuất sắc ★";
-      levelClass = "badge-a";
-    } else if (score >= 7.5) {
-      levelLabel = "Tốt";
-      levelClass = "badge-b";
-    } else if (score >= 6.0) {
-      levelLabel = "Khá";
-      levelClass = "badge-c";
-    } else {
-      levelLabel = "Cần luyện thêm";
-      levelClass = "badge-d";
-    }
-
-    return {
-      title: item.tieuDe,
-      score,
-      meta,
-      levelLabel,
-      levelClass,
-    };
-  });
-
-  if (!chartData.length) return null;
-
-  // Tọa độ Radar 4 trục (Top, Right, Bottom, Left) với không gian đệm rộng rãi
+/**
+ * Radar 4 trục + thanh đo ngang. Chỉ vẽ khi có đủ điểm cả 4 kỹ năng: biểu đồ thiếu
+ * một trục sẽ trông như kỹ năng đó bằng 0, phụ huynh sẽ hiểu sai.
+ */
+function SkillsDashboardChart({ kyNang, diemToiDa }: { kyNang: KyNangKetQua[]; diemToiDa: number }) {
   const cx = 175;
   const cy = 135;
   const maxR = 74;
-
-  // Lấy điểm 4 trục (fallback 0 nếu thiếu)
-  const s0 = chartData[0] ? chartData[0].score : 7.5;
-  const s1 = chartData[1] ? chartData[1].score : 7.5;
-  const s2 = chartData[2] ? chartData[2].score : 7.5;
-  const s3 = chartData[3] ? chartData[3].score : 7.5;
-
-  const r0 = (s0 / 10) * maxR;
-  const r1 = (s1 / 10) * maxR;
-  const r2 = (s2 / 10) * maxR;
-  const r3 = (s3 / 10) * maxR;
-
-  const polyPoints = `${cx},${cy - r0} ${cx + r1},${cy} ${cx},${cy + r2} ${cx - r3},${cy}`;
+  const r = kyNang.map((k) => ((k.diem ?? 0) / diemToiDa) * maxR);
+  const [top, right, bottom, left] = kyNang;
+  const polyPoints = `${cx},${cy - r[0]} ${cx + r[1]},${cy} ${cx},${cy + r[2]} ${cx - r[3]},${cy}`;
+  const nhan = (k: KyNangKetQua) => `${giaoDien(k.key).icon} ${k.ten} (${hienDiem(k.diem)})`;
 
   return (
     <div className="skills-dashboard-box">
@@ -192,78 +145,70 @@ function SkillsDashboardChart({
           <span className="skills-box-icon">📊</span>
           <span>Phân tích Năng lực 4 Kỹ năng Tiếng Anh</span>
         </div>
-        <div className="chart-scale-pill">Thang điểm 10.0</div>
+        <div className="chart-scale-pill">Thang điểm 0–{diemToiDa}</div>
       </div>
 
       <div className="skills-dual-view">
-        {/* Phần 1: Biểu đồ Radar 4 trục SVG Solid */}
         <div className="radar-col">
           <svg viewBox="0 0 350 270" className="radar-svg" role="img" aria-label="Biểu đồ đa giác 4 kỹ năng">
-            {/* Các vòng mạng nhện đồng tâm (2.5, 5.0, 7.5, 10.0) */}
-            {[2.5, 5.0, 7.5, 10.0].map((level) => {
-              const r = (level / 10) * maxR;
+            {[0.25, 0.5, 0.75, 1].map((tiLe) => {
+              const rr = tiLe * maxR;
               return (
                 <polygon
-                  key={level}
-                  points={`${cx},${cy - r} ${cx + r},${cy} ${cx},${cy + r} ${cx - r},${cy}`}
+                  key={tiLe}
+                  points={`${cx},${cy - rr} ${cx + rr},${cy} ${cx},${cy + rr} ${cx - rr},${cy}`}
                   className="radar-grid-ring"
                 />
               );
             })}
 
-            {/* 2 trục vuông góc */}
             <line x1={cx - maxR - 8} y1={cy} x2={cx + maxR + 8} y2={cy} className="radar-axis-line" />
             <line x1={cx} y1={cy - maxR - 8} x2={cx} y2={cy + maxR + 8} className="radar-axis-line" />
 
-            {/* Vùng đa giác điểm của học sinh (Solid) */}
             <polygon points={polyPoints} className="radar-polygon-fill" />
             <polygon points={polyPoints} className="radar-polygon-stroke" />
 
-            {/* 4 điểm mốc (Vertex Points) */}
-            <circle cx={cx} cy={cy - r0} r="4.5" className="radar-point point-top" />
-            <circle cx={cx + r1} cy={cy} r="4.5" className="radar-point point-right" />
-            <circle cx={cx} cy={cy + r2} r="4.5" className="radar-point point-bottom" />
-            <circle cx={cx - r3} cy={cy} r="4.5" className="radar-point point-left" />
+            <circle cx={cx} cy={cy - r[0]} r="4.5" className="radar-point point-top" />
+            <circle cx={cx + r[1]} cy={cy} r="4.5" className="radar-point point-right" />
+            <circle cx={cx} cy={cy + r[2]} r="4.5" className="radar-point point-bottom" />
+            <circle cx={cx - r[3]} cy={cy} r="4.5" className="radar-point point-left" />
 
-            {/* Nhãn 4 đỉnh trục */}
             <text x={cx} y={cy - maxR - 16} textAnchor="middle" className="radar-label label-top">
-              📚 Từ vựng ({s0.toFixed(1)})
+              {nhan(top)}
             </text>
             <text x={cx + maxR + 12} y={cy + 4} textAnchor="start" className="radar-label label-right">
-              📐 Cấu trúc ({s1.toFixed(1)})
+              {nhan(right)}
             </text>
             <text x={cx} y={cy + maxR + 24} textAnchor="middle" className="radar-label label-bottom">
-              🎙️ Phát âm ({s2.toFixed(1)})
+              {nhan(bottom)}
             </text>
             <text x={cx - maxR - 12} y={cy + 4} textAnchor="end" className="radar-label label-left">
-              ⚡ Phản xạ ({s3.toFixed(1)})
+              {nhan(left)}
             </text>
           </svg>
           <div className="radar-caption">Mô hình cân bằng năng lực ngoại ngữ</div>
         </div>
 
-        {/* Phần 2: Thước đo thanh ngang chi tiết với màu Solid */}
         <div className="gauges-col">
-          {chartData.map((d) => (
-            <div className="skill-gauge-row" key={d.title}>
+          {kyNang.map((k) => (
+            <div className="skill-gauge-row" key={k.key}>
               <div className="skill-gauge-header">
                 <div className="skill-gauge-name">
-                  <span className="skill-gauge-icon">{d.meta.icon}</span>
-                  <strong>{d.title}</strong>
+                  <span className="skill-gauge-icon">{giaoDien(k.key).icon}</span>
+                  <strong>{k.ten}</strong>
+                  <span className="skill-gauge-viet">{k.tenViet}</span>
                 </div>
                 <div className="skill-gauge-score-wrap">
-                  <span className="skill-gauge-score">{d.score.toFixed(1)}</span>
-                  <span className="skill-gauge-max">/10</span>
-                  <span className={`solid-tag ${d.levelClass}`}>{d.levelLabel}</span>
+                  <span className="skill-gauge-score">{hienDiem(k.diem)}</span>
+                  <span className="skill-gauge-max">/{diemToiDa}</span>
                 </div>
               </div>
-
               <div className="skill-gauge-track">
                 <div
                   className="skill-gauge-bar"
                   style={{
-                    width: `${Math.min(100, Math.max(10, (d.score / 10) * 100))}%`,
-                    backgroundColor: d.meta.solidColor,
+                    width: `${((k.diem ?? 0) / diemToiDa) * 100}%`,
+                    backgroundColor: giaoDien(k.key).mau,
                   }}
                 />
               </div>
@@ -275,109 +220,7 @@ function SkillsDashboardChart({
   );
 }
 
-/* ------------------------ Thước đo Tinh thần học tập (Solid) ------------------------ */
-
-function SpiritMeters({
-  tinhThan,
-}: {
-  tinhThan: { soCup: string; gioTay: string; traLoiDung: string };
-}) {
-  const cups = parseInt(tinhThan.soCup || "0", 10) || 0;
-  const hands = parseInt(tinhThan.gioTay || "0", 10) || 0;
-
-  let accuracyPct = 70;
-  if (tinhThan.traLoiDung && tinhThan.traLoiDung.includes("/")) {
-    const parts = tinhThan.traLoiDung.split("/");
-    const num = parseFloat(parts[0]);
-    const den = parseFloat(parts[1]);
-    if (den > 0) accuracyPct = Math.round((num / den) * 100);
-  }
-
-  const cupPct = Math.min(100, Math.round((cups / 80) * 100));
-
-  return (
-    <div className="spirit-meters-grid">
-      {/* 1. Cúp khen thưởng */}
-      <div className="spirit-card spirit-cup">
-        <div className="spirit-top">
-          <div className="spirit-icon-box">🏆</div>
-          <div className="spirit-title-box">
-            <span className="spirit-label">Cúp khen thưởng</span>
-            <span className="spirit-badge">Tích lũy</span>
-          </div>
-        </div>
-        <div className="spirit-val-row">
-          <span className="spirit-value">{tinhThan.soCup || "0"}</span>
-          <span className="spirit-unit">cúp</span>
-        </div>
-        <div className="spirit-progress-track">
-          <div
-            className="spirit-progress-bar cup-bar-solid"
-            style={{ width: `${Math.max(15, cupPct)}%` }}
-          />
-        </div>
-        <span className="spirit-hint">
-          {cups >= 50 ? "Thuộc nhóm năng nổ nhất" : "Tích cực thu thập phần thưởng"}
-        </span>
-      </div>
-
-      {/* 2. Giơ tay phát biểu */}
-      <div className="spirit-card spirit-hand">
-        <div className="spirit-top">
-          <div className="spirit-icon-box">✋</div>
-          <div className="spirit-title-box">
-            <span className="spirit-label">Giơ tay phát biểu</span>
-            <span className="spirit-badge">Chủ động</span>
-          </div>
-        </div>
-        <div className="spirit-val-row">
-          <span className="spirit-value">{tinhThan.gioTay || "0"}</span>
-          <span className="spirit-unit">lượt</span>
-        </div>
-        <div className="spirit-dots">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <span
-              key={i}
-              className={`spirit-dot ${i <= hands ? "active" : ""}`}
-              title={`Lượt ${i}`}
-            >
-              ★
-            </span>
-          ))}
-        </div>
-        <span className="spirit-hint">
-          {hands >= 4 ? "Tự tin phát biểu xây dựng bài" : "Sẵn sàng tương tác cùng giáo viên"}
-        </span>
-      </div>
-
-      {/* 3. Tỷ lệ trả lời đúng */}
-      <div className="spirit-card spirit-accuracy">
-        <div className="spirit-top">
-          <div className="spirit-icon-box">🎯</div>
-          <div className="spirit-title-box">
-            <span className="spirit-label">Độ chính xác</span>
-            <span className="spirit-badge">Trả lời đúng</span>
-          </div>
-        </div>
-        <div className="spirit-val-row">
-          <span className="spirit-value">{tinhThan.traLoiDung || "—"}</span>
-          <span className="spirit-unit">({accuracyPct}%)</span>
-        </div>
-        <div className="spirit-progress-track">
-          <div
-            className="spirit-progress-bar accuracy-bar-solid"
-            style={{ width: `${accuracyPct}%` }}
-          />
-        </div>
-        <span className="spirit-hint">
-          {accuracyPct >= 80 ? "Nắm chắc bài, độ chính xác cao" : "Tiếp thu tốt kiến thức bài học"}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-/* -------------------------- Biểu đồ Lộ trình (Solid) -------------------------- */
+/* -------------------------- Biểu đồ Lộ trình -------------------------- */
 
 function RoadmapVisual({
   phanTramCoBan,
@@ -395,7 +238,7 @@ function RoadmapVisual({
             <span>Kiến thức cơ bản chuẩn</span>
           </div>
           <div className="road-pct">{phanTramCoBan}</div>
-          <div className="road-desc">Nắm vững 100% từ vựng & cấu trúc cốt lõi</div>
+          <div className="road-desc">Nắm vững từ vựng & cấu trúc cốt lõi</div>
         </div>
 
         <div className="road-stat-item advanced">
@@ -408,7 +251,6 @@ function RoadmapVisual({
         </div>
       </div>
 
-      {/* Thanh đo thị giác Solid */}
       <div className="dual-progress-container">
         <div className="dual-progress-bar-solid">
           <div
@@ -434,21 +276,10 @@ function RoadmapVisual({
 /* ------------------------------ Báo cáo chính ------------------------------ */
 
 export default function Report({ bc }: { bc: BaoCao }) {
-  const { tinhThan, ketQua, loTrinh, nangLucDauRa } = bc;
-  const coNangLuc =
-    nangLucDauRa.nghe.length ||
-    nangLucDauRa.noi.length ||
-    nangLucDauRa.doc.length ||
-    nangLucDauRa.viet.length;
-
-  const gradeMeta = getGradeMeta(ketQua.hocLuc);
-
-  const skillDomains = [
-    { ten: "Nghe", icon: "🎧", colorClass: "domain-nghe", items: nangLucDauRa.nghe },
-    { ten: "Nói", icon: "🗣️", colorClass: "domain-noi", items: nangLucDauRa.noi },
-    { ten: "Đọc", icon: "📖", colorClass: "domain-doc", items: nangLucDauRa.doc },
-    { ten: "Viết", icon: "✍️", colorClass: "domain-viet", items: nangLucDauRa.viet },
-  ];
+  const { kyNang, loTrinh, level } = bc;
+  const duDiem = bc.tongDiem !== null;
+  const coGoiY = kyNang.some((k) => k.goiY);
+  const tenLevel = level?.ten || "Đang cập nhật";
 
   return (
     <>
@@ -458,7 +289,7 @@ export default function Report({ bc }: { bc: BaoCao }) {
         <div className="rule-solid" />
       </div>
 
-      {/* Thông tin học sinh kèm Avatar minh họa 3D */}
+      {/* Thông tin học sinh */}
       <section className="card student-card">
         <div className="card-body">
           <div className="student">
@@ -467,111 +298,91 @@ export default function Report({ bc }: { bc: BaoCao }) {
             <div className="student-info-main">
               <div className="student-name-row">
                 <div className="student-name">{bc.hoTen}</div>
-                <span className={`grade-tag ${gradeMeta.cls}`}>
-                  {ketQua.hocLuc || "Đang cập nhật"}
-                </span>
+                <span className={`grade-tag ${level ? "g-b" : "g-c"}`}>Level {tenLevel}</span>
               </div>
 
               <div className="meta-grid">
                 <Meta icon="🆔" k="Mã học sinh" v={bc.maHocSinh} />
                 <Meta icon="🏫" k="Lớp" v={bc.lop} />
                 <Meta icon="👩‍🏫" k="Giáo viên" v={bc.giaoVien} />
-                <Meta icon="🗓️" k="Lịch học" v={bc.lichHoc} />
-                {bc.videoUrl ? (
-                  <div className="meta-item video-meta">
-                    <span className="meta-icon">🎥</span>
-                    <span className="k">Xem:</span>
-                    <a className="v video-link" href={bc.videoUrl} target="_blank" rel="noreferrer">
-                      Xem video buổi học ↗
-                    </a>
-                  </div>
-                ) : null}
+                <Meta icon="🗓️" k="Ngày chấm" v={bc.ngayCham} />
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Bố cục chia 2 cột rộng rãi trên Desktop (Dashboard Layout) */}
       <div className="report-dashboard-grid">
-        {/* CỘT TRÁI (CHÍNH): Tinh thần học tập & Kết quả 4 kỹ năng */}
+        {/* CỘT TRÁI: Kết quả 4 kỹ năng */}
         <div className="dashboard-col-left">
-          {/* I. Tinh thần học tập */}
           <Card
             num="I"
-            title="Tinh thần học tập"
-            subtitle="Mức độ tương tác và tính chủ động trong buổi học"
-          >
-            <SpiritMeters tinhThan={tinhThan} />
-            {tinhThan.nhanXet ? (
-              <div className="quote-box-solid">
-                <span className="quote-icon">💬</span>
-                <p className="quote">{tinhThan.nhanXet}</p>
-              </div>
-            ) : null}
-          </Card>
-
-          {/* II. Kết quả học tập */}
-          <Card
-            num="II"
             title="Kết quả học tập"
-            subtitle="Đánh giá tổng thể và phân tích trực quan 4 kỹ năng ngôn ngữ"
+            subtitle={`Điểm 4 kỹ năng Listening, Reading, Writing, Speaking — thang 0–${bc.diemToiDa} mỗi kỹ năng`}
           >
             <div className="grade-highlight-box-solid">
               <div className="grade-left">
-                <span className="k">Xếp loại học lực:</span>
-                <span className={`badge ${gradeMeta.cls}`}>{ketQua.hocLuc || "Đang cập nhật"}</span>
+                <span className="k">Level tương ứng:</span>
+                <span className="badge g-b">{tenLevel}</span>
               </div>
               <div className="grade-right">
                 <span className="grade-status-pill">
-                  Đánh giá: <strong>{gradeMeta.label}</strong>
+                  Tổng điểm:{" "}
+                  <strong>
+                    {duDiem ? hienDiem(bc.tongDiem) : "—"}/{bc.tongToiDa}
+                  </strong>
                 </span>
               </div>
             </div>
 
-            {ketQua.nhanXetTongQuan ? (
+            {level?.moTa ? (
               <div className="quote-box-solid">
-                <span className="quote-icon">📝</span>
-                <p className="quote">{ketQua.nhanXetTongQuan}</p>
+                <span className="quote-icon">🎓</span>
+                <p className="quote">{level.moTa}</p>
               </div>
             ) : null}
 
-            {/* Biểu đồ đo lường 4 kỹ năng Solid (Radar + Thước đo ngang) */}
-            {ketQua.chiTiet.length ? (
-              <SkillsDashboardChart skills={ketQua.chiTiet} hocLuc={ketQua.hocLuc} />
-            ) : null}
+            {duDiem ? (
+              <SkillsDashboardChart kyNang={kyNang} diemToiDa={bc.diemToiDa} />
+            ) : (
+              <div className="skills-missing-note">
+                Chưa đủ điểm cả 4 kỹ năng nên chưa xếp Level và chưa vẽ biểu đồ. Trung tâm sẽ cập
+                nhật sớm.
+              </div>
+            )}
 
-            {/* Nhận xét chi tiết 4 kỹ năng */}
-            {ketQua.chiTiet.length ? (
-              <>
-                <div className="sub-title">Nhận xét chi tiết từng kỹ năng</div>
-                <div className="detail-list">
-                  {ketQua.chiTiet.map((m) => (
-                    <div className="detail-solid" key={m.tieuDe}>
-                      <div className="detail-header">
-                        <h3>{m.tieuDe}</h3>
-                        {m.diem !== undefined && (
-                          <span className="detail-score-badge">
-                            Điểm: <strong>{m.diem.toFixed(1)}</strong>/10
-                          </span>
-                        )}
-                      </div>
-                      <p>{m.noiDung}</p>
+            <div className="sub-title">Nhận xét từng kỹ năng</div>
+            <div className="detail-list">
+              {kyNang.map((k) => (
+                <div className="detail-solid" key={k.key}>
+                  <div className="detail-header">
+                    <h3>
+                      {giaoDien(k.key).icon} {k.ten}
+                      <span className="detail-viet"> · {k.tenViet}</span>
+                    </h3>
+                    <span className="detail-score-badge">
+                      Điểm: <strong>{hienDiem(k.diem)}</strong>/{bc.diemToiDa}
+                    </span>
+                  </div>
+                  <p>{k.moTa || "Giáo viên đang cập nhật nhận xét."}</p>
+                  {k.moTaRieng ? (
+                    <div className="mo-ta-rieng">
+                      <span className="mo-ta-rieng-label">Nhận xét riêng của giáo viên</span>
+                      <p>{k.moTaRieng}</p>
                     </div>
-                  ))}
+                  ) : null}
                 </div>
-              </>
-            ) : null}
+              ))}
+            </div>
           </Card>
         </div>
 
-        {/* CỘT PHẢI: Lộ trình phát triển & Khung chuẩn 6 bậc */}
+        {/* CỘT PHẢI: Lộ trình & gợi ý luyện tập */}
         <div className="dashboard-col-right">
-          {/* III. Lộ trình học tập */}
           <Card
-            num="III"
+            num="II"
             title="Lộ trình học tập"
-            subtitle="Định hướng cá nhân hóa và tiêu chí chuẩn đầu ra"
+            subtitle="Định hướng cá nhân hoá và gợi ý luyện tập cho từng kỹ năng"
           >
             <RoadmapVisual
               phanTramCoBan={loTrinh.phanTramCoBan}
@@ -585,30 +396,21 @@ export default function Report({ bc }: { bc: BaoCao }) {
               </div>
             ) : null}
 
-            {coNangLuc ? (
+            {coGoiY ? (
               <>
-                <div className="sub-title">Chuẩn năng lực đầu ra dự kiến</div>
-                <div className="level-head">
-                  <span className="level-badge-solid">{nangLucDauRa.bac}</span>
-                  <span className="level-note">
-                    Khung năng lực ngoại ngữ 6 bậc dùng cho Việt Nam (KNLNNVN)
-                  </span>
-                </div>
-
+                <div className="sub-title">Gợi ý luyện tập 4 kỹ năng</div>
                 <div className="skills-stack">
-                  {skillDomains.map(
-                    (dom) =>
-                      dom.items.length > 0 && (
-                        <div className={`skill-card-solid ${dom.colorClass}`} key={dom.ten}>
+                  {kyNang.map(
+                    (k) =>
+                      k.goiY && (
+                        <div className={`skill-card-solid ${giaoDien(k.key).domain}`} key={k.key}>
                           <div className="skill-card-head-solid">
-                            <span className="skill-icon">{dom.icon}</span>
-                            <h4>Kỹ năng {dom.ten}</h4>
+                            <span className="skill-icon">{giaoDien(k.key).icon}</span>
+                            <h4>
+                              {k.ten} · {k.tenViet}
+                            </h4>
                           </div>
-                          <ul>
-                            {dom.items.map((it, i) => (
-                              <li key={i}>{it}</li>
-                            ))}
-                          </ul>
+                          <p className="skill-card-text">{k.goiY}</p>
                         </div>
                       )
                   )}
@@ -617,9 +419,8 @@ export default function Report({ bc }: { bc: BaoCao }) {
             ) : null}
           </Card>
 
-          {/* Khối xác nhận & ký tên */}
           <div className="sign-card-solid">
-            {bc.ngayCap ? <div className="date">{bc.ngayCap}</div> : null}
+            {bc.ngayCham ? <div className="date">{dongKyTen(bc.ngayCham)}</div> : null}
             <div className="org-role">{ORG.hoiDong}</div>
             <div className="org-name">{ORG.ten}</div>
           </div>

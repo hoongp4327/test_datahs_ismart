@@ -1,38 +1,8 @@
-export type MucNhanXet = {
-  tieuDe: string;
-  noiDung: string;
-  diem?: number;
-};
+import type { buildReport } from "../shared/bao-cao";
 
-export type BaoCao = {
-  maHocSinh: string;
-  hoTen: string;
-  giaoVien: string;
-  lichHoc: string;
-  lop: string;
-  videoUrl: string;
-  tinhThan: {
-    soCup: string;
-    gioTay: string;
-    traLoiDung: string;
-    nhanXet: string;
-  };
-  ketQua: {
-    hocLuc: string;
-    nhanXetTongQuan: string;
-    chiTiet: MucNhanXet[];
-  };
-  loTrinh: {
-    phanTramCoBan: string;
-    phanTramNangCao: string;
-    nhanXet: string;
-  };
-  nangLucDauRa: {
-    bac: string;
-    nghe: string[];
-    noi: string[];
-    doc: string[];
-    viet: string[];
-  };
-  ngayCap: string;
-};
+/**
+ * Kiểu báo cáo lấy thẳng từ hàm server dựng ra (shared/bao-cao.ts), nên thêm hay
+ * đổi trường ở server thì frontend tự biết — không còn hai bản định nghĩa lệch nhau.
+ */
+export type BaoCao = ReturnType<typeof buildReport>;
+export type KyNangKetQua = BaoCao["kyNang"][number];

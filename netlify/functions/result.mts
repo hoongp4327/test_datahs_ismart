@@ -1,58 +1,43 @@
 import { JWT } from "google-auth-library";
 import type { Context } from "@netlify/functions";
-import { buildReport, normalizeCode, timHocSinh, toObjects } from "../../shared/bao-cao";
-import { docQuaAppsScript, type SheetData } from "../../shared/apps-script";
-import { docQuaGoogleSheetPublic } from "../../shared/sheet-public";
-import duLieuMau from "../../shared/du-lieu-mau";
+import { buildReport, normalizeCode, timHocSinh, toObjects, type SheetData } from "../../shared/bao-cao";
+import { cauHinhTuEnv, docDuLieu } from "../../shared/nguon-du-lieu";
 
 /* ------------------------------------------------------------------ *
  * Cấu hình
  * ------------------------------------------------------------------ */
-const SHEET_ID = process.env.GOOGLE_SHEET_ID ?? "";
-const TAB_RESULTS = process.env.SHEET_TAB_RESULTS ?? "KetQua";
-const TAB_LEVELS = process.env.SHEET_TAB_LEVELS ?? "BacNangLuc";
+const CAU_HINH = cauHinhTuEnv(process.env);
 const SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"];
 
-const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL ?? "";
-const APPS_SCRIPT_TOKEN = process.env.APPS_SCRIPT_TOKEN ?? "";
-
 /**
- * Thời gian giữ cache trong bộ nhớ của function (giây), cũng là độ trễ tối đa
- * từ lúc sửa sheet đến lúc web hiện dữ liệu mới.
+ * Thời gian giữ cache trong bộ nhớ của function (giây).
  *
- * Cố tình để ngắn: đây là công cụ tra cứu, dữ liệu đúng quan trọng hơn nhanh.
- * Cache ở đây chỉ còn hai việc — hứng lúc nhiều phụ huynh tra cùng lúc, và làm
- * chỗ dựa cho request warm-up của trang tra cứu.
- * Đặt 0 để mỗi lượt tra cứu đều đọc thẳng từ Google (chậm ~3 s mỗi lượt).
+ * Độ tươi dữ liệu do `refresh=1` lo (trang web gửi mỗi lần tải trang). Cache ở đây
+ * chỉ phục vụ các lượt tra cứu tiếp theo trong cùng phiên xem và gộp request khi
+ * nhiều phụ huynh tra cùng lúc. Đặt 0 để mỗi lượt đều đọc thẳng Google (~3 s/lượt).
  */
 const TTL_GIAY = Number(process.env.CACHE_TTL_SECONDS ?? 60);
 const MEMORY_TTL = TTL_GIAY * 1000;
 
 /**
- * Request có `refresh=1` (trang web gửi mỗi lần tải trang) sẽ bỏ qua cache và
- * đọc mới. Nhưng vẫn giữ một mức sàn để một cú F5 liên tục không bắn hàng loạt
- * lượt gọi vào Apps Script — và để React StrictMode gọi effect hai lần chỉ tốn
- * một lượt đọc.
+ * Request có `refresh=1` bỏ qua cache và đọc mới. Vẫn giữ một mức sàn để F5 liên
+ * tục không bắn hàng loạt lượt gọi vào Google — và để React StrictMode gọi effect
+ * hai lần chỉ tốn một lượt đọc.
  */
 const SAN_LAM_MOI = 3_000;
 
-/** Cache sống cùng warm container -> bỏ qua vòng gọi Google Sheets API. */
+/** Cache sống cùng warm container. */
 let cache: { at: number; data: SheetData } | null = null;
 
 /* ------------------------------------------------------------------ *
- * Google Sheets
+ * Service account (tùy chọn) — chỉ function có, dev server không có
  * ------------------------------------------------------------------ */
-function coAppsScript() {
-  return Boolean(APPS_SCRIPT_URL);
-}
-
 function coServiceAccount() {
   return Boolean(
-    process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_PRIVATE_KEY && SHEET_ID
+    process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_PRIVATE_KEY && CAU_HINH.sheetId
   );
 }
 
-/** Cách 2: gọi thẳng Google Sheets API bằng service account. */
 async function docQuaSheetsApi(): Promise<SheetData> {
   const auth = new JWT({
     email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
@@ -62,10 +47,12 @@ async function docQuaSheetsApi(): Promise<SheetData> {
   });
   const { token } = await auth.getAccessToken();
 
+  const { tab } = CAU_HINH;
   const url =
-    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values:batchGet` +
-    `?ranges=${encodeURIComponent(TAB_RESULTS)}` +
-    `&ranges=${encodeURIComponent(TAB_LEVELS)}` +
+    `https://sheets.googleapis.com/v4/spreadsheets/${CAU_HINH.sheetId}/values:batchGet` +
+    [tab.ketQua, tab.moTa, tab.thangLevel]
+      .map((t, i) => `${i ? "&" : "?"}ranges=${encodeURIComponent(t)}`)
+      .join("") +
     `&majorDimension=ROWS`;
 
   const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
@@ -75,48 +62,24 @@ async function docQuaSheetsApi(): Promise<SheetData> {
 
   const json = (await res.json()) as { valueRanges: { values?: string[][] }[] };
   return {
-    results: toObjects(json.valueRanges?.[0]?.values),
-    levels: toObjects(json.valueRanges?.[1]?.values),
+    ketQua: toObjects(json.valueRanges?.[0]?.values),
+    moTa: toObjects(json.valueRanges?.[1]?.values),
+    thangLevel: toObjects(json.valueRanges?.[2]?.values),
   };
 }
 
-/**
- * Thứ tự ưu tiên nguồn dữ liệu:
- *   1. Apps Script  (chỉ cần dán URL)
- *   2. Sheets API   (service account)
- *   3. Google Sheet trực tiếp (qua link chia sẻ công khai)
- *   4. Dữ liệu mẫu  (chưa cấu hình gì)
- */
 async function fetchSheet(lamMoi = false): Promise<SheetData> {
   const nguong = lamMoi ? SAN_LAM_MOI : MEMORY_TTL;
   if (cache && Date.now() - cache.at < nguong) return cache.data;
 
   try {
-    let data: SheetData;
-    if (coAppsScript()) {
-      try {
-        data = await docQuaAppsScript(APPS_SCRIPT_URL, APPS_SCRIPT_TOKEN);
-      } catch (err) {
-        if (SHEET_ID) {
-          console.warn(`[result] Apps Script lỗi (${(err as Error).message}), fallback đọc qua Google Sheet ID: ${SHEET_ID}`);
-          data = await docQuaGoogleSheetPublic(SHEET_ID, TAB_RESULTS, TAB_LEVELS);
-        } else {
-          throw err;
-        }
-      }
-    } else if (coServiceAccount()) {
-      data = await docQuaSheetsApi();
-    } else if (SHEET_ID) {
-      data = await docQuaGoogleSheetPublic(SHEET_ID, TAB_RESULTS, TAB_LEVELS);
-    } else {
-      console.warn("[result] Chưa cấu hình nguồn dữ liệu — đang dùng dữ liệu mẫu.");
-      return duLieuMau as SheetData;
-    }
+    const { data } = await docDuLieu(CAU_HINH, {
+      sheetsApi: coServiceAccount() ? docQuaSheetsApi : undefined,
+    });
     cache = { at: Date.now(), data };
     return data;
   } catch (err) {
-    // Google chậm hoặc lỗi: thà trả dữ liệu cũ còn hơn báo lỗi cho phụ huynh.
-    // Cache hết hạn vẫn dùng được — thà dữ liệu cũ một chút còn hơn trang lỗi.
+    // Google chậm hoặc lỗi: thà trả dữ liệu cũ một chút còn hơn hiện trang lỗi.
     if (cache) {
       const tuoi = Math.round((Date.now() - cache.at) / 1000);
       console.warn(`[result] ${(err as Error).message} — dùng cache cũ ${tuoi}s.`);
@@ -134,14 +97,9 @@ const json = (body: unknown, status: number) =>
     status,
     headers: {
       "Content-Type": "application/json; charset=utf-8",
-      // Không cache ở trình duyệt lẫn CDN: mỗi lần tải trang phải hỏi lại máy chủ.
-      //
-      // Trước đây có cache ở cả hai nơi. Nhược điểm: CDN lưu theo từng URL nên mỗi
-      // mã học sinh là một bản riêng — với lưu lượng của một trung tâm thì hầu như
-      // lần nào cũng trượt cache, tức là gần như không nhanh hơn, mà lại giữ dữ liệu
-      // cũ tới 5 phút. Bỏ đi thì tra cứu luôn ra dữ liệu mới.
-      //
-      // Việc gộp request khi đông người vẫn còn, do cache trong RAM của function.
+      // Không cache ở trình duyệt lẫn CDN: CDN lưu theo từng URL nên mỗi mã học sinh
+      // là một bản riêng — với lưu lượng một trung tâm thì hầu như lần nào cũng trượt
+      // cache, gần như không nhanh hơn mà lại giữ dữ liệu cũ.
       "Netlify-CDN-Cache-Control": "no-store",
       "Cache-Control": "no-store",
     },
@@ -158,8 +116,8 @@ export default async (req: Request, _context: Context) => {
   }
 
   try {
-    const { results, levels } = await fetchSheet(lamMoi);
-    const row = timHocSinh(results, code);
+    const data = await fetchSheet(lamMoi);
+    const row = timHocSinh(data.ketQua, code);
 
     if (!row) {
       return json(
@@ -171,7 +129,7 @@ export default async (req: Request, _context: Context) => {
       );
     }
 
-    return json({ data: buildReport(row, levels) }, 200);
+    return json({ data: buildReport(row, data) }, 200);
   } catch (err) {
     console.error("[result]", err);
     return json(

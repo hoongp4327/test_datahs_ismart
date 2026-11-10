@@ -11,17 +11,20 @@
 ## 1. Bài toán
 
 Trung tâm Anh ngữ cần một trang web để phụ huynh **nhập mã học sinh** và xem
-**báo cáo kết quả buổi học**. Dữ liệu do giáo viên nhập vào **Google Sheet**.
+**báo cáo kết quả kiểm tra năng lực**. Dữ liệu do giáo viên nhập vào **Google Sheet**.
 
 Tham chiếu thiết kế: `https://student.edupiatutor.vn/demo-result?dealId=11583656`
 (đã phân tích và mô phỏng cấu trúc, không sao chép giao diện).
 
-Trang kết quả gồm 3 phần, đúng theo bản tham chiếu:
+Trang kết quả gồm 2 phần:
 
-1. **Tinh thần học tập** — số cúp, giơ tay, trả lời đúng + nhận xét
-2. **Kết quả học tập** — học lực tổng thể + nhận xét chi tiết 4 kỹ năng
-   (Từ vựng, Cấu trúc/Ngữ pháp, Phát âm, Phản xạ)
-3. **Lộ trình học tập** — % cơ bản/nâng cao + Năng lực đầu ra theo Khung 6 bậc
+1. **Kết quả học tập** — điểm 4 kỹ năng **Listening, Reading, Writing, Speaking** (0–20 mỗi
+   kỹ năng, tổng 80), **Level tương ứng** (Pre-A1 / A1 / A2 / Pre-B1), biểu đồ radar, mô tả chung
+   từng kỹ năng, và nhận xét riêng của giáo viên cho Speaking
+2. **Lộ trình học tập** — % cơ bản/nâng cao + **gợi ý luyện tập** cho từng kỹ năng
+
+Đã **bỏ** so với bản đầu: Tinh thần học tập (số cúp, giơ tay), Xếp loại A/B/C/D, Khung năng
+lực 6 bậc Việt Nam, lịch học, link video.
 
 Kèm header thông tin học sinh và phần ký của hội đồng chất lượng.
 
@@ -30,8 +33,8 @@ Kèm header thông tin học sinh và phần ký của hội đồng chất lư�
 ## 2. Kiến trúc
 
 ```
-Trình duyệt  ──►  /api/result?code=HS001  ──►  Netlify Function  ──►  Google Sheet
-   (React)          (Netlify redirect)         (cache + giữ bí mật)    (2 tab dữ liệu)
+Trình duyệt  ──►  /api/result?code=HS-7K3M9Q  ──►  Netlify Function  ──►  Google Sheet
+   (React)          (Netlify redirect)            (cache + giữ bí mật)    (3 tab dữ liệu)
 ```
 
 **Vì sao phải có Netlify Function, không gọi Google thẳng từ frontend:**
@@ -81,56 +84,95 @@ Build hiện tại: **173 KB JS (56 KB gzip) + 8 KB CSS**. Không dùng UI libra
 
 ## 3. Hợp đồng dữ liệu — phần quan trọng nhất
 
-Website chỉ đòi hỏi **một tab tên `KetQua`, hàng 1 là 21 tên cột dưới đây**.
-Dữ liệu vào tab đó bằng cách nào (gõ tay, Google Form, công thức, import) đều được.
+Sheet có **3 tab**. **Không đổi tên tab và không đổi tên cột ở hàng 1** — website tìm cột theo tên.
 
 ### Tab `KetQua` — mỗi dòng một học sinh
 
-| Cột | Ý nghĩa |
-|---|---|
-| `ma_hoc_sinh` | Mã tra cứu, không phân biệt hoa thường, bỏ khoảng trắng |
-| `ho_ten` | Họ tên học sinh |
-| `giao_vien` | Giáo viên phụ trách |
-| `lich_hoc` | Giờ và ngày học, dạng chuỗi tự do |
-| `lop` | Mã lớp |
-| `video_url` | Link video buổi học, để trống thì ẩn dòng "Xem" |
-| `so_cup` | Số cúp |
-| `gio_tay` | Số lần giơ tay |
-| `tra_loi_dung` | Dạng "6/10", chuỗi tự do |
-| `nhan_xet_tinh_than` | Nhận xét phần I |
-| `hoc_luc` | Ví dụ "C - Trung Bình". **Ký tự đầu A/B/C/D quyết định màu nhãn** |
-| `nhan_xet_tong_quan` | Nhận xét chung phần II |
-| `nx_tu_vung` | Nhận xét chi tiết — Từ vựng |
-| `nx_ngu_phap` | Nhận xét chi tiết — Cấu trúc/Ngữ pháp |
-| `nx_phat_am` | Nhận xét chi tiết — Phát âm |
-| `nx_phan_xa` | Nhận xét chi tiết — Phản xạ |
-| `diem_tu_vung` | Điểm kỹ năng Từ vựng (thang 0–10, ví dụ 9.0) |
-| `diem_ngu_phap` | Điểm kỹ năng Cấu trúc / Ngữ pháp (thang 0–10) |
-| `diem_phat_am` | Điểm kỹ năng Phát âm (thang 0–10) |
-| `diem_phan_xa` | Điểm kỹ năng Phản xạ (thang 0–10) |
-| `pct_co_ban` | Ví dụ "100%" |
-| `pct_nang_cao` | Ví dụ "10%" |
-| `nhan_xet_lo_trinh` | Mô tả lộ trình cá nhân hoá |
-| `bac_nang_luc` | **Phải khớp cột `bac` ở tab 2**, ví dụ "Bậc 1-" |
-| `ngay_cap` | Dòng ngày tháng ở phần ký |
+| Cột | Ý nghĩa | Ví dụ |
+|---|---|---|
+| `ma_hoc_sinh` | **Mã tra cứu**, ngẫu nhiên, không trùng | `HS-7K3M9Q` |
+| `ho_ten` | Họ tên học sinh | `Nguyễn Minh Anh` |
+| `giao_vien` | Giáo viên chấm | `Nguyễn Thu Trang` |
+| `lop` | Lớp | `Movers 1` |
+| `ngay_cham` | Ngày chấm, dạng **ngày/tháng/năm** | `05/11/2026` |
+| `diem_listening` | Điểm Listening, **0–20** | `14` |
+| `diem_reading` | Điểm Reading, 0–20 | `12` |
+| `diem_writing` | Điểm Writing, 0–20 | `11` |
+| `diem_speaking` | Điểm Speaking, 0–20 | `15` |
+| `option_listening` | Mô tả chung Listening — chọn từ tab `MoTaKyNang` | `Option 3` |
+| `option_reading` | Mô tả chung Reading | `Option 3` |
+| `option_writing` | Mô tả chung Writing | `Option 3` |
+| `option_speaking` | Mô tả chung Speaking | `Option 3` |
+| `mo_ta_rieng_speaking` | Nhận xét riêng của giáo viên — **chỉ Speaking có**, gõ tự do | (đoạn văn) |
+| `pct_co_ban` | % kiến thức cơ bản | `100%` |
+| `pct_nang_cao` | % kiến thức nâng cao | `10%` |
+| `nhan_xet_lo_trinh` | Mô tả lộ trình cá nhân hoá | (đoạn văn) |
 
-Ô nhận xét để trống → phần tương ứng **tự ẩn** trên giao diện.
+**Tổng điểm và Level không có cột** — website tự cộng 4 điểm (tối đa 80) rồi tra tab
+`ThangLevel`. Nhờ vậy không bao giờ có chuyện tổng 70 mà ghi A1.
 
-### Tab `BacNangLuc` — chuẩn đầu ra Khung 6 bậc, dùng chung mọi học sinh
+Quy tắc khi dữ liệu không đủ:
 
-| Cột | Ý nghĩa |
-|---|---|
-| `bac` | Tên bậc: "Bậc 1-", "Bậc 1", "Bậc 2", "Bậc 3" |
-| `nghe` / `noi` / `doc` / `viet` | Nhiều gạch đầu dòng, ngăn bằng xuống dòng trong ô hoặc `" \| "` |
+- **Điểm để trống, ngoài 0–20 hoặc không phải số** → hiện "—". Thà trống còn hơn hiện số sai.
+- **Thiếu bất kỳ điểm nào trong 4 kỹ năng** → chưa xếp Level, chưa vẽ biểu đồ. Một Level tính
+  trên 3/4 kỹ năng sẽ sai mà phụ huynh không có cách nào nhận ra.
+- **Ô option để trống** → website **tự chọn option theo khoảng điểm**. Giáo viên chỉ cần nhập
+  điểm cũng ra báo cáo đầy đủ; chỉ chọn tay khi muốn mô tả khác với mặc định.
+- **Một mã có nhiều dòng** → lấy dòng **dưới cùng** (bản mới nhất).
+- Mã tra cứu không phân biệt hoa thường, dấu gạch, khoảng trắng: `hs7k3m9q` = `HS-7K3M9Q`.
 
-### Muốn thêm một trường mới hiển thị trên web → sửa đúng 3 chỗ
+### Tab `MoTaKyNang` — nội dung mô tả và gợi ý (dùng chung mọi học sinh)
+
+| Cột | Ý nghĩa | Ví dụ |
+|---|---|---|
+| `ky_nang` | `Listening` / `Reading` / `Writing` / `Speaking` | `Listening` |
+| `option` | Tên option — giáo viên chọn đúng chữ này ở tab `KetQua` | `Option 1` |
+| `diem_tu` | Option này hợp với điểm **từ bao nhiêu trở lên** | `0` |
+| `mo_ta` | Mô tả chung — hiện ở mục *Kết quả học tập* | (đoạn văn) |
+| `goi_y` | Gợi ý luyện tập — hiện ở mục *Lộ trình học tập* | (đoạn văn) |
+
+Mặc định mỗi kỹ năng 4 option: Option 1 từ 0, Option 2 từ 6, Option 3 từ 11, Option 4 từ 16.
+
+**Sửa câu chữ ở đây là mọi báo cáo — cũ lẫn mới — đổi theo ngay**, vì `KetQua` chỉ lưu tên
+option chứ không lưu nguyên văn. Thêm option thứ 5 cũng chỉ cần thêm một dòng.
+
+### Tab `ThangLevel` — tổng điểm từ bao nhiêu thì đạt Level nào
+
+| `level` | `diem_tu` | `mo_ta` |
+|---|---|---|
+| Pre-A1 | 0 | Mô tả năng lực, hiện dưới Level trên báo cáo |
+| A1 | 25 | … |
+| A2 | 50 | … |
+| Pre-B1 | 70 | … |
+
+Mỗi Level áp dụng **từ `diem_tu` trở lên cho tới mốc của Level kế tiếp**. Chỉ cần mốc dưới nên
+không bao giờ có khe hở giữa hai khoảng, và điểm lẻ như 24,5 vẫn rơi đúng một Level.
+
+Mốc được chia để khớp với 4 dòng mẫu ban đầu của trung tâm khi quy từ thang 60 lên thang 80
+(17/60 → Pre-A1, 36/60 → A1, 52/60 → A2, 60/60 → Pre-B1). **Muốn đổi thì sửa thẳng cột
+`diem_tu` trên sheet** — không cần sửa code, không cần deploy lại. Thêm Level mới (ví dụ B1)
+cũng chỉ là thêm một dòng.
+
+### Ràng buộc nhập liệu ngay trên sheet
+
+Chạy hàm `thietLapRangBuoc` trong Apps Script **một lần** (chọn hàm trên thanh công cụ →
+Chạy). Sau đó:
+
+- Cột `diem_*` chỉ nhận số 0–20 — gõ 25 là sheet từ chối.
+- Cột `option_*` thành dropdown, lấy đúng danh sách option của kỹ năng đó trong `MoTaKyNang`.
+
+Thêm option mới vào `MoTaKyNang` thì chạy lại hàm này để dropdown cập nhật.
+
+`npm run kiem-tra` báo thêm những lỗi sheet không chặn được: option chọn lệch với khoảng điểm,
+học sinh thiếu điểm, mã trùng, mã kiểu số thứ tự dễ đoán.
+
+### Muốn thêm một trường mới hiển thị trên web → sửa đúng 2 chỗ
 
 1. `shared/bao-cao.ts` → hàm `buildReport` (đọc cột mới)
-2. `src/types.ts` → khai kiểu
-3. `src/components/Report.tsx` → hiển thị
+2. `src/components/Report.tsx` → hiển thị
 
-Đổi tên tab, đổi thứ tự cột, thêm cột không dùng đến — **không** cần sửa code.
-Tên tab đọc từ env `SHEET_TAB_RESULTS` / `SHEET_TAB_LEVELS`.
+Kiểu dữ liệu frontend (`src/types.ts`) suy thẳng từ `buildReport` nên tự cập nhật.
+Đổi thứ tự cột hay thêm cột không dùng đến — **không** cần sửa code.
 
 ---
 
@@ -244,8 +286,8 @@ Form luôn ghi thêm xuống dưới — dòng cuối là bản mới nhất. **
 - Web app Apps Script để "Anyone" nên URL là endpoint công khai — `TOKEN` là thứ
   bảo vệ nó.
 - `.env` và file JSON service account **không bao giờ commit**.
-- Mã dạng `HS001` dễ đoán. Nếu dữ liệu nhạy cảm, đổi sang mã ngẫu nhiên — chỉ sửa
-  cột `ma_hoc_sinh` trong sheet, code không đổi.
+- Mã học sinh ngẫu nhiên `HS-XXXXXX` (bỏ 0/O, 1/I/L). Không dùng số thứ tự — đoán được.
+  Không sinh bằng `RANDBETWEEN` — công thức tính lại thì mã tự đổi, link phụ huynh chết.
 
 ---
 
@@ -298,8 +340,10 @@ Local ở `.env`, production ở Netlify → Site settings → Environment varia
 | `GOOGLE_SHEET_ID` | Cách B |
 | `GOOGLE_SERVICE_ACCOUNT_EMAIL` | Cách B |
 | `GOOGLE_PRIVATE_KEY` | Cách B — giữ nguyên ký tự `\n` |
-| `SHEET_TAB_RESULTS` | Mặc định `KetQua` |
-| `SHEET_TAB_LEVELS` | Mặc định `BacNangLuc` |
+| `SHEET_TAB_KET_QUA` | Mặc định `KetQua` |
+| `SHEET_TAB_MO_TA` | Mặc định `MoTaKyNang` |
+| `SHEET_TAB_THANG_LEVEL` | Mặc định `ThangLevel` |
+| `NGUON_DU_LIEU` | Đặt `mau` để luôn dùng dữ liệu mẫu, bỏ qua Google |
 | `CACHE_TTL_SECONDS` | Mặc định `60` |
 | `DEV_CACHE_TTL_SECONDS` | Mặc định `60` |
 
@@ -309,31 +353,29 @@ Local ở `.env`, production ở Netlify → Site settings → Environment varia
 
 ### Đã xong
 
-- Toàn bộ frontend, 3 phần báo cáo, responsive, CSS in ấn (nút "In / Lưu PDF")
-- Netlify Function với 2 nguồn dữ liệu + fallback dữ liệu mẫu
-- Cache và độ tươi dữ liệu (mục 5)
-- Xử lý lỗi Apps Script (mục 6)
-- Template Google Sheet + 20 dòng dữ liệu ảo, sheet thật đã kết nối và chạy
-- Script chẩn đoán `npm run kiem-tra`
-- Đã push GitHub: `hoongp4327/test_datahs_ismart` (repo **PUBLIC**)
+- Trang tra cứu + báo cáo theo cấu trúc mới (L/R/W/S, Level, gợi ý), responsive, in PDF
+- Nhận diện iSMART: logo, mascot, `ORG` đã điền thông tin thật
+- 3 nguồn dữ liệu dùng chung một module (`shared/nguon-du-lieu.ts`) + dữ liệu mẫu
+- Template sheet 3 tab + 20 học sinh ảo mã ngẫu nhiên; `npm run dev:mau` để xem bằng dữ liệu mẫu
+- `Code.gs`: đọc 3 tab + `thietLapRangBuoc()` tạo ràng buộc nhập liệu ngay trên sheet
+- `npm run kiem-tra` kiểm cả cấu trúc lẫn chất lượng dữ liệu nhập
 
 ### Chưa xong — bắt buộc trước khi dùng thật
 
-1. **Google Sheet vẫn đang công khai.** Share → General access → **Restricted**.
-   Apps Script chạy bằng quyền chủ sheet nên đóng lại web vẫn chạy.
-2. **Chưa deploy Netlify.** Import repo từ GitHub, điền `APPS_SCRIPT_URL`,
-   `APPS_SCRIPT_TOKEN`, `CACHE_TTL_SECONDS` trước khi bấm Deploy.
-3. **Tên trung tâm còn là placeholder** — hằng `ORG` trong `src/components/Layout.tsx`
-   đang là "Trung tâm Anh ngữ", "Hotline: 0000.000.000", "website.vn".
+1. **Sheet thật vẫn còn cấu trúc cũ.** Import `data/Template_KetQua_HocSinh.xlsx` (3 tab).
+2. **Apps Script đang trả 403.** Dán `Code.gs` mới, đổi `TOKEN`, triển khai phiên bản mới với
+   "Bất kỳ ai". Hiện web chạy bằng đường dự phòng đọc sheet công khai.
+3. **Sheet đang công khai, Sheet ID + token cũ từng bị commit** vào `.env.example` trên repo
+   public (đã gỡ, nhưng còn trong lịch sử git). Sau khi Apps Script chạy: đổi `TOKEN` mới và
+   đóng sheet về **Restricted**.
+4. **Chưa deploy Netlify.**
 
 ### Đang chờ quyết định nghiệp vụ
 
-- **Biểu đồ cột 4 kỹ năng** (bản tham chiếu có). Đã phân tích: thang 0–10, trục Y
-  max 12 để chừa chỗ nhãn chữ trên cột, màu nhạt dần theo điểm, nhãn "Khá"/"Trung
-  bình" suy ra từ điểm theo mức A/B/C/D. **Chặn ở chỗ chưa có rubric chấm điểm** —
-  không có tiêu chí thì hai giáo viên chấm 7 điểm không cùng nghĩa, mà biểu đồ lại
-  trông như một phép đo chính xác. Cần thêm 4 cột điểm và quyết định `hoc_luc` tính
-  tự động hay gõ tay (để cả hai gõ tay sẽ có ngày trang tự mâu thuẫn).
+- **Trang /admin cho giáo viên nhập điểm** — đã chốt hướng: link bí mật (không đăng nhập),
+  mã bí mật nằm sau `#` trong URL, **kiểm tra ở server** (không phải ở đường dẫn trang),
+  lưu trong biến môi trường `ADMIN_KEY`. Server ghi vào sheet qua Apps Script `doPost`. Gom
+  kiểm tra quyền vào một hàm để sau này đổi sang đăng nhập Google mà không sửa giao diện.
 - **Google Form cho giáo viên nhập liệu.** Form tạo tab riêng với tiêu đề là nguyên
   văn câu hỏi. Hai cách khớp về `KetQua`: công thức `FILTER({...})` trong sheet, hoặc
   bảng ánh xạ trong `Code.gs`. Chi tiết ở README mục 10.
