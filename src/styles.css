@@ -31,14 +31,23 @@
   --maxw:        1240px;
 
   /* Nhận diện thương hiệu iSMART Education */
-  --ismart-orange:       #f25c05;
-  --ismart-orange-hover: #d94e02;
-  --ismart-orange-soft:  #fff7ed;
-  --ismart-navy:         #0f2942;
+  /* Màu chuẩn theo iSmart Brand Guidelines — không dùng màu xấp xỉ */
+  --ismart-orange:       #E8501B;
+  --ismart-orange-hover: #C9420F;
+  --ismart-orange-soft:  #FDF0EA;
+  --ismart-navy:         #1B3A6B;
+  --ismart-sky:          #4AACCE;
+  --ismart-green:        #7AB648;
+  --ismart-yellow:       #F5A623;
+  --font-heading: "Montserrat", Arial, Helvetica, sans-serif;
+  --font-body:    "Open Sans", Calibri, Helvetica, sans-serif;
   --ismart-blue:         #1e40af;
 }
 
 /* Các lớp tiện ích màu sắc iSMART */
+/* Tiêu đề dùng Montserrat, nội dung dùng Open Sans (iSmart Brand Guidelines) */
+h1, h2, h3, h4, .student-name, .card-head h2, .report-pretitle, .sub-title { font-family: var(--font-heading); }
+
 .text-navy { color: var(--ismart-navy) !important; }
 .text-orange { color: var(--ismart-orange) !important; }
 
@@ -49,7 +58,7 @@ html, body {
   padding: 0;
   background: var(--bg);
   color: var(--ink);
-  font-family: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-body);
   font-size: 14.5px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -1306,4 +1315,10 @@ a:hover { text-decoration: underline; }
   .report-dashboard-grid { grid-template-columns: 1fr !important; gap: 16px !important; }
   .skills-dashboard-box { break-inside: avoid; }
   .spirit-card { break-inside: avoid; }
+}
+
+/* Topbar trên điện thoại: logo + tiêu đề đã đủ, nút "Tra cứu kết quả" bị gãy 4 dòng nên ẩn */
+.topbar-link { white-space: nowrap; }
+@media (max-width: 520px) {
+  .topbar-link { display: none; }
 }

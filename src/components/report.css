@@ -1,0 +1,591 @@
+/* ==========================================================================
+   Báo cáo kết quả — bố cục lấy biểu đồ làm trung tâm
+   Màu và font theo iSmart Brand Guidelines. Mọi class có tiền tố bc- để không
+   va chạm với các class cũ trong styles.css.
+   ========================================================================== */
+
+.bc-bao-cao {
+  /* Một đường cong cho 80% chuyển động, một cho khoảnh khắc chính — không nảy,
+     đúng giọng "chuyên nghiệp, đáng tin" của thương hiệu. */
+  --bc-ease: cubic-bezier(0.2, 0, 0, 1);
+  --bc-ease-nhan: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --bc-dur-nhanh: 160ms;
+  --bc-dur: 320ms;
+  --bc-dur-cham: 700ms;
+
+  --bc-cam: #E8501B;
+  /* Cam chuẩn trên nền xanh đậm chỉ đạt tương phản ~2,9:1 — chữ cam trên nền tối dùng bản sáng hơn */
+  --bc-cam-tren-toi: #FF8A5C;
+  --bc-xanh: #1B3A6B;
+  --bc-ink: #1A1A1A;
+  --bc-xam: #666666;
+  --bc-vien: #E4E8EE;
+}
+
+@keyframes bc-len {
+  from { opacity: 0; transform: translateY(16px); }
+}
+
+/* ------------------------------ Dải học sinh ------------------------------ */
+
+.bc-hoc-sinh {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: #fff;
+  border: 1px solid var(--bc-vien);
+  border-radius: 16px;
+  padding: 14px 22px;
+  margin-bottom: 20px;
+  animation: bc-len var(--bc-dur) var(--bc-ease) both;
+}
+.bc-hoc-sinh .student-avatar-wrap { width: 60px; height: 60px; }
+.bc-hoc-sinh-ten h2 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--bc-xanh);
+  line-height: 1.2;
+}
+.bc-hoc-sinh-ten span {
+  font-size: 13px;
+  color: var(--bc-xam);
+  font-variant-numeric: tabular-nums;
+}
+.bc-hoc-sinh-meta {
+  margin-left: auto;
+  display: flex;
+  gap: 32px;
+}
+.bc-meta { display: flex; flex-direction: column; gap: 2px; }
+.bc-meta-k {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--bc-xam);
+}
+.bc-meta-v {
+  font-family: var(--font-heading);
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--bc-ink);
+}
+
+/* ---------------------------------- Hero ---------------------------------- */
+
+.bc-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: grid;
+  /* Cột trái tối thiểu 400px để đoạn hẹp nhất của thang Level vẫn đủ chỗ cho tên */
+  grid-template-columns: minmax(400px, 0.72fr) minmax(0, 1.28fr);
+  gap: 20px;
+  align-items: center;
+  padding: 44px 48px 40px;
+  margin-bottom: 40px;
+  border-radius: 24px;
+  color: #fff;
+  background: linear-gradient(140deg, #1B3A6B 0%, #16335F 48%, #10294C 100%);
+  box-shadow: 0 32px 64px -32px rgba(27, 58, 107, 0.6);
+  animation: bc-len var(--bc-dur-cham) var(--bc-ease-nhan) both;
+}
+/* Thanh nhấn cam 4px — dấu hiệu nhận diện của thương hiệu */
+.bc-hero::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 48px;
+  width: 72px;
+  height: 4px;
+  border-radius: 0 0 4px 4px;
+  background: var(--bc-cam);
+}
+/* Lớp nền "thở": quầng cam sau radar, quầng xanh trời ở góc — trôi rất chậm */
+.bc-hero-nen {
+  position: absolute;
+  inset: -20%;
+  z-index: -1;
+  background:
+    radial-gradient(38% 46% at 68% 50%, rgba(232, 80, 27, 0.24), transparent 70%),
+    radial-gradient(34% 40% at 12% 90%, rgba(74, 172, 206, 0.2), transparent 70%);
+  animation: bc-troi 18s ease-in-out infinite alternate;
+}
+@keyframes bc-troi {
+  to { transform: translate3d(-4%, 3%, 0) scale(1.06); }
+}
+
+.bc-eyebrow {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+}
+.bc-level {
+  font-family: var(--font-heading);
+  font-size: clamp(68px, 9vw, 116px);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.035em;
+  margin: 8px 0 6px;
+}
+.bc-level.is-chua-co {
+  font-size: 34px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: rgba(255, 255, 255, 0.85);
+}
+.bc-tong {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-heading);
+}
+.bc-tong-so {
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--bc-cam-tren-toi);
+  font-variant-numeric: tabular-nums;
+}
+.bc-tong-max {
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.72);
+}
+.bc-level-mo-ta {
+  margin: 14px 0 0;
+  max-width: 46ch;
+  font-size: 15px;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+/* ------------------------------- Thang Level ------------------------------- */
+
+.bc-thang { margin-top: 26px; padding-top: 34px; }
+.bc-thang-ray { position: relative; height: 40px; }
+.bc-thang-cac-doan {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+}
+.bc-thang-doan {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 2px;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset -2px 0 0 #16335F;
+  font-family: var(--font-heading);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: rgba(255, 255, 255, 0.72);
+  white-space: nowrap;
+}
+.bc-thang-doan span { overflow: hidden; text-overflow: ellipsis; }
+.bc-thang-doan.is-hien-tai { background: var(--bc-cam); color: #fff; }
+
+.bc-thang-kim {
+  position: absolute;
+  top: -8px;
+  bottom: -8px;
+  width: 3px;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.18);
+  animation: bc-kim 900ms var(--bc-ease) 500ms both;
+}
+/* Chỉ khai báo điểm xuất phát: điểm đến là `left` thật đặt trong style của phần tử */
+@keyframes bc-kim {
+  from { left: 0%; }
+}
+.bc-thang-kim-so {
+  position: absolute;
+  bottom: calc(100% + 7px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--bc-xanh);
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.bc-thang-kim-so::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border: 5px solid transparent;
+  border-top-color: #fff;
+}
+.bc-thang-moc { position: relative; height: 16px; margin-top: 8px; }
+.bc-thang-moc span {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  font-variant-numeric: tabular-nums;
+}
+.bc-thang-moc span:first-child { transform: none; }
+.bc-thang-moc span:last-child { transform: translateX(-100%); }
+
+/* ---------------------------------- Radar ---------------------------------- */
+
+.bc-hero-phai { display: flex; justify-content: center; }
+.bc-radar { width: 100%; max-width: 680px; height: auto; overflow: visible; }
+
+.bc-vong {
+  transform-box: view-box;
+  transform-origin: var(--cx) var(--cy);
+  animation: bc-vong-vao 520ms var(--bc-ease) var(--tre) both;
+}
+@keyframes bc-vong-vao {
+  from { opacity: 0; transform: scale(0.7); }
+}
+.bc-vong-dai { fill: rgba(255, 255, 255, 0.028); stroke: none; }
+.bc-vong-trong { fill: none; stroke: rgba(255, 255, 255, 0.15); stroke-width: 1; stroke-dasharray: 3 5; }
+.bc-vong-ngoai { fill: none; stroke: rgba(255, 255, 255, 0.3); stroke-width: 1.5; }
+.bc-vong-so {
+  fill: rgba(255, 255, 255, 0.45);
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 600;
+}
+.bc-truc { stroke: rgba(255, 255, 255, 0.16); stroke-width: 1; }
+
+/* Chuyển động chính: đa giác nở từ tâm radar */
+.bc-da-giac {
+  transform-box: view-box;
+  transform-origin: var(--cx) var(--cy);
+  animation: bc-no 780ms var(--bc-ease-nhan) 300ms both;
+}
+@keyframes bc-no {
+  from { opacity: 0; transform: scale(0); }
+  30% { opacity: 1; }
+}
+.bc-da-giac-chinh { stroke: var(--bc-cam); stroke-width: 2.5; stroke-linejoin: round; }
+.bc-da-giac-sang { fill: rgba(232, 80, 27, 0.4); stroke: var(--bc-cam); stroke-width: 6; opacity: 0.65; }
+
+.bc-dinh {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: bc-dinh-vao 340ms var(--bc-ease) var(--tre) both;
+}
+@keyframes bc-dinh-vao {
+  from { opacity: 0; transform: scale(0); }
+}
+.bc-dinh-diem { stroke: #fff; stroke-width: 2.5; }
+.bc-dinh-quang {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0.22;
+  animation: bc-tho 3.2s ease-in-out calc(var(--tre) + 400ms) infinite;
+}
+@keyframes bc-tho {
+  0%, 100% { opacity: 0.16; transform: scale(0.85); }
+  50% { opacity: 0.34; transform: scale(1.25); }
+}
+
+.bc-radar-nhan { animation: bc-hien 420ms var(--bc-ease) var(--tre) both; }
+@keyframes bc-hien {
+  from { opacity: 0; }
+}
+.bc-radar-ten {
+  fill: #fff;
+  font-family: var(--font-heading);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.bc-radar-diem {
+  font-family: var(--font-heading);
+  font-size: 24px;
+  font-weight: 800;
+}
+.bc-radar-max { fill: rgba(255, 255, 255, 0.5); font-size: 15px; font-weight: 600; }
+
+/* Chế độ gọn (điện thoại): radar cắt sát vòng tròn, nhãn ra chú thích 2×2 */
+.bc-radar-khung { display: flex; flex-direction: column; align-items: center; width: 100%; }
+.bc-radar-chu { font-family: var(--font-heading); font-size: 22px; font-weight: 800; }
+.bc-chu-giai {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.bc-chu-giai li {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.07);
+}
+.bc-chu-giai-ky-hieu { font-family: var(--font-heading); font-size: 13px; font-weight: 800; }
+.bc-chu-giai-ten { font-family: var(--font-heading); font-size: 13.5px; font-weight: 700; color: #fff; }
+.bc-chu-giai b { margin-left: auto; font-family: var(--font-heading); font-size: 17px; font-weight: 800; }
+.bc-chu-giai small { font-size: 11px; font-weight: 600; color: rgba(255, 255, 255, 0.55); }
+
+.bc-chua-du {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 420px;
+  padding: 40px 28px;
+  border: 1px dashed rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.6;
+}
+.bc-chua-du strong { font-family: var(--font-heading); font-size: 18px; color: #fff; }
+
+/* --------------------------- Khu chi tiết kỹ năng --------------------------- */
+
+.bc-khu { margin-bottom: 40px; }
+.bc-khu-tieu-de {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 16px;
+  font-family: var(--font-heading);
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--bc-xanh);
+}
+.bc-khu-tieu-de::before {
+  content: "";
+  width: 4px;
+  height: 20px;
+  border-radius: 2px;
+  background: var(--bc-cam);
+}
+
+.bc-luoi-the {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+/* Trạng thái chờ: ẩn và hạ 16px. Khi khu cha có .is-hien thì trả về trạng thái thật,
+   animation chỉ dùng `backwards` để sau khi chạy xong, hover vẫn điều khiển được transform. */
+.bc-the,
+.bc-reveal {
+  opacity: 0;
+  transform: translateY(16px);
+}
+.is-hien .bc-the,
+.is-hien .bc-reveal {
+  opacity: 1;
+  transform: none;
+  animation: bc-len var(--bc-dur) var(--bc-ease) var(--tre) backwards;
+}
+
+.bc-the {
+  position: relative;
+  overflow: hidden;
+  padding: 24px 22px 20px;
+  background: #fff;
+  border: 1px solid var(--bc-vien);
+  border-radius: 16px;
+  transition:
+    transform var(--bc-dur-nhanh) var(--bc-ease),
+    box-shadow var(--bc-dur-nhanh) var(--bc-ease);
+}
+.bc-the::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: var(--mau);
+}
+.is-hien .bc-the:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 32px -20px rgba(27, 58, 107, 0.45);
+}
+
+.bc-the-dau { display: flex; align-items: center; gap: 12px; }
+.bc-ky-hieu {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 800;
+}
+.bc-the-ten h3 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--bc-ink);
+  line-height: 1.2;
+}
+.bc-the-ten span { font-size: 12.5px; color: var(--bc-xam); }
+.bc-the-diem {
+  display: flex;
+  align-items: baseline;
+  margin-left: auto;
+  font-family: var(--font-heading);
+}
+.bc-the-so {
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--bc-xanh);
+  font-variant-numeric: tabular-nums;
+}
+.bc-the-max { margin-left: 2px; font-size: 15px; font-weight: 600; color: var(--bc-xam); }
+
+.bc-the-thanh {
+  height: 8px;
+  margin: 18px 0 14px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #EEF1F5;
+}
+.bc-the-thanh span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--mau);
+  transition: width 900ms var(--bc-ease);
+}
+.is-hien .bc-the-thanh span {
+  width: calc(var(--ti-le) * 100%);
+  transition-delay: calc(var(--tre) + 150ms);
+}
+
+.bc-the-mo-ta { margin: 0; font-size: 14.5px; line-height: 1.65; color: #333; }
+.bc-the-rieng {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--bc-cam);
+  border-radius: 0 10px 10px 0;
+  background: var(--ismart-orange-soft);
+}
+.bc-the-rieng span {
+  display: block;
+  margin-bottom: 4px;
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #C9420F;
+}
+.bc-the-rieng p { margin: 0; font-size: 14px; line-height: 1.6; color: #333; }
+
+/* --------------------------- Lộ trình + gợi ý --------------------------- */
+
+.bc-hang-duoi {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  align-items: start;
+  margin-bottom: 28px;
+}
+.bc-khoi {
+  padding: 22px;
+  background: #fff;
+  border: 1px solid var(--bc-vien);
+  border-radius: 16px;
+}
+.bc-lo-trinh-nx {
+  margin: 16px 0 0;
+  padding-left: 14px;
+  border-left: 3px solid var(--bc-vien);
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: #333;
+}
+.bc-goi-y { display: flex; flex-direction: column; gap: 16px; margin: 0; padding: 0; list-style: none; }
+.bc-goi-y li { display: flex; gap: 12px; align-items: flex-start; }
+.bc-goi-y .bc-ky-hieu { width: 28px; height: 28px; border-radius: 8px; font-size: 13px; }
+.bc-goi-y strong { font-family: var(--font-heading); font-size: 14px; color: var(--bc-ink); }
+.bc-goi-y p { margin: 2px 0 0; font-size: 14px; line-height: 1.6; color: #444; }
+
+.bc-tagline {
+  margin-top: 2px;
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--bc-cam);
+}
+
+/* ------------------------------- Responsive ------------------------------- */
+
+@media (max-width: 960px) {
+  .bc-hero { grid-template-columns: 1fr; gap: 12px; padding: 36px 28px 28px; }
+  .bc-hero::before { left: 28px; }
+  .bc-luoi-the,
+  .bc-hang-duoi { grid-template-columns: 1fr; }
+  .bc-hoc-sinh { flex-wrap: wrap; }
+  .bc-hoc-sinh-meta { width: 100%; margin-left: 0; gap: 20px; flex-wrap: wrap; }
+}
+@media (max-width: 520px) {
+  .bc-hero { padding: 32px 18px 22px; border-radius: 18px; }
+  .bc-hero::before { left: 18px; }
+  .bc-level { font-size: 64px; }
+  /* Thang hẹp: tên Level nhỏ lại để đoạn ngắn nhất (70–80) vẫn đủ chỗ */
+  .bc-thang-doan { padding: 0; font-size: 10px; letter-spacing: -0.02em; }
+  .bc-the { padding: 22px 16px 18px; }
+  .bc-the-so { font-size: 28px; }
+}
+
+/* ----------------------- Giảm chuyển động & bản in ----------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .bc-bao-cao *,
+  .bc-bao-cao *::before,
+  .bc-bao-cao *::after,
+  .bc-bao-cao .bc-hoc-sinh,
+  .bc-bao-cao .bc-hero {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@media print {
+  .bc-bao-cao *,
+  .bc-bao-cao *::before,
+  .bc-bao-cao *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  .bc-hoc-sinh,
+  .bc-hero { animation: none !important; }
+  /* Khu chưa cuộn tới vẫn phải in đủ */
+  .bc-the,
+  .bc-reveal { opacity: 1 !important; transform: none !important; }
+  .bc-the-thanh span { width: calc(var(--ti-le) * 100%) !important; }
+  .bc-hero-nen { display: none; }
+  .bc-hero { box-shadow: none; }
+  .bc-hero,
+  .bc-the,
+  .bc-khoi { break-inside: avoid; }
+}

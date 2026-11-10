@@ -159,6 +159,11 @@ export function buildReport(row: Row, data: SheetData) {
     tongDiem,
     tongToiDa: TONG_TOI_DA,
     level: level ? { ten: level.level, moTa: level.mo_ta ?? "" } : null,
+    // Toàn bộ thang Level để vẽ thanh 0–80 trên báo cáo; sửa mốc trên sheet là thanh đổi theo.
+    thangLevel: data.thangLevel
+      .map((r) => ({ ten: r.level, tu: docDiem(r.diem_tu, Number.POSITIVE_INFINITY) }))
+      .filter((r): r is { ten: string; tu: number } => Boolean(r.ten) && r.tu !== null)
+      .sort((a, b) => a.tu - b.tu),
     loTrinh: {
       phanTramCoBan: row.pct_co_ban || "100%",
       phanTramNangCao: row.pct_nang_cao || "10%",

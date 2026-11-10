@@ -1,6 +1,10 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import type { BaoCao, KyNangKetQua } from "../types";
 import { ORG } from "./Layout";
+import SkillHero from "./SkillHero";
+import { giaoDienKyNang } from "./kyNangGiaoDien";
+import { hienSoDem, useDemSo, useHienKhiCuon } from "./motion";
+import "./report.css";
 
 /* ---------------------------- Tiện ích & Avatar ---------------------------- */
 
@@ -47,17 +51,8 @@ function StudentAvatar({ name, code }: { name: string; code: string }) {
       <span className="avatar-monogram" title={name}>
         {mon}
       </span>
-      <span className="avatar-badge-status" title="Học viên tích cực">
-        ★
-      </span>
     </div>
   );
-}
-
-/** Hiển thị điểm: số nguyên thì không kèm ",0"; chưa có điểm thì "—". */
-function hienDiem(d: number | null) {
-  if (d === null) return "—";
-  return Number.isInteger(d) ? String(d) : d.toFixed(1).replace(".", ",");
 }
 
 /**
@@ -74,149 +69,75 @@ function dongKyTen(ngayCham: string) {
   return `${ORG.diaDiem}, ngày ${Number(d)} tháng ${Number(m)} năm ${y}`;
 }
 
-function Meta({ k, v, icon }: { k: string; v?: string; icon?: string }) {
+function Meta({ k, v }: { k: string; v?: string }) {
   if (!v) return null;
   return (
-    <div className="meta-item">
-      {icon && <span className="meta-icon">{icon}</span>}
-      <span className="k">{k}:</span>
-      <span className="v">{v}</span>
+    <div className="bc-meta">
+      <span className="bc-meta-k">{k}</span>
+      <span className="bc-meta-v">{v}</span>
     </div>
   );
 }
 
-function Card({
-  num,
-  title,
-  subtitle,
-  children,
-  className = "",
+/** Ô ký hiệu kỹ năng (L / R / W / S) — thay emoji, đúng tinh thần icon phẳng của thương hiệu. */
+function KyHieu({ k }: { k: KyNangKetQua }) {
+  const gd = giaoDienKyNang(k.key);
+  return (
+    <span className="bc-ky-hieu" style={{ background: gd.mau, color: gd.chu }} aria-hidden="true">
+      {gd.kyHieu}
+    </span>
+  );
+}
+
+/* --------------------------- Thẻ chi tiết kỹ năng --------------------------- */
+
+function TheKyNang({
+  k,
+  diemToiDa,
+  daHien,
+  thuTu,
 }: {
-  num: string;
-  title: string;
-  subtitle?: string;
-  children: React.ReactNode;
-  className?: string;
+  k: KyNangKetQua;
+  diemToiDa: number;
+  daHien: boolean;
+  thuTu: number;
 }) {
-  return (
-    <section className={`card ${className}`}>
-      <div className="card-head">
-        <span className="num">{num}</span>
-        <div className="card-head-titles">
-          <h2>{title}</h2>
-          {subtitle && <span className="card-sub">{subtitle}</span>}
-        </div>
-      </div>
-      <div className="card-body">{children}</div>
-    </section>
-  );
-}
-
-/* --------------------------- Giao diện từng kỹ năng --------------------------- */
-
-const GIAO_DIEN_KY_NANG: Record<string, { icon: string; mau: string; domain: string }> = {
-  listening: { icon: "🎧", mau: "#2563eb", domain: "domain-nghe" },
-  reading: { icon: "📖", mau: "#7c3aed", domain: "domain-doc" },
-  writing: { icon: "✍️", mau: "#d97706", domain: "domain-viet" },
-  speaking: { icon: "🗣️", mau: "#059669", domain: "domain-noi" },
-};
-const giaoDien = (key: string) =>
-  GIAO_DIEN_KY_NANG[key] ?? { icon: "✨", mau: "#2563eb", domain: "domain-nghe" };
-
-/* --------------------------- Biểu đồ 4 kỹ năng --------------------------- */
-
-/**
- * Radar 4 trục + thanh đo ngang. Chỉ vẽ khi có đủ điểm cả 4 kỹ năng: biểu đồ thiếu
- * một trục sẽ trông như kỹ năng đó bằng 0, phụ huynh sẽ hiểu sai.
- */
-function SkillsDashboardChart({ kyNang, diemToiDa }: { kyNang: KyNangKetQua[]; diemToiDa: number }) {
-  const cx = 175;
-  const cy = 135;
-  const maxR = 74;
-  const r = kyNang.map((k) => ((k.diem ?? 0) / diemToiDa) * maxR);
-  const [top, right, bottom, left] = kyNang;
-  const polyPoints = `${cx},${cy - r[0]} ${cx + r[1]},${cy} ${cx},${cy + r[2]} ${cx - r[3]},${cy}`;
-  const nhan = (k: KyNangKetQua) => `${giaoDien(k.key).icon} ${k.ten} (${hienDiem(k.diem)})`;
+  const gd = giaoDienKyNang(k.key);
+  // Chỉ đếm khi thẻ đã hiện trên màn hình, để phụ huynh kịp thấy số chạy.
+  const dich = k.diem === null ? null : daHien ? k.diem : 0;
+  const dangDem = useDemSo(dich, 120 + thuTu * 60, 700);
+  const tiLe = k.diem === null ? 0 : k.diem / diemToiDa;
 
   return (
-    <div className="skills-dashboard-box">
-      <div className="skills-box-header">
-        <div className="skills-box-title">
-          <span className="skills-box-icon">📊</span>
-          <span>Phân tích Năng lực 4 Kỹ năng Tiếng Anh</span>
+    <article
+      className="bc-the"
+      style={{ ["--mau" as string]: gd.mau, ["--tre" as string]: `${thuTu * 60}ms` }}
+    >
+      <header className="bc-the-dau">
+        <KyHieu k={k} />
+        <div className="bc-the-ten">
+          <h3>{k.ten}</h3>
+          <span>{k.tenViet}</span>
         </div>
-        <div className="chart-scale-pill">Thang điểm 0–{diemToiDa}</div>
+        <div className="bc-the-diem">
+          <span className="bc-the-so">{hienSoDem(dangDem, k.diem)}</span>
+          <span className="bc-the-max">/{diemToiDa}</span>
+        </div>
+      </header>
+
+      <div className="bc-the-thanh" aria-hidden="true">
+        <span style={{ ["--ti-le" as string]: String(tiLe) }} />
       </div>
 
-      <div className="skills-dual-view">
-        <div className="radar-col">
-          <svg viewBox="0 0 350 270" className="radar-svg" role="img" aria-label="Biểu đồ đa giác 4 kỹ năng">
-            {[0.25, 0.5, 0.75, 1].map((tiLe) => {
-              const rr = tiLe * maxR;
-              return (
-                <polygon
-                  key={tiLe}
-                  points={`${cx},${cy - rr} ${cx + rr},${cy} ${cx},${cy + rr} ${cx - rr},${cy}`}
-                  className="radar-grid-ring"
-                />
-              );
-            })}
+      <p className="bc-the-mo-ta">{k.moTa || "Giáo viên đang cập nhật nhận xét."}</p>
 
-            <line x1={cx - maxR - 8} y1={cy} x2={cx + maxR + 8} y2={cy} className="radar-axis-line" />
-            <line x1={cx} y1={cy - maxR - 8} x2={cx} y2={cy + maxR + 8} className="radar-axis-line" />
-
-            <polygon points={polyPoints} className="radar-polygon-fill" />
-            <polygon points={polyPoints} className="radar-polygon-stroke" />
-
-            <circle cx={cx} cy={cy - r[0]} r="4.5" className="radar-point point-top" />
-            <circle cx={cx + r[1]} cy={cy} r="4.5" className="radar-point point-right" />
-            <circle cx={cx} cy={cy + r[2]} r="4.5" className="radar-point point-bottom" />
-            <circle cx={cx - r[3]} cy={cy} r="4.5" className="radar-point point-left" />
-
-            <text x={cx} y={cy - maxR - 16} textAnchor="middle" className="radar-label label-top">
-              {nhan(top)}
-            </text>
-            <text x={cx + maxR + 12} y={cy + 4} textAnchor="start" className="radar-label label-right">
-              {nhan(right)}
-            </text>
-            <text x={cx} y={cy + maxR + 24} textAnchor="middle" className="radar-label label-bottom">
-              {nhan(bottom)}
-            </text>
-            <text x={cx - maxR - 12} y={cy + 4} textAnchor="end" className="radar-label label-left">
-              {nhan(left)}
-            </text>
-          </svg>
-          <div className="radar-caption">Mô hình cân bằng năng lực ngoại ngữ</div>
+      {k.moTaRieng ? (
+        <div className="bc-the-rieng">
+          <span>Nhận xét riêng của giáo viên</span>
+          <p>{k.moTaRieng}</p>
         </div>
-
-        <div className="gauges-col">
-          {kyNang.map((k) => (
-            <div className="skill-gauge-row" key={k.key}>
-              <div className="skill-gauge-header">
-                <div className="skill-gauge-name">
-                  <span className="skill-gauge-icon">{giaoDien(k.key).icon}</span>
-                  <strong>{k.ten}</strong>
-                  <span className="skill-gauge-viet">{k.tenViet}</span>
-                </div>
-                <div className="skill-gauge-score-wrap">
-                  <span className="skill-gauge-score">{hienDiem(k.diem)}</span>
-                  <span className="skill-gauge-max">/{diemToiDa}</span>
-                </div>
-              </div>
-              <div className="skill-gauge-track">
-                <div
-                  className="skill-gauge-bar"
-                  style={{
-                    width: `${((k.diem ?? 0) / diemToiDa) * 100}%`,
-                    backgroundColor: giaoDien(k.key).mau,
-                  }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+      ) : null}
+    </article>
   );
 }
 
@@ -276,156 +197,79 @@ function RoadmapVisual({
 /* ------------------------------ Báo cáo chính ------------------------------ */
 
 export default function Report({ bc }: { bc: BaoCao }) {
-  const { kyNang, loTrinh, level } = bc;
-  const duDiem = bc.tongDiem !== null;
+  const { kyNang, loTrinh } = bc;
   const coGoiY = kyNang.some((k) => k.goiY);
-  const tenLevel = level?.ten || "Đang cập nhật";
+  const [refKyNang, hienKyNang] = useHienKhiCuon<HTMLElement>();
+  const [refDuoi, hienDuoi] = useHienKhiCuon<HTMLDivElement>();
 
   return (
-    <>
+    <div className="bc-bao-cao">
       <div className="report-title">
         <div className="report-pretitle">{ORG.ten.toUpperCase()}</div>
         <h1>Báo Cáo Đánh Giá Năng Lực Học Viên</h1>
         <div className="rule-solid" />
       </div>
 
-      {/* Thông tin học sinh */}
-      <section className="card student-card">
-        <div className="card-body">
-          <div className="student">
-            <StudentAvatar name={bc.hoTen} code={bc.maHocSinh} />
-
-            <div className="student-info-main">
-              <div className="student-name-row">
-                <div className="student-name">{bc.hoTen}</div>
-                <span className={`grade-tag ${level ? "g-b" : "g-c"}`}>Level {tenLevel}</span>
-              </div>
-
-              <div className="meta-grid">
-                <Meta icon="🆔" k="Mã học sinh" v={bc.maHocSinh} />
-                <Meta icon="🏫" k="Lớp" v={bc.lop} />
-                <Meta icon="👩‍🏫" k="Giáo viên" v={bc.giaoVien} />
-                <Meta icon="🗓️" k="Ngày chấm" v={bc.ngayCham} />
-              </div>
-            </div>
-          </div>
+      {/* Thông tin học sinh — gọn một dải, nhường chỗ cho biểu đồ */}
+      <section className="bc-hoc-sinh">
+        <StudentAvatar name={bc.hoTen} code={bc.maHocSinh} />
+        <div className="bc-hoc-sinh-ten">
+          <h2>{bc.hoTen}</h2>
+          <span>Mã học sinh {bc.maHocSinh}</span>
+        </div>
+        <div className="bc-hoc-sinh-meta">
+          <Meta k="Lớp" v={bc.lop} />
+          <Meta k="Giáo viên" v={bc.giaoVien} />
+          <Meta k="Ngày chấm" v={bc.ngayCham} />
         </div>
       </section>
 
-      <div className="report-dashboard-grid">
-        {/* CỘT TRÁI: Kết quả 4 kỹ năng */}
-        <div className="dashboard-col-left">
-          <Card
-            num="I"
-            title="Kết quả học tập"
-            subtitle={`Điểm 4 kỹ năng Listening, Reading, Writing, Speaking — thang 0–${bc.diemToiDa} mỗi kỹ năng`}
-          >
-            <div className="grade-highlight-box-solid">
-              <div className="grade-left">
-                <span className="k">Level tương ứng:</span>
-                <span className="badge g-b">{tenLevel}</span>
-              </div>
-              <div className="grade-right">
-                <span className="grade-status-pill">
-                  Tổng điểm:{" "}
-                  <strong>
-                    {duDiem ? hienDiem(bc.tongDiem) : "—"}/{bc.tongToiDa}
-                  </strong>
-                </span>
-              </div>
-            </div>
+      <SkillHero bc={bc} />
 
-            {level?.moTa ? (
-              <div className="quote-box-solid">
-                <span className="quote-icon">🎓</span>
-                <p className="quote">{level.moTa}</p>
-              </div>
-            ) : null}
+      {/* Chi tiết từng kỹ năng */}
+      <section ref={refKyNang} className={`bc-khu${hienKyNang ? " is-hien" : ""}`}>
+        <h2 className="bc-khu-tieu-de">Nhận xét từng kỹ năng</h2>
+        <div className="bc-luoi-the">
+          {kyNang.map((k, i) => (
+            <TheKyNang key={k.key} k={k} diemToiDa={bc.diemToiDa} daHien={hienKyNang} thuTu={i} />
+          ))}
+        </div>
+      </section>
 
-            {duDiem ? (
-              <SkillsDashboardChart kyNang={kyNang} diemToiDa={bc.diemToiDa} />
-            ) : (
-              <div className="skills-missing-note">
-                Chưa đủ điểm cả 4 kỹ năng nên chưa xếp Level và chưa vẽ biểu đồ. Trung tâm sẽ cập
-                nhật sớm.
-              </div>
-            )}
+      {/* Lộ trình + gợi ý luyện tập */}
+      <div ref={refDuoi} className={`bc-hang-duoi${hienDuoi ? " is-hien" : ""}`}>
+        <section className="bc-khoi bc-reveal" style={{ ["--tre" as string]: "0ms" }}>
+          <h2 className="bc-khu-tieu-de">Lộ trình học tập</h2>
+          <RoadmapVisual phanTramCoBan={loTrinh.phanTramCoBan} phanTramNangCao={loTrinh.phanTramNangCao} />
+          {loTrinh.nhanXet ? <p className="bc-lo-trinh-nx">{loTrinh.nhanXet}</p> : null}
+        </section>
 
-            <div className="sub-title">Nhận xét từng kỹ năng</div>
-            <div className="detail-list">
-              {kyNang.map((k) => (
-                <div className="detail-solid" key={k.key}>
-                  <div className="detail-header">
-                    <h3>
-                      {giaoDien(k.key).icon} {k.ten}
-                      <span className="detail-viet"> · {k.tenViet}</span>
-                    </h3>
-                    <span className="detail-score-badge">
-                      Điểm: <strong>{hienDiem(k.diem)}</strong>/{bc.diemToiDa}
-                    </span>
-                  </div>
-                  <p>{k.moTa || "Giáo viên đang cập nhật nhận xét."}</p>
-                  {k.moTaRieng ? (
-                    <div className="mo-ta-rieng">
-                      <span className="mo-ta-rieng-label">Nhận xét riêng của giáo viên</span>
-                      <p>{k.moTaRieng}</p>
+        {coGoiY ? (
+          <section className="bc-khoi bc-reveal" style={{ ["--tre" as string]: "80ms" }}>
+            <h2 className="bc-khu-tieu-de">Gợi ý luyện tập ở nhà</h2>
+            <ul className="bc-goi-y">
+              {kyNang.map((k) =>
+                k.goiY ? (
+                  <li key={k.key}>
+                    <KyHieu k={k} />
+                    <div>
+                      <strong>{k.ten}</strong>
+                      <p>{k.goiY}</p>
                     </div>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          </Card>
-        </div>
-
-        {/* CỘT PHẢI: Lộ trình & gợi ý luyện tập */}
-        <div className="dashboard-col-right">
-          <Card
-            num="II"
-            title="Lộ trình học tập"
-            subtitle="Định hướng cá nhân hoá và gợi ý luyện tập cho từng kỹ năng"
-          >
-            <RoadmapVisual
-              phanTramCoBan={loTrinh.phanTramCoBan}
-              phanTramNangCao={loTrinh.phanTramNangCao}
-            />
-
-            {loTrinh.nhanXet ? (
-              <div className="quote-box-solid">
-                <span className="quote-icon">🎯</span>
-                <p className="quote">{loTrinh.nhanXet}</p>
-              </div>
-            ) : null}
-
-            {coGoiY ? (
-              <>
-                <div className="sub-title">Gợi ý luyện tập 4 kỹ năng</div>
-                <div className="skills-stack">
-                  {kyNang.map(
-                    (k) =>
-                      k.goiY && (
-                        <div className={`skill-card-solid ${giaoDien(k.key).domain}`} key={k.key}>
-                          <div className="skill-card-head-solid">
-                            <span className="skill-icon">{giaoDien(k.key).icon}</span>
-                            <h4>
-                              {k.ten} · {k.tenViet}
-                            </h4>
-                          </div>
-                          <p className="skill-card-text">{k.goiY}</p>
-                        </div>
-                      )
-                  )}
-                </div>
-              </>
-            ) : null}
-          </Card>
-
-          <div className="sign-card-solid">
-            {bc.ngayCham ? <div className="date">{dongKyTen(bc.ngayCham)}</div> : null}
-            <div className="org-role">{ORG.hoiDong}</div>
-            <div className="org-name">{ORG.ten}</div>
-          </div>
-        </div>
+                  </li>
+                ) : null
+              )}
+            </ul>
+          </section>
+        ) : null}
       </div>
-    </>
+
+      <div className="sign-card-solid">
+        {bc.ngayCham ? <div className="date">{dongKyTen(bc.ngayCham)}</div> : null}
+        <div className="org-role">{ORG.hoiDong}</div>
+        <div className="org-name">{ORG.ten}</div>
+        <div className="bc-tagline">Transforming Education</div>
+      </div>
+    </div>
   );
 }

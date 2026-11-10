@@ -129,7 +129,7 @@ function thietLapRangBuoc() {
 
   sh.setFrozenRows(1);
   sh.setFrozenColumns(2);
-  Logger.log('Đã thiết lập ràng buộc cho %s cột:\n  %s', daLam.length, daLam.join('\n  '));
+  Logger.log('Đã thiết lập ràng buộc cho ' + daLam.length + ' cột:\n  ' + daLam.join('\n  '));
 }
 
 /**
