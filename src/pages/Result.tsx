@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
-import { SiteFooter, Topbar } from "../components/Layout";
+import { KqFooter, KqTopbar } from "../components/KetQuaLayout";
 import Icon from "../components/Icon";
 import Report from "../components/Report";
 import type { BaoCao } from "../types";
+import "../ket-qua.css";
 
 type TrangThai =
   | { loai: "dang-tai" }
@@ -61,18 +62,18 @@ export default function Result() {
   }, [tt]);
 
   return (
-    <div className="page">
-      <Topbar />
+    <div className="kq kq-page">
+      <KqTopbar />
       <main className="result">
         {tt.loai === "dang-tai" ? (
-          <div className="state" role="status">
-            <span className="spinner" aria-hidden="true" />
+          <div className="kq-state" role="status">
+            <span className="kq-spinner" aria-hidden="true" />
             Đang tải kết quả…
           </div>
         ) : null}
 
         {tt.loai === "loi" ? (
-          <div className="state">
+          <div className="kq-state">
             <p>{tt.message}</p>
             <Link to="/" className="btn-cam">
               <Icon ten="arrowLeft" size={18} />
@@ -84,7 +85,7 @@ export default function Result() {
         {tt.loai === "xong" ? (
           <>
             <Report bc={tt.baoCao} />
-            <div className="actions">
+            <div className="kq-actions">
               <button className="btn-pill" onClick={() => window.print()}>
                 <Icon ten="printer" size={18} />
                 In hoặc lưu PDF
@@ -93,7 +94,7 @@ export default function Result() {
           </>
         ) : null}
       </main>
-      <SiteFooter />
+      <KqFooter />
     </div>
   );
 }

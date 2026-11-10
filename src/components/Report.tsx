@@ -1,7 +1,8 @@
 import { useState } from "react";
 import type { BaoCao, KyNangKetQua } from "../types";
 import Icon from "./Icon";
-import { MayBayGiay, ORG } from "./Layout";
+import { MayBayGiay } from "./KetQuaLayout";
+import { ORG } from "./Layout";
 import SkillHero from "./SkillHero";
 import { giaoDienKyNang } from "./kyNangGiaoDien";
 import { hienSoDem, useDemSo, useHienKhiCuon } from "./motion";

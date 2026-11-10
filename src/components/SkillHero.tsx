@@ -39,7 +39,7 @@ function Radar({ kyNang, diemToiDa }: { kyNang: KyNangKetQua[]; diemToiDa: numbe
   const points = dinh.map((p) => p.join(",")).join(" ");
 
   return (
-    <svg className="radar-svg" viewBox="0 0 400 400" aria-hidden="true">
+    <svg className="kq-radar-svg" viewBox="0 0 400 400" aria-hidden="true">
       <defs>
         <linearGradient id="radar-to" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#FFB067" />
