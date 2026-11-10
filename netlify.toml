@@ -22,3 +22,10 @@
   for = "/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+
+# Trang quản trị: không cho máy tìm kiếm lập chỉ mục, không lộ link qua Referer
+[[headers]]
+  for = "/quan-tri"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    Referrer-Policy = "no-referrer"

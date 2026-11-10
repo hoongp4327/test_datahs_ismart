@@ -1,9 +1,12 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import Lookup from "./pages/Lookup";
 import Result from "./pages/Result";
 import "./styles.css";
+
+// Trang quản trị tách thành file riêng: phụ huynh tra cứu không phải tải phần này.
+const QuanTri = lazy(() => import("./pages/QuanTri"));
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -11,6 +14,14 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <Routes>
         <Route path="/" element={<Lookup />} />
         <Route path="/ket-qua" element={<Result />} />
+        <Route
+          path="/quan-tri"
+          element={
+            <Suspense fallback={null}>
+              <QuanTri />
+            </Suspense>
+          }
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

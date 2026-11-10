@@ -1,0 +1,290 @@
+/* ==========================================================================
+   Trang quản trị (/quan-tri) — công cụ làm việc của giáo viên: nền trắng, gọn,
+   ưu tiên nhập nhanh. Mọi quy tắc gói trong .qt để không đụng trang tra cứu
+   (styles.css) và trang kết quả (ket-qua.css).
+   ========================================================================== */
+
+.qt {
+  --navy: #1b3a6b;
+  --orange: #f26b1d;
+  --ink: #26354d;
+  --ink-2: #5a6b85;
+  --muted: #8494aa;
+  --line: #e4e9f1;
+  --bg: #f5f7fb;
+  --ok: #1e8e5a;
+  --err: #d93025;
+  --radius: 12px;
+  --font: "Nunito", "Segoe UI", Arial, sans-serif;
+
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+.qt *,
+.qt *::before,
+.qt *::after { box-sizing: border-box; }
+.qt :where(h1, h2, p) { margin: 0; }
+.qt :where(button, input, select, textarea) { font: inherit; color: inherit; }
+.qt :focus-visible { outline: 3px solid #2b8cee; outline-offset: 2px; }
+.qt .sr-only {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+.qt .icon { flex: none; display: block; }
+.qt .qt-nho { color: var(--muted); font-size: 13px; }
+
+/* ------------------------------- Nút ------------------------------- */
+
+.qt-nut {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 38px; padding: 0 14px; border-radius: 10px;
+  border: 1px solid transparent; background: none; cursor: pointer;
+  font-weight: 700; font-size: 14px; white-space: nowrap; text-decoration: none;
+  transition: background-color .15s, border-color .15s, opacity .15s;
+}
+.qt-nut:disabled { opacity: .45; cursor: not-allowed; }
+.qt-nut-chinh { background: var(--orange); color: #fff; }
+.qt-nut-chinh:not(:disabled):hover { background: #db5c12; }
+.qt-nut-phu { border-color: var(--line); background: #fff; color: var(--navy); }
+.qt-nut-phu:not(:disabled):hover { background: #eef3fa; }
+.qt-nut-nho { height: auto; padding: 0 12px; border: 1px solid var(--line); background: #f7f9fc; color: var(--ink-2); font-size: 13px; }
+.qt-nut-nho:hover { background: #eef3fa; }
+
+/* --------------------------- Màn hình chặn --------------------------- */
+
+.qt-chan {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px; padding: 24px; text-align: center;
+}
+.qt-chan h1 { font-size: 20px; color: var(--navy); }
+.qt-chan p { max-width: 420px; color: var(--ink-2); }
+.qt-chan-icon {
+  display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%;
+  background: #fff1e8; color: var(--orange);
+}
+
+.qt-spinner {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 3px solid #dfe6f0; border-top-color: var(--orange);
+  animation: qt-quay .8s linear infinite;
+}
+.qt-spinner-nho { width: 16px; height: 16px; border-width: 2px; border-color: rgba(255,255,255,.4); border-top-color: #fff; }
+.qt-quay { display: inline-flex; animation: qt-quay .8s linear infinite; }
+@keyframes qt-quay { to { transform: rotate(360deg); } }
+
+/* ------------------------------ Đầu trang ------------------------------ */
+
+.qt-dau {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; gap: 14px;
+  height: 60px; padding: 0 20px;
+  background: #fff; border-bottom: 1px solid var(--line);
+}
+.qt-logo { height: 30px; width: auto; }
+.qt-dau-ten { font-weight: 800; color: var(--navy); font-size: 16px; padding-left: 14px; border-left: 1px solid var(--line); }
+.qt-nguon {
+  margin-left: auto; padding: 4px 10px; border-radius: 999px;
+  background: #e8f5ee; color: var(--ok); font-size: 12px; font-weight: 700;
+}
+.qt-nguon.is-mau { background: #fff4e0; color: #a35b00; }
+.qt-canh-bao { padding: 10px 20px; background: #fff4e0; color: #8a4b00; font-size: 14px; }
+
+/* ------------------------------- Bố cục ------------------------------- */
+
+.qt-than {
+  display: grid; grid-template-columns: 340px minmax(0, 1fr);
+  max-width: 1280px; margin: 0 auto;
+  min-height: calc(100vh - 60px);
+}
+
+/* ------------------------------ Danh sách ------------------------------ */
+
+.qt-ds {
+  position: sticky; top: 60px; align-self: start;
+  height: calc(100vh - 60px);
+  display: flex; flex-direction: column;
+  border-right: 1px solid var(--line); background: #fff;
+}
+.qt-ds-dau { display: flex; gap: 8px; padding: 16px 16px 8px; }
+.qt-tim {
+  flex: 1; display: flex; align-items: center; gap: 8px;
+  height: 38px; padding: 0 12px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--bg); color: var(--muted);
+}
+.qt-tim:focus-within { border-color: #2b8cee; background: #fff; }
+.qt-tim input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; color: var(--ink); }
+.qt-ds-dem { padding: 4px 18px 8px; font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.qt-ds-muc { list-style: none; margin: 0; padding: 0 8px 16px; overflow-y: auto; }
+.qt-ds-trong { padding: 16px 10px; color: var(--muted); font-size: 14px; }
+
+.qt-hs {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px;
+  width: 100%; padding: 10px 12px; border: 0; border-radius: 10px;
+  background: none; text-align: left; cursor: pointer;
+}
+.qt-hs:hover { background: var(--bg); }
+.qt-hs.is-chon { background: #fff1e8; box-shadow: inset 3px 0 0 var(--orange); }
+.qt-hs-ten { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qt-hs-phu { grid-row: 2; font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qt-chip {
+  grid-row: 1 / span 2; grid-column: 2; align-self: center;
+  padding: 3px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap;
+}
+.qt-chip.is-du { background: #eaf2ff; color: var(--navy); }
+.qt-chip.is-thieu { background: #fff4e0; color: #a35b00; }
+
+/* ------------------------------ Biểu mẫu ------------------------------ */
+
+.qt-form-khung { padding: 24px 28px 0; min-width: 0; }
+.qt-chua-chon {
+  margin-top: 12vh; text-align: center; color: var(--ink-2);
+  display: grid; gap: 8px; justify-items: center;
+}
+.qt-chua-chon p { max-width: 380px; }
+
+.qt-form { display: grid; gap: 16px; max-width: 880px; }
+.qt-form-dau { display: flex; align-items: center; gap: 12px; }
+.qt-quay-lai { display: none; }
+.qt-form-ten { flex: 1; min-width: 0; }
+.qt-form-ten h1 { font-size: 22px; font-weight: 800; color: var(--navy); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.qt-ma {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 2px;
+  padding: 2px 8px; border: 1px dashed #c9d4e3; border-radius: 6px;
+  background: #fff; color: var(--ink-2); cursor: pointer;
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 13px; letter-spacing: .03em;
+}
+.qt-ma:hover { border-color: var(--orange); color: var(--orange); }
+
+.qt-the {
+  display: grid; gap: 14px; padding: 20px;
+  background: #fff; border: 1px solid var(--line); border-radius: var(--radius);
+}
+.qt-the h2 { font-size: 15px; font-weight: 800; color: var(--navy); }
+.qt-the-dau { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.qt-luoi-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; }
+
+/* Ô nhập */
+.qt-o { display: grid; gap: 5px; min-width: 0; }
+.qt-o-nhan { font-size: 13px; font-weight: 700; color: var(--ink-2); }
+.qt-o-nhan i { color: var(--err); font-style: normal; margin-left: 2px; }
+.qt-o-goi-y { font-size: 12px; color: var(--muted); }
+.qt-o-loi { font-size: 12.5px; color: var(--err); font-weight: 600; }
+.qt :where(.qt-o input, .qt-o select, .qt-o textarea) {
+  width: 100%; min-height: 40px; padding: 8px 12px;
+  border: 1px solid #d4dce8; border-radius: 10px; background: #fff;
+  transition: border-color .15s, box-shadow .15s;
+}
+.qt :where(.qt-o textarea) { resize: vertical; line-height: 1.5; }
+.qt :where(.qt-o input, .qt-o select, .qt-o textarea):focus {
+  outline: 0; border-color: #2b8cee; box-shadow: 0 0 0 3px rgba(43, 140, 238, .15);
+}
+.qt-o.co-loi :where(input, select, textarea) { border-color: var(--err); }
+.qt-o-ghep { display: flex; gap: 8px; }
+.qt-o-ghep input { flex: 1; }
+
+/* Tổng điểm + Level */
+.qt-tong { display: flex; align-items: baseline; gap: 4px; color: var(--ink-2); font-weight: 700; }
+.qt-tong b { font-size: 22px; color: var(--navy); font-weight: 900; }
+.qt-level {
+  margin-left: 8px; padding: 3px 10px; border-radius: 999px;
+  background: var(--orange); color: #fff; font-size: 13px; font-weight: 800;
+}
+
+/* Một dòng kỹ năng */
+.qt-ky-nang-ds { display: grid; gap: 12px; }
+.qt-kn {
+  display: grid;
+  grid-template-columns: 150px 110px minmax(0, 1fr);
+  grid-template-areas:
+    "ten  diem opt"
+    "thanh thanh mota"
+    "rieng rieng rieng";
+  gap: 10px 16px; align-items: center;
+  padding: 14px; border-radius: 10px; border: 1px solid var(--line);
+  background: linear-gradient(90deg, var(--nen) 0, #fff 180px);
+}
+.qt-kn-ten { grid-area: ten; display: flex; align-items: center; gap: 10px; }
+.qt-kn-ten strong { display: block; font-weight: 800; }
+.qt-kn-ten span { font-size: 12.5px; color: var(--muted); }
+.qt-kn-icon {
+  display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px;
+  background: #fff; color: var(--mau); box-shadow: 0 1px 2px rgba(27, 58, 107, .08);
+}
+
+.qt-diem {
+  grid-area: diem; display: flex; align-items: baseline; gap: 4px;
+  font-weight: 700; color: var(--muted);
+}
+.qt-diem input {
+  width: 72px; height: 44px; padding: 0 8px; text-align: center;
+  border: 1px solid #d4dce8; border-radius: 10px; background: #fff;
+  font-size: 20px; font-weight: 900; color: var(--mau);
+}
+.qt-diem input:focus { outline: 0; border-color: var(--mau); box-shadow: 0 0 0 3px color-mix(in srgb, var(--mau) 20%, transparent); }
+.qt-diem.co-loi input { border-color: var(--err); }
+
+.qt-kn-thanh { grid-area: thanh; height: 6px; border-radius: 99px; background: #e9eef5; overflow: hidden; align-self: start; margin-top: 6px; }
+.qt-kn-thanh span { display: block; height: 100%; border-radius: inherit; background: var(--mau); transition: width .3s cubic-bezier(.2, 0, 0, 1); }
+
+.qt-kn-opt { grid-area: opt; }
+.qt-kn-mo-ta { grid-area: mota; font-size: 13.5px; color: var(--ink-2); line-height: 1.5; }
+.qt-kn-mo-ta.is-trong { color: var(--muted); font-style: italic; }
+.qt-lech {
+  display: block; margin-bottom: 4px; font-style: normal; font-weight: 700;
+  color: #a35b00;
+}
+.qt-kn-rieng { grid-area: rieng; }
+
+/* Thanh lưu dính đáy */
+.qt-thanh-luu {
+  position: sticky; bottom: 0; z-index: 2;
+  display: flex; align-items: center; gap: 10px;
+  margin: 0 -28px; padding: 12px 28px;
+  background: rgba(255, 255, 255, .94); backdrop-filter: blur(6px);
+  border-top: 1px solid var(--line);
+}
+.qt-thong-bao { flex: 1; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--muted); font-weight: 600; min-width: 0; }
+.qt-thong-bao.is-ok { color: var(--ok); }
+.qt-thong-bao.is-loi { color: var(--err); }
+
+/* ------------------------------ Màn hình hẹp ------------------------------ */
+
+@media (max-width: 900px) {
+  .qt-than { grid-template-columns: 1fr; }
+  .qt-ds { position: static; height: auto; border-right: 0; }
+  .qt-ds-muc { overflow: visible; }
+  /* Đang sửa thì ẩn danh sách, chỉ hiện biểu mẫu + nút quay lại */
+  .qt-trang.dang-sua .qt-ds { display: none; }
+  .qt-trang:not(.dang-sua) .qt-form-khung { display: none; }
+  .qt-quay-lai { display: inline-flex; }
+  .qt-form-khung { padding: 16px 16px 0; }
+  .qt-thanh-luu { margin: 0 -16px; padding: 12px 16px; }
+}
+
+@media (max-width: 640px) {
+  .qt-dau { gap: 10px; padding: 0 16px; }
+  .qt-dau-ten { display: none; }
+  .qt-nguon { font-size: 11px; }
+  .qt-an-hep { display: none; }
+  .qt-luoi-2 { grid-template-columns: 1fr; }
+  .qt-kn {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "ten  diem"
+      "thanh thanh"
+      "opt  opt"
+      "mota mota"
+      "rieng rieng";
+  }
+  .qt-thong-bao { font-size: 13px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qt *, .qt *::before, .qt *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+}

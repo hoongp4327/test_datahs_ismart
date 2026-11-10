@@ -362,20 +362,32 @@ Local ở `.env`, production ở Netlify → Site settings → Environment varia
 
 ### Chưa xong — bắt buộc trước khi dùng thật
 
-1. **Sheet thật vẫn còn cấu trúc cũ.** Import `data/Template_KetQua_HocSinh.xlsx` (3 tab).
-2. **Apps Script đang trả 403.** Dán `Code.gs` mới, đổi `TOKEN`, triển khai phiên bản mới với
-   "Bất kỳ ai". Hiện web chạy bằng đường dự phòng đọc sheet công khai.
-3. **Sheet đang công khai, Sheet ID + token cũ từng bị commit** vào `.env.example` trên repo
-   public (đã gỡ, nhưng còn trong lịch sử git). Sau khi Apps Script chạy: đổi `TOKEN` mới và
-   đóng sheet về **Restricted**.
-4. **Chưa deploy Netlify.**
+1. **Apps Script cần bản có `doPost`** để trang quản trị ghi được: dán `Code.gs` mới (giữ
+   nguyên dòng `TOKEN` thật), Triển khai → Quản lý các lần triển khai → Chỉnh sửa →
+   Phiên bản mới. URL không đổi.
+2. **Sheet nên đóng về Restricted** — website đọc/ghi qua Apps Script, không cần sheet công khai.
+   Token cũ từng bị commit đã vô hiệu (bản triển khai cũ đã lưu trữ).
+3. **Chưa deploy Netlify.** Cần env: `APPS_SCRIPT_URL`, `APPS_SCRIPT_TOKEN`, `ADMIN_KEY`.
+
+### Trang quản trị `/quan-tri` (đã làm)
+
+- Link: `https://<site>/quan-tri#<ADMIN_KEY>`. Phần sau `#` không gửi lên server; trang đọc
+  rồi gửi qua header `x-admin-key`, server so với env `ADMIN_KEY` (≥16 ký tự, so bằng
+  SHA-256 + timingSafeEqual). Thiếu `ADMIN_KEY` = trang tắt. Đổi khoá = mọi link cũ hết hạn.
+- `GET /api/admin` đọc cả 3 tab (không cache). `POST /api/admin` {hocSinh} → kiểm tra
+  (`shared/hoc-sinh-sua.ts`, dùng chung trình duyệt + server) → Apps Script `doPost`
+  action `luu`: cập nhật dòng CUỐI trùng mã, chưa có thì thêm dòng; chỉ ghi cột trong
+  `COT_GHI`; khoá LockService; option phải có trong MoTaKyNang.
+- Sửa học sinh cũ chỉ gửi cột đã đổi (không đè thay đổi người khác vừa làm ở cột khác).
+  Học sinh mới: mã `HS-XXXXXX` tạo ở trình duyệt bằng crypto → lưu lại khi timeout không
+  sinh dòng trùng.
+- Logic ở `shared/quan-tri.ts`, dùng chung bởi `netlify/functions/admin.mts` và dev server.
+- Chạy thử không đụng sheet: `npm run dev:mau` + `.env.mau.local` chứa `ADMIN_KEY` thử
+  (gitignored); ghi vào bộ nhớ, tắt server là mất.
+- Chưa có: xoá học sinh (xoá trên sheet), lịch sử ai sửa gì, đăng nhập Google.
 
 ### Đang chờ quyết định nghiệp vụ
 
-- **Trang /admin cho giáo viên nhập điểm** — đã chốt hướng: link bí mật (không đăng nhập),
-  mã bí mật nằm sau `#` trong URL, **kiểm tra ở server** (không phải ở đường dẫn trang),
-  lưu trong biến môi trường `ADMIN_KEY`. Server ghi vào sheet qua Apps Script `doPost`. Gom
-  kiểm tra quyền vào một hàm để sau này đổi sang đăng nhập Google mà không sửa giao diện.
 - **Google Form cho giáo viên nhập liệu.** Form tạo tab riêng với tiêu đề là nguyên
   văn câu hỏi. Hai cách khớp về `KetQua`: công thức `FILTER({...})` trong sheet, hoặc
   bảng ánh xạ trong `Code.gs`. Chi tiết ở README mục 10.

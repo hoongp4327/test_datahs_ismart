@@ -2,6 +2,7 @@ import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import { buildReport, normalizeCode, timHocSinh, type SheetData } from "./shared/bao-cao";
 import { cauHinhTuEnv, docDuLieu } from "./shared/nguon-du-lieu";
+import { xuLyQuanTri } from "./shared/quan-tri";
 
 /**
  * Giả lập Netlify Function ngay trong Vite dev server, dùng chung cách chọn nguồn
@@ -46,6 +47,31 @@ function apiGiaLap(env: Record<string, string>): Plugin {
         cache = { at: Date.now(), data };
         return [data, "nạp mới"] as const;
       };
+
+      // Trang quản trị: chuyển request Node thành Request chuẩn web rồi dùng đúng
+      // handler của Netlify Function, để chạy thử ở máy giống hệt production.
+      server.middlewares.use("/api/admin", async (req, res) => {
+        const chunks: Buffer[] = [];
+        for await (const c of req) chunks.push(c as Buffer);
+        const headers = new Headers();
+        for (const [k, v] of Object.entries(req.headers)) if (typeof v === "string") headers.set(k, v);
+        const coBody = req.method !== "GET" && req.method !== "HEAD";
+        const r = await xuLyQuanTri(
+          new Request("http://localhost" + (req.originalUrl ?? req.url ?? ""), {
+            method: req.method,
+            headers,
+            body: coBody ? Buffer.concat(chunks) : undefined,
+          }),
+          cauHinh,
+          env.ADMIN_KEY ?? ""
+        );
+        // Ghi xong thì bỏ cache để trang kết quả thấy điểm mới ngay.
+        if (coBody && r.ok) cache = null;
+        log.info(`  [admin] ${req.method} → ${r.status}`);
+        res.statusCode = r.status;
+        r.headers.forEach((v, k) => res.setHeader(k, v));
+        res.end(Buffer.from(await r.arrayBuffer()));
+      });
 
       server.middlewares.use("/api/result", async (req, res) => {
         const url = new URL(req.url ?? "", "http://localhost");
