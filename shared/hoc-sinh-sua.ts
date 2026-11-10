@@ -91,3 +91,63 @@ export function kiemTraHocSinh(dauVao: unknown): { loi: Record<string, string>; 
   if ("ho_ten" in vao && !sach.ho_ten) loi.ho_ten = "Cần nhập họ tên.";
   return { loi, sach };
 }
+
+/* ------------------------------------------------------------------ *
+ * Xung đột: người khác sửa cùng ô trong lúc mình đang sửa
+ * ------------------------------------------------------------------ */
+
+/** Tên dễ đọc của từng cột, để báo xung đột cho giáo viên. */
+export const NHAN_COT: Record<CotSua, string> = {
+  ho_ten: "Họ và tên",
+  lop: "Lớp",
+  giao_vien: "Giáo viên",
+  ngay_cham: "Ngày chấm",
+  diem_listening: "Điểm Listening",
+  diem_reading: "Điểm Reading",
+  diem_writing: "Điểm Writing",
+  diem_speaking: "Điểm Speaking",
+  option_listening: "Mô tả Listening",
+  option_reading: "Mô tả Reading",
+  option_writing: "Mô tả Writing",
+  option_speaking: "Mô tả Speaking",
+  mo_ta_rieng_speaking: "Nhận xét riêng Speaking",
+  pct_co_ban: "Kiến thức cơ bản",
+  pct_nang_cao: "Kiến thức nâng cao",
+  nhan_xet_lo_trinh: "Nhận xét lộ trình",
+};
+
+/** Chỉ giữ cột hợp lệ, giá trị dạng chuỗi, giới hạn độ dài. Không phải object → null. */
+export function lamSachTruoc(v: unknown): Partial<Record<CotSua, string>> | null {
+  if (!v || typeof v !== "object") return null;
+  const ra: Partial<Record<CotSua, string>> = {};
+  for (const cot of COT_SUA) {
+    const x = (v as Record<string, unknown>)[cot];
+    if (x !== undefined) ra[cot] = String(x ?? "").slice(0, 2000);
+  }
+  return ra;
+}
+
+/** Giống giongNhau() trong Code.gs: điểm so theo số ("12,5" = "12.5"), còn lại so chuỗi. */
+export function giongNhau(cot: string, a: string | undefined, b: string | undefined) {
+  const x = String(a ?? "").trim();
+  const y = String(b ?? "").trim();
+  if (x === y) return true;
+  if (cot.startsWith("diem_") && x && y) return Number(x.replace(",", ".")) === Number(y.replace(",", "."));
+  return false;
+}
+
+/** Các ô mà sheet giờ đã khác lúc mở — trả về giá trị hiện tại trên sheet. */
+export function timXungDot(
+  hienTai: Record<string, string>,
+  hs: HocSinhSua,
+  truoc: Partial<Record<CotSua, string>>
+): Partial<Record<CotSua, string>> {
+  const xd: Partial<Record<CotSua, string>> = {};
+  for (const cot of COT_SUA) {
+    if (!(cot in hs) || !(cot in truoc)) continue;
+    const ht = hienTai[cot] ?? "";
+    if (giongNhau(cot, ht, truoc[cot]) || giongNhau(cot, ht, hs[cot])) continue;
+    xd[cot] = ht;
+  }
+  return xd;
+}

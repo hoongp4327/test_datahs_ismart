@@ -385,7 +385,21 @@ Local ở `.env`, production ở Netlify → Site settings → Environment varia
 - Logic ở `shared/quan-tri.ts`, dùng chung bởi `netlify/functions/admin.mts` và dev server.
 - Chạy thử không đụng sheet: `npm run dev:mau` + `.env.mau.local` chứa `ADMIN_KEY` thử
   (gitignored); ghi vào bộ nhớ, tắt server là mất.
+- **Cảnh báo xung đột:** khi sửa học sinh có sẵn, trang gửi kèm `truoc` = giá trị lúc mở của
+  các ô đã đổi. Apps Script (trong khoá) so với sheet: ô nào khác → không ghi gì, trả
+  `CONFLICT` + giá trị hiện tại; giáo viên chọn "Dùng bản trên sheet" hoặc "Vẫn lưu bản của
+  tôi" (gửi lại với `truoc` = giá trị sheet). Dòng đã bị xoá → `GONE`, không tạo lại dòng.
+  Điểm so theo số (12,5 = 12.5). Logic có bản sao trong `shared/hoc-sinh-sua.ts` cho chế độ mẫu.
 - Chưa có: xoá học sinh (xoá trên sheet), lịch sử ai sửa gì, đăng nhập Google.
+
+### Giao diện trang kết quả (theo bản mẫu ismart_report_premium.html)
+
+- Nền gradient xanh, thẻ kính mờ, khối Level chữ lớn (Outfit) + vòng quỹ đạo, radar SVG sáng
+  trên nền tối, thẻ kỹ năng có ảnh minh hoạ, ô "điểm cao nhất / ưu tiên cải thiện".
+- CSS: `src/ket-qua.css`, gốc `.kq`, mọi class tiền tố `bc-`. Ảnh: `public/images/bao-cao/`
+  (lấy từ file mẫu, độ phân giải thấp ~100 px — muốn nét hơn thì tạo lại bằng Higgsfield).
+- Font: Be Vietnam Pro + Outfit (trang kết quả), Montserrat (tra cứu), Nunito (quản trị).
+- Trang tra cứu KHÔNG đổi.
 
 ### Đang chờ quyết định nghiệp vụ
 

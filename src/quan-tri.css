@@ -288,3 +288,19 @@
 @media (prefers-reduced-motion: reduce) {
   .qt *, .qt *::before, .qt *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
 }
+
+/* ------------------------------ Xung đột ------------------------------ */
+
+.qt-xung-dot {
+  display: grid; gap: 10px; padding: 18px 20px;
+  border: 1.5px solid #f3b35b; border-radius: var(--radius); background: #fff8ec;
+}
+.qt-xung-dot h2 { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 800; color: #8a4b00; }
+.qt-xung-dot p { font-size: 14px; color: var(--ink-2); }
+.qt-xung-dot table { width: 100%; border-collapse: collapse; font-size: 14px; background: #fff; border-radius: 8px; overflow: hidden; }
+.qt-xung-dot th, .qt-xung-dot td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #f1e3cc; vertical-align: top; }
+.qt-xung-dot th { font-size: 12px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; background: #fffdf8; }
+.qt-xung-dot td.la-sheet { font-weight: 700; color: #8a4b00; }
+.qt-xung-dot td.la-toi { font-weight: 700; color: var(--navy); }
+.qt-xung-dot td i { color: var(--muted); font-weight: 500; }
+.qt-xung-dot-nut { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }

@@ -107,7 +107,7 @@ function doPost(e) {
     return traVeJson({ error: 'UNAUTHORIZED' });
   }
   if (body.action === 'luu') {
-    return traVeJson(luuHocSinh(body.hocSinh || {}));
+    return traVeJson(luuHocSinh(body.hocSinh || {}, body.truoc || null));
   }
   return traVeJson({ error: 'UNKNOWN_ACTION' });
 }
@@ -123,8 +123,12 @@ function chuanKhoa(v) {
  * Cập nhật học sinh theo mã (dòng CUỐI CÙNG trùng mã — giống cách website đọc),
  * chưa có thì thêm dòng mới. Khoá script để hai giáo viên lưu cùng lúc không ghi đè
  * lên cùng một dòng trống.
+ *
+ * truoc = giá trị các ô LÚC GIÁO VIÊN MỞ học sinh này. Ô nào trên sheet giờ đã khác
+ * (người khác vừa sửa) thì KHÔNG ghi gì cả, trả CONFLICT kèm giá trị hiện tại để trang
+ * quản trị hỏi lại giáo viên.
  */
-function luuHocSinh(hs) {
+function luuHocSinh(hs, truoc) {
   var ma = String(hs.ma_hoc_sinh || '').trim().toUpperCase();
   if (!/^[A-Z0-9][A-Z0-9-]{3,19}$/.test(ma)) {
     return { error: 'INVALID', loi: { ma_hoc_sinh: 'Mã học sinh không hợp lệ.' } };
@@ -161,6 +165,25 @@ function luuHocSinh(hs) {
       }
     }
     var moi = dong < 0;
+
+    if (truoc) {
+      // Đang sửa học sinh có sẵn mà dòng đã biến mất → có người xoá, đừng tạo lại dòng thiếu.
+      if (moi) return { error: 'GONE' };
+      var hang = sh.getRange(dong, 1, 1, soCot).getDisplayValues()[0];
+      var xungDot = {};
+      for (var k = 0; k < COT_GHI.length; k++) {
+        var tenCot = COT_GHI[k];
+        if (!(tenCot in hs) || !(tenCot in truoc)) continue;
+        var viTri = tieuDe.indexOf(tenCot);
+        if (viTri < 0) continue;
+        var hienTai = hang[viTri];
+        // Sheet vẫn như lúc mở, hoặc người kia đổi đúng thành giá trị mình định ghi → không xung đột.
+        if (giongNhau(tenCot, hienTai, truoc[tenCot]) || giongNhau(tenCot, hienTai, hs[tenCot])) continue;
+        xungDot[tenCot] = hienTai;
+      }
+      if (Object.keys(xungDot).length) return { error: 'CONFLICT', xungDot: xungDot };
+    }
+
     if (moi) {
       dong = dongCuoi + 1;
       sh.getRange(dong, cotMa + 1).setValue("'" + ma);
@@ -178,6 +201,17 @@ function luuHocSinh(hs) {
   } finally {
     lock.releaseLock();
   }
+}
+
+/** So hai giá trị ô: điểm so theo số ("12,5" = "12.5"), còn lại so chuỗi đã cắt khoảng trắng. */
+function giongNhau(ten, a, b) {
+  var x = String(a == null ? '' : a).trim();
+  var y = String(b == null ? '' : b).trim();
+  if (x === y) return true;
+  if (ten.indexOf('diem_') === 0 && x !== '' && y !== '') {
+    return Number(x.replace(',', '.')) === Number(y.replace(',', '.'));
+  }
+  return false;
 }
 
 /**

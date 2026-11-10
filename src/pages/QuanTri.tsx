@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DIEM_TOI_DA, KY_NANG, TONG_TOI_DA, docDiem, normalizeCode, timLevel, timMoTa, type Row } from "../../shared/bao-cao";
-import { COT_SUA, KY_TU_MA, kiemTraHocSinh, type CotSua, type HocSinhSua } from "../../shared/hoc-sinh-sua";
+import { COT_SUA, KY_TU_MA, NHAN_COT, kiemTraHocSinh, type CotSua } from "../../shared/hoc-sinh-sua";
 import Icon from "../components/Icon";
 import { giaoDienKyNang } from "../components/kyNangGiaoDien";
 import "../quan-tri.css";
@@ -84,6 +84,8 @@ export default function QuanTri() {
   const [loi, setLoi] = useState<Record<string, string>>({});
   const [dangLuu, setDangLuu] = useState(false);
   const [thongBao, setThongBao] = useState<{ loai: "ok" | "loi"; chu: string } | null>(null);
+  /** Ô bị người khác sửa trong lúc mình đang sửa → giá trị hiện tại trên sheet. */
+  const [xungDot, setXungDot] = useState<Partial<Record<CotSua, string>> | null>(null);
 
   useEffect(() => {
     document.title = "Quản trị kết quả — iSMART";
@@ -176,6 +178,7 @@ export default function QuanTri() {
     setGoc(tuRow(r));
     setLoi({});
     setThongBao(null);
+    setXungDot(null);
   };
 
   const themMoi = () => {
@@ -189,6 +192,7 @@ export default function QuanTri() {
     setGoc(formTrong(ma));
     setLoi({});
     setThongBao(null);
+    setXungDot(null);
   };
 
   const dong = () => {
@@ -196,6 +200,7 @@ export default function QuanTri() {
     setChon(null);
     setForm(null);
     setGoc(null);
+    setXungDot(null);
   };
 
   const sua = (cot: CotSua, v: string) => {
@@ -203,12 +208,57 @@ export default function QuanTri() {
     if (loi[cot]) setLoi(({ [cot]: _, ...con }) => con);
   };
 
-  const luu = async () => {
+  /** Cập nhật một học sinh trong danh sách đang hiển thị, khỏi chờ đọc lại cả sheet. */
+  const vaDanhSach = (ma: string, giaTri: Partial<Form>) =>
+    setDuLieu((d) => {
+      if (!d) return d;
+      const ds = d.hocSinh.slice();
+      let i = ds.length - 1;
+      while (i >= 0 && normalizeCode(ds[i].ma_hoc_sinh) !== normalizeCode(ma)) i--;
+      if (i >= 0) ds[i] = { ...ds[i], ...(giaTri as Row) };
+      else ds.push({ ...(giaTri as Row) });
+      return { ...d, hocSinh: ds };
+    });
+
+  /** Xung đột → lấy giá trị người khác vừa lưu trên sheet, bỏ phần mình sửa ở các ô đó. */
+  const dungBanTrenSheet = () => {
+    if (!form || !goc || !xungDot) return;
+    const f = { ...form };
+    const g = { ...goc };
+    for (const [c, v] of Object.entries(xungDot) as [CotSua, string][]) {
+      f[c] = v;
+      g[c] = v;
+    }
+    setForm(f);
+    setGoc(g);
+    vaDanhSach(f.ma_hoc_sinh, xungDot);
+    setLoi({});
+    setXungDot(null);
+    setThongBao({ loai: "ok", chu: "Đã lấy giá trị mới nhất trên sheet cho các ô bị trùng." });
+  };
+
+  /** Xung đột → vẫn ghi bản của mình: coi giá trị trên sheet là "lúc mở" rồi lưu lại. */
+  const ghiDeBanCuaToi = () => {
+    if (!goc || !xungDot) return;
+    const g = { ...goc, ...xungDot } as Form;
+    setGoc(g);
+    setXungDot(null);
+    luu(g);
+  };
+
+  const luu = async (gocDung: Form | null = goc) => {
     if (!form) return;
     // Mới thì gửi đủ cột; đang sửa thì chỉ gửi cột đã đổi, để không ghi đè
     // những gì người khác vừa sửa ở cột khác trên sheet.
     const gui: Record<string, string> = { ma_hoc_sinh: form.ma_hoc_sinh };
-    for (const c of COT_SUA) if (laMoi || form[c] !== goc?.[c]) gui[c] = form[c];
+    // Giá trị LÚC MỞ của các ô đã đổi — server so với sheet để phát hiện người khác vừa sửa.
+    const truoc: Record<string, string> = {};
+    for (const c of COT_SUA) {
+      if (laMoi || form[c] !== gocDung?.[c]) {
+        gui[c] = form[c];
+        if (!laMoi && gocDung) truoc[c] = gocDung[c];
+      }
+    }
     if (laMoi) gui.ho_ten = form.ho_ten;
 
     const { loi: loiKt, sach } = kiemTraHocSinh(gui);
@@ -221,27 +271,36 @@ export default function QuanTri() {
     setDangLuu(true);
     setThongBao(null);
     try {
-      const r = await goiApi<{ ok?: boolean; nguon?: string; message?: string; loi?: Record<string, string> }>(khoa, {
+      const r = await goiApi<{
+        ok?: boolean;
+        error?: string;
+        nguon?: string;
+        message?: string;
+        loi?: Record<string, string>;
+        xungDot?: Partial<Record<CotSua, string>>;
+      }>(khoa, {
         method: "POST",
-        body: JSON.stringify({ hocSinh: sach }),
+        body: JSON.stringify({ hocSinh: sach, ...(laMoi ? {} : { truoc }) }),
       });
       if (!r.ok) {
+        if (r.json.error === "CONFLICT" && r.json.xungDot) {
+          const xd = r.json.xungDot;
+          setXungDot(xd);
+          setLoi(
+            Object.fromEntries(
+              Object.entries(xd).map(([c, v]) => [c, "Vừa bị đổi trên sheet thành: " + (v || "(trống)")])
+            )
+          );
+          setThongBao({ loai: "loi", chu: "Chưa lưu — có người vừa sửa cùng ô. Chọn cách xử lý bên dưới." });
+          return;
+        }
         if (r.json.loi) setLoi(r.json.loi);
         setThongBao({ loai: "loi", chu: r.json.message ?? "Chưa lưu được." });
         return;
       }
-      // Cập nhật danh sách tại chỗ, khỏi chờ đọc lại cả sheet.
       const daLuu = { ...form } as Form;
       for (const [k, v] of Object.entries(sach)) if (v !== undefined) daLuu[k as keyof Form] = v;
-      setDuLieu((d) => {
-        if (!d) return d;
-        const ds = d.hocSinh.slice();
-        let i = ds.length - 1;
-        while (i >= 0 && normalizeCode(ds[i].ma_hoc_sinh) !== normalizeCode(daLuu.ma_hoc_sinh)) i--;
-        if (i >= 0) ds[i] = { ...ds[i], ...daLuu };
-        else ds.push(daLuu);
-        return { ...d, hocSinh: ds };
-      });
+      vaDanhSach(daLuu.ma_hoc_sinh, daLuu);
       setForm(daLuu);
       setGoc(daLuu);
       setLaMoi(false);
@@ -386,7 +445,7 @@ export default function QuanTri() {
               className="qt-form"
               onSubmit={(e) => {
                 e.preventDefault();
-                luu();
+                if (!xungDot) luu();
               }}
             >
               <div className="qt-form-dau">
@@ -504,6 +563,41 @@ export default function QuanTri() {
                 </O>
               </section>
 
+              {xungDot && form ? (
+                <section className="qt-xung-dot" role="alert">
+                  <h2>
+                    <Icon ten="alert" size={18} /> Có người vừa sửa cùng ô với bạn
+                  </h2>
+                  <p>Trong lúc bạn đang sửa, các ô sau đã được lưu giá trị khác trên sheet. Chưa có gì bị ghi đè.</p>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Ô</th>
+                        <th>Trên sheet bây giờ</th>
+                        <th>Bạn nhập</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(Object.entries(xungDot) as [CotSua, string][]).map(([c, v]) => (
+                        <tr key={c}>
+                          <td>{NHAN_COT[c]}</td>
+                          <td className="la-sheet">{v || <i>(trống)</i>}</td>
+                          <td className="la-toi">{form[c] || <i>(trống)</i>}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <div className="qt-xung-dot-nut">
+                    <button type="button" className="qt-nut qt-nut-phu" onClick={dungBanTrenSheet}>
+                      Dùng bản trên sheet
+                    </button>
+                    <button type="button" className="qt-nut qt-nut-chinh" onClick={ghiDeBanCuaToi} disabled={dangLuu}>
+                      Vẫn lưu bản của tôi
+                    </button>
+                  </div>
+                </section>
+              ) : null}
+
               <div className="qt-thanh-luu">
                 <span className={`qt-thong-bao${thongBao ? ` is-${thongBao.loai}` : ""}`} role="status">
                   {thongBao ? (
@@ -527,6 +621,7 @@ export default function QuanTri() {
                       setForm(goc);
                       setLoi({});
                       setThongBao(null);
+                      setXungDot(null);
                     }}
                   >
                     Hoàn tác
@@ -535,7 +630,7 @@ export default function QuanTri() {
                 <button
                   type="submit"
                   className="qt-nut qt-nut-chinh"
-                  disabled={dangLuu || !duLieu.coTheGhi || (!doiChua && !laMoi)}
+                  disabled={dangLuu || !duLieu.coTheGhi || Boolean(xungDot) || (!doiChua && !laMoi)}
                 >
                   {dangLuu ? <span className="qt-spinner qt-spinner-nho" aria-hidden="true" /> : <Icon ten="check" size={16} />}
                   {dangLuu ? "Đang lưu…" : "Lưu vào sheet"}

@@ -10,7 +10,7 @@
  */
 import { createHash, timingSafeEqual } from "node:crypto";
 import { normalizeCode, type Row } from "./bao-cao";
-import { COT_SUA, kiemTraHocSinh, type HocSinhSua } from "./hoc-sinh-sua";
+import { COT_SUA, kiemTraHocSinh, lamSachTruoc, timXungDot, type CotSua, type HocSinhSua } from "./hoc-sinh-sua";
 import { docDuLieu, type CauHinh } from "./nguon-du-lieu";
 import duLieuMau from "./du-lieu-mau";
 
@@ -33,20 +33,31 @@ function dungKhoa(guiLen: string, khoa: string) {
 /** Netlify cắt function ở 10 s — phải tự dừng trước để còn trả lời được. */
 const TIMEOUT_GHI_MS = 9_000;
 
+type Truoc = Partial<Record<CotSua, string>> | null;
+
 class LoiGhi extends Error {
-  constructor(message: string, public trangThai = 502, public chiTiet?: Record<string, string>) {
+  constructor(
+    message: string,
+    public trangThai = 502,
+    public chiTiet?: Record<string, string>,
+    public ma = "WRITE_FAILED",
+    public xungDot?: Partial<Record<string, string>>
+  ) {
     super(message);
   }
 }
 
-async function ghiQuaAppsScript(ch: CauHinh, hs: HocSinhSua) {
+const LOI_XUNG_DOT = "Trong lúc bạn sửa, người khác đã đổi một số ô của học sinh này.";
+const LOI_DA_XOA = "Học sinh này không còn trên sheet (có thể vừa bị xoá). Bấm Tải lại danh sách.";
+
+async function ghiQuaAppsScript(ch: CauHinh, hs: HocSinhSua, truoc: Truoc) {
   let res: Response;
   try {
     res = await fetch(ch.appsScriptUrl, {
       method: "POST",
       // text/plain để Apps Script nhận nguyên chuỗi trong e.postData.contents
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ token: ch.appsScriptToken, action: "luu", hocSinh: hs }),
+      body: JSON.stringify({ token: ch.appsScriptToken, action: "luu", hocSinh: hs, truoc }),
       redirect: "follow",
       signal: AbortSignal.timeout(TIMEOUT_GHI_MS),
     });
@@ -61,7 +72,14 @@ async function ghiQuaAppsScript(ch: CauHinh, hs: HocSinhSua) {
   }
 
   const text = await res.text();
-  let json: { ok?: boolean; error?: string; message?: string; loi?: Record<string, string>; moi?: boolean };
+  let json: {
+    ok?: boolean;
+    error?: string;
+    message?: string;
+    loi?: Record<string, string>;
+    xungDot?: Record<string, string>;
+    moi?: boolean;
+  };
   try {
     json = JSON.parse(text);
   } catch {
@@ -77,20 +95,27 @@ async function ghiQuaAppsScript(ch: CauHinh, hs: HocSinhSua) {
     throw new LoiGhi("Apps Script chưa có chức năng ghi — dán Code.gs mới rồi triển khai phiên bản mới.");
   }
   if (json.error === "INVALID") throw new LoiGhi("Dữ liệu chưa hợp lệ.", 400, json.loi);
+  if (json.error === "CONFLICT") throw new LoiGhi(LOI_XUNG_DOT, 409, undefined, "CONFLICT", json.xungDot);
+  if (json.error === "GONE") throw new LoiGhi(LOI_DA_XOA, 409, undefined, "GONE");
   if (json.error) throw new LoiGhi(json.message || `Apps Script báo lỗi: ${json.error}`);
   return { moi: Boolean(json.moi) };
 }
 
 /** Chế độ dữ liệu mẫu: ghi vào bộ nhớ để thử giao diện, tắt server là mất. */
-function ghiVaoMau(hs: HocSinhSua) {
+function ghiVaoMau(hs: HocSinhSua, truoc: Truoc) {
   const ds = (duLieuMau as { ketQua: Row[] }).ketQua;
   const ma = normalizeCode(hs.ma_hoc_sinh);
   for (let i = ds.length - 1; i >= 0; i--) {
     if (normalizeCode(ds[i].ma_hoc_sinh) === ma) {
+      if (truoc) {
+        const xd = timXungDot(ds[i], hs, truoc);
+        if (Object.keys(xd).length) throw new LoiGhi(LOI_XUNG_DOT, 409, undefined, "CONFLICT", xd);
+      }
       ds[i] = { ...ds[i], ...(hs as Row) };
       return { moi: false };
     }
   }
+  if (truoc) throw new LoiGhi(LOI_DA_XOA, 409, undefined, "GONE");
   ds.push({ ...(Object.fromEntries(COT_SUA.map((c) => [c, ""])) as Row), ...(hs as Row) });
   return { moi: true };
 }
@@ -139,7 +164,7 @@ export async function xuLyQuanTri(req: Request, ch: CauHinh, adminKey: string): 
     }
 
     if (req.method === "POST") {
-      let body: { hocSinh?: unknown };
+      let body: { hocSinh?: unknown; truoc?: unknown };
       try {
         const text = await req.text();
         if (text.length > 20_000) return traJson({ error: "TOO_LARGE", message: "Dữ liệu quá lớn." }, 413);
@@ -159,14 +184,15 @@ export async function xuLyQuanTri(req: Request, ch: CauHinh, adminKey: string): 
           501
         );
       }
-      const { moi } = dungMau ? ghiVaoMau(sach) : await ghiQuaAppsScript(ch, sach);
+      const truoc = lamSachTruoc(body.truoc);
+      const { moi } = dungMau ? ghiVaoMau(sach, truoc) : await ghiQuaAppsScript(ch, sach, truoc);
       return traJson({ ok: true, moi, ma_hoc_sinh: sach.ma_hoc_sinh, nguon: dungMau ? "dữ liệu mẫu" : "Apps Script" });
     }
 
     return traJson({ error: "METHOD_NOT_ALLOWED" }, 405);
   } catch (err) {
     if (err instanceof LoiGhi) {
-      return traJson({ error: "WRITE_FAILED", message: err.message, loi: err.chiTiet }, err.trangThai);
+      return traJson({ error: err.ma, message: err.message, loi: err.chiTiet, xungDot: err.xungDot }, err.trangThai);
     }
     console.error("[quan-tri]", err);
     return traJson({ error: "SERVER_ERROR", message: (err as Error).message || "Lỗi máy chủ." }, 500);

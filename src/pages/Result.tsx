@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
-import { KqFooter, KqTopbar } from "../components/KetQuaLayout";
+import { KqTopbar } from "../components/KetQuaLayout";
 import Icon from "../components/Icon";
 import Report from "../components/Report";
 import type { BaoCao } from "../types";
@@ -62,39 +62,38 @@ export default function Result() {
   }, [tt]);
 
   return (
-    <div className="kq kq-page">
-      <KqTopbar />
-      <main className="result">
-        {tt.loai === "dang-tai" ? (
-          <div className="kq-state" role="status">
-            <span className="kq-spinner" aria-hidden="true" />
-            Đang tải kết quả…
-          </div>
-        ) : null}
+    <div className="kq">
+      <KqTopbar coIn={tt.loai === "xong"} />
+      <main className="bc-main">
+        <div className="bc-wrap">
+          <Link to="/" className="bc-back">
+            <Icon ten="arrowLeft" size={15} />
+            Tra cứu mã khác
+          </Link>
 
-        {tt.loai === "loi" ? (
-          <div className="kq-state">
-            <p>{tt.message}</p>
-            <Link to="/" className="btn-cam">
-              <Icon ten="arrowLeft" size={18} />
-              Nhập lại mã
-            </Link>
-          </div>
-        ) : null}
-
-        {tt.loai === "xong" ? (
-          <>
-            <Report bc={tt.baoCao} />
-            <div className="kq-actions">
-              <button className="btn-pill" onClick={() => window.print()}>
-                <Icon ten="printer" size={18} />
-                In hoặc lưu PDF
-              </button>
+          {tt.loai === "dang-tai" ? (
+            <div className="bc-state" role="status">
+              <span className="bc-spinner" aria-hidden="true" />
+              Đang tải kết quả…
             </div>
-          </>
-        ) : null}
+          ) : null}
+
+          {tt.loai === "loi" ? (
+            <div className="bc-state">
+              <p>{tt.message}</p>
+              <Link to="/" className="bc-btn bc-btn-chinh">
+                <Icon ten="arrowLeft" size={16} />
+                Nhập lại mã
+              </Link>
+            </div>
+          ) : null}
+
+          {tt.loai === "xong" ? <Report bc={tt.baoCao} /> : null}
+        </div>
+
+        <div className="bc-waves" aria-hidden="true" />
+        <img src="/images/bao-cao/chong-sach.webp" className="bc-books" alt="" aria-hidden="true" />
       </main>
-      <KqFooter />
     </div>
   );
 }
