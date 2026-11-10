@@ -8,8 +8,9 @@ import "../quan-tri.css";
 /**
  * Trang quản trị — giáo viên chọn học sinh, nhập điểm, lưu thẳng vào Google Sheet.
  *
- * Link dạng /quan-tri#<ADMIN_KEY>. Phần sau # không gửi lên server, trang tự đọc rồi
- * gửi qua header x-admin-key. Sai khoá thì server từ chối mọi thao tác.
+ * Server chưa đặt ADMIN_KEY thì mở thẳng /quan-tri là dùng được. Có đặt ADMIN_KEY thì
+ * cần link /quan-tri#<khoá>: phần sau # không gửi lên server, trang tự đọc rồi gửi qua
+ * header x-admin-key. Sai khoá thì server từ chối mọi thao tác.
  */
 
 type MoTaOption = { ky_nang: string; option: string; diem_tu: string; mo_ta: string };
@@ -55,7 +56,7 @@ function tongVaLevel(f: Form, d: DuLieu | null) {
 async function goiApi<T>(khoa: string, init?: RequestInit): Promise<{ ok: boolean; status: number; json: T }> {
   const res = await fetch("/api/admin", {
     ...init,
-    headers: { "x-admin-key": khoa, "Content-Type": "application/json", ...(init?.headers ?? {}) },
+    headers: { ...(khoa ? { "x-admin-key": khoa } : {}), "Content-Type": "application/json", ...(init?.headers ?? {}) },
   });
   let json: T;
   try {
@@ -93,10 +94,6 @@ export default function QuanTri() {
   }, []);
 
   const taiDuLieu = useCallback(async () => {
-    if (!khoa) {
-      setTrangThai("khoa-sai");
-      return;
-    }
     setDangTaiLai(true);
     try {
       const r = await goiApi<DuLieu & { message?: string }>(khoa);

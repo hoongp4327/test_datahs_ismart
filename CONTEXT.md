@@ -371,9 +371,10 @@ Local ở `.env`, production ở Netlify → Site settings → Environment varia
 
 ### Trang quản trị `/quan-tri` (đã làm)
 
-- Link: `https://<site>/quan-tri#<ADMIN_KEY>`. Phần sau `#` không gửi lên server; trang đọc
-  rồi gửi qua header `x-admin-key`, server so với env `ADMIN_KEY` (≥16 ký tự, so bằng
-  SHA-256 + timingSafeEqual). Thiếu `ADMIN_KEY` = trang tắt. Đổi khoá = mọi link cũ hết hạn.
+- **Hiện đang mở tự do** (theo yêu cầu, giai đoạn đầu): không đặt env `ADMIN_KEY` thì
+  `/quan-tri` ai vào cũng sửa được điểm. Bật bảo vệ = đặt `ADMIN_KEY` (≥16 ký tự) rồi
+  deploy lại, không cần sửa code; link khi đó là `https://<site>/quan-tri#<ADMIN_KEY>`
+  (phần sau `#` gửi qua header `x-admin-key`, so bằng SHA-256 + timingSafeEqual).
 - `GET /api/admin` đọc cả 3 tab (không cache). `POST /api/admin` {hocSinh} → kiểm tra
   (`shared/hoc-sinh-sua.ts`, dùng chung trình duyệt + server) → Apps Script `doPost`
   action `luu`: cập nhật dòng CUỐI trùng mã, chưa có thì thêm dòng; chỉ ghi cột trong

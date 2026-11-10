@@ -3,9 +3,10 @@
  * Google Sheet vẫn là nơi lưu — trang này chỉ đọc qua Apps Script (doGet) và ghi
  * qua Apps Script (doPost). Dùng chung giữa Netlify Function và Vite dev server.
  *
- * Bảo vệ: không đăng nhập, chỉ có một khoá bí mật ADMIN_KEY nằm sau dấu # của link
- * quản trị (phần sau # không bao giờ gửi lên server hay lọt vào log). Trình duyệt
- * gửi khoá qua header x-admin-key, server so với biến môi trường ADMIN_KEY.
+ * Bảo vệ — tuỳ biến môi trường ADMIN_KEY:
+ *   - KHÔNG đặt  → trang mở tự do, ai biết đường dẫn /quan-tri cũng sửa được điểm.
+ *   - Có đặt     → bắt buộc link /quan-tri#<ADMIN_KEY>. Phần sau # không gửi lên server
+ *                  hay lọt vào log; trình duyệt gửi khoá qua header x-admin-key.
  */
 import { createHash, timingSafeEqual } from "node:crypto";
 import { normalizeCode, type Row } from "./bao-cao";
@@ -110,10 +111,10 @@ const traJson = (body: unknown, status = 200) =>
   });
 
 export async function xuLyQuanTri(req: Request, ch: CauHinh, adminKey: string): Promise<Response> {
-  if (!adminKey || adminKey.length < 16) {
-    return traJson({ error: "DISABLED", message: "Trang quản trị chưa bật (thiếu ADMIN_KEY)." }, 503);
+  if (adminKey && adminKey.length < 16) {
+    return traJson({ error: "WEAK_KEY", message: "ADMIN_KEY quá ngắn (cần ít nhất 16 ký tự)." }, 503);
   }
-  if (!dungKhoa(req.headers.get("x-admin-key") ?? "", adminKey)) {
+  if (adminKey && !dungKhoa(req.headers.get("x-admin-key") ?? "", adminKey)) {
     return traJson({ error: "UNAUTHORIZED", message: "Link quản trị không đúng hoặc đã được đổi." }, 401);
   }
 
