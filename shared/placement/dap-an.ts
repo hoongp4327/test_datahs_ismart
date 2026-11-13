@@ -17,18 +17,19 @@ type DapAnCau =
 
 export const DAP_AN: Record<string, DapAnCau> = {
   // ---------- LISTENING (10 câu × 2 điểm = 20) ----------
-  // TODO: điền đáp án nghe theo audio gốc. Part 1 & 2: chữ cái A–F / A–C.
-  "L1-1": { diem: 2, dung: null },
-  "L1-2": { diem: 2, dung: null },
-  "L1-3": { diem: 2, dung: null },
-  "L2-1": { diem: 2, dung: null }, // A dance · B ride a bike · C swim
-  "L2-2": { diem: 2, dung: null }, // A eggs · B chicken · C rice
-  "L2-3": { diem: 2, dung: null }, // A Science · B English · C Maths
-  "L2-4": { diem: 2, dung: null }, // A a red dress · B black trousers · C a blue T-shirt
+  // Đáp án do trung tâm cung cấp theo audio gốc.
+  // Part 1 — hình: A khỉ, B đi siêu thị, C từ điển A-Z, D ghế, E tóc xoăn, F ô tô đỏ
+  "L1-1": { diem: 2, dung: ["D"] },
+  "L1-2": { diem: 2, dung: ["A"] },
+  "L1-3": { diem: 2, dung: ["E"] },
+  "L2-1": { diem: 2, dung: ["C"] }, // A dance · B ride a bike · C swim
+  "L2-2": { diem: 2, dung: ["A"] }, // A eggs · B chicken · C rice
+  "L2-3": { diem: 2, dung: ["C"] }, // A Science · B English · C Maths
+  "L2-4": { diem: 2, dung: ["C"] }, // A a red dress · B black trousers · C a blue T-shirt
   // Part 3: liệt kê mọi cách viết chấp nhận được, ví dụ ["8", "eight"].
-  "L3-1": { diem: 2, dung: null },
-  "L3-2": { diem: 2, dung: null },
-  "L3-3": { diem: 2, dung: null },
+  "L3-1": { diem: 2, dung: ["park"] }, // National Park
+  "L3-2": { diem: 2, dung: ["uniform"] },
+  "L3-3": { diem: 2, dung: ["8", "eight"] }, // 8 a.m. — chữ hay số đều đúng
 
   // ---------- READING (20) ----------
   // Part 1: 2 câu × 2 = 4. Hình: A xe đạp, B trực thăng, C giá sách, D áo khoác, E thỏ, F bác sĩ
