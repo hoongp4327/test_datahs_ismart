@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import { buildReport, normalizeCode, timHocSinh, type SheetData } from "./shared/bao-cao";
 import { cauHinhTuEnv, docDuLieu } from "./shared/nguon-du-lieu";
 import { xuLyQuanTri } from "./shared/quan-tri";
+import { xuLyNopBai } from "./shared/placement/nop-bai";
 
 /**
  * Giả lập Netlify Function ngay trong Vite dev server, dùng chung cách chọn nguồn
@@ -68,6 +69,24 @@ function apiGiaLap(env: Record<string, string>): Plugin {
         // Ghi xong thì bỏ cache để trang kết quả thấy điểm mới ngay.
         if (coBody && r.ok) cache = null;
         log.info(`  [admin] ${req.method} → ${r.status}`);
+        res.statusCode = r.status;
+        r.headers.forEach((v, k) => res.setHeader(k, v));
+        res.end(Buffer.from(await r.arrayBuffer()));
+      });
+
+      // Placement test: học sinh nộp bài → chấm → ghi tab PlacementTest.
+      server.middlewares.use("/api/placement", async (req, res) => {
+        const chunks: Buffer[] = [];
+        for await (const c of req) chunks.push(c as Buffer);
+        const r = await xuLyNopBai(
+          new Request("http://localhost/api/placement", {
+            method: req.method,
+            headers: { "content-type": "application/json" },
+            body: req.method === "POST" ? Buffer.concat(chunks) : undefined,
+          }),
+          cauHinh,
+          (m) => log.info("  " + m)
+        );
         res.statusCode = r.status;
         r.headers.forEach((v, k) => res.setHeader(k, v));
         res.end(Buffer.from(await r.arrayBuffer()));

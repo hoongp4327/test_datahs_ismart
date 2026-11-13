@@ -157,9 +157,10 @@ export async function xuLyQuanTri(req: Request, ch: CauHinh, adminKey: string): 
           ky_nang: r.ky_nang,
           option: r.option,
           diem_tu: r.diem_tu,
+          khoang: r.khoang ?? "",
           mo_ta: r.mo_ta,
         })),
-        thangLevel: data.thangLevel.map((r) => ({ level: r.level, diem_tu: r.diem_tu })),
+        thangLevel: data.thangLevel.map((r) => ({ level: r.level, diem_tu: r.diem_tu, lop_xep: r.lop_xep ?? "" })),
       });
     }
 

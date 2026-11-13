@@ -42,9 +42,10 @@ const NHAN = [
   { x: CX - R - 30, y: 190, neo: "end" as const }, // trái
 ];
 
-function Radar({ kyNang, diemToiDa }: { kyNang: KyNangKetQua[]; diemToiDa: number }) {
+/** Mỗi trục co theo điểm tối đa của kỹ năng đó (Writing 15, còn lại 20), nên vòng lưới ghi %. */
+function Radar({ kyNang }: { kyNang: KyNangKetQua[] }) {
   const dinh = kyNang.map((k, i) => {
-    const r = (Math.min(diemToiDa, Math.max(0, k.diem ?? 0)) / diemToiDa) * R;
+    const r = (Math.min(k.toiDa, Math.max(0, k.diem ?? 0)) / k.toiDa) * R;
     return { x: CX + HUONG[i][0] * r, y: CY + HUONG[i][1] * r };
   });
   const diem = dinh.map((p) => `${p.x},${p.y}`).join(" ");
@@ -85,7 +86,7 @@ function Radar({ kyNang, diemToiDa }: { kyNang: KyNangKetQua[]; diemToiDa: numbe
       <path d={`M ${CX - R} ${CY} H ${CX + R} M ${CX} ${CY - R} V ${CY + R}`} className="bc-radar-truc" />
       {[0.25, 0.5, 0.75, 1].map((k) => (
         <text key={k} x={CX + 9} y={CY - R * k + 4} className="bc-radar-so">
-          {so(diemToiDa * k)}
+          {k * 100}%
         </text>
       ))}
 
@@ -120,7 +121,7 @@ function Radar({ kyNang, diemToiDa }: { kyNang: KyNangKetQua[]; diemToiDa: numbe
             </text>
             <text x={n.x} y={n.y + 79} textAnchor={n.neo} className="bc-radar-diem" fill={MAU_DINH[i]}>
               <tspan>{k.diem === null ? "—" : so(k.diem)}</tspan>
-              <tspan className="bc-radar-mau">/{diemToiDa}</tspan>
+              <tspan className="bc-radar-mau">/{k.toiDa}</tspan>
             </text>
           </g>
         );
@@ -187,7 +188,7 @@ export default function SkillHero({ bc }: { bc: BaoCao }) {
   const tongDangDem = hienSoDem(useDemSo(bc.tongDiem, 300, 900), bc.tongDiem);
   const duDiem = bc.tongDiem !== null;
   const level = bc.level?.ten ?? "—";
-  const moTaRadar = bc.kyNang.map((k) => `${k.ten} ${k.diem ?? "chưa có"}/${bc.diemToiDa}`).join(", ");
+  const moTaRadar = bc.kyNang.map((k) => `${k.ten} ${k.diem ?? "chưa có"}/${k.toiDa}`).join(", ");
 
   return (
     <section className="bc-hero" aria-label="Kết quả tổng quan">
@@ -211,6 +212,11 @@ export default function SkillHero({ bc }: { bc: BaoCao }) {
           <strong>{tongDangDem}</strong>
           <span>/ {bc.tongToiDa} điểm</span>
         </div>
+        {bc.level?.lop ? (
+          <div className="bc-lop-xep">
+            Xếp lớp <b>{bc.level.lop}</b>
+          </div>
+        ) : null}
         <p className="bc-description">
           {bc.level?.moTa ||
             (duDiem ? "" : "Chưa đủ điểm cả 4 kỹ năng nên chưa xếp Level. Trung tâm sẽ cập nhật khi giáo viên chấm xong.")}
@@ -221,7 +227,7 @@ export default function SkillHero({ bc }: { bc: BaoCao }) {
       <div className="bc-radar-col">
         {duDiem ? (
           <div className="bc-radar" role="img" aria-label={`Biểu đồ 4 kỹ năng: ${moTaRadar}`}>
-            <Radar kyNang={bc.kyNang} diemToiDa={bc.diemToiDa} />
+            <Radar kyNang={bc.kyNang} />
           </div>
         ) : (
           <div className="bc-radar-trong">

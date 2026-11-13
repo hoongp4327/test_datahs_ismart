@@ -1,7 +1,8 @@
 /**
  * Apps Script gắn trong Google Sheet:
  *   - doGet:             trả dữ liệu 3 tab dạng JSON cho website
- *   - doPost:            trang quản trị lưu điểm / thêm học sinh vào tab KetQua
+ *   - doPost:            trang quản trị lưu điểm / thêm học sinh vào tab KetQua;
+ *                        học sinh nộp bài placement test vào tab PlacementTest
  *   - thietLapRangBuoc:  chạy tay MỘT lần để sheet tự chặn điểm sai và tạo dropdown option
  *   - kiemTra:           chạy tay để xem sheet có đúng cấu trúc không
  *
@@ -34,7 +35,8 @@ var TAB_MO_TA = 'MoTaKyNang';
 var TAB_THANG_LEVEL = 'ThangLevel';
 var CAC_TAB = [TAB_KET_QUA, TAB_MO_TA, TAB_THANG_LEVEL];
 
-var DIEM_TOI_DA = 20;
+/** Điểm tối đa từng kỹ năng (khung iLEAD) — khớp KY_NANG trong shared/bao-cao.ts. */
+var DIEM_TOI_DA = { listening: 20, reading: 20, writing: 15, speaking: 20 };
 var KY_NANG = ['listening', 'reading', 'writing', 'speaking'];
 
 function doGet(e) {
@@ -79,7 +81,7 @@ function traVeJson(obj) {
  * CHẠY TAY MỘT LẦN (chọn hàm này trên thanh công cụ → Chạy).
  * Chạy lại bất cứ lúc nào — ví dụ sau khi thêm option mới vào tab MoTaKyNang.
  *
- *   - Cột diem_*:   chỉ nhận số 0–20, gõ sai sheet từ chối
+ *   - Cột diem_*:   chỉ nhận số 0 → điểm tối đa của kỹ năng (Writing 15, còn lại 20)
  *   - Cột option_*: dropdown lấy đúng danh sách option của kỹ năng đó trong MoTaKyNang
  *   - Cố định hàng tiêu đề và 2 cột đầu (mã, tên) khi cuộn
  */
@@ -109,7 +111,108 @@ function doPost(e) {
   if (body.action === 'luu') {
     return traVeJson(luuHocSinh(body.hocSinh || {}, body.truoc || null));
   }
+  if (body.action === 'nopBaiTest') {
+    return traVeJson(nopBaiTest(body.dong || {}, body.congThuc || {}, body.chuThich || {}, body.rangBuoc || {}));
+  }
   return traVeJson({ error: 'UNKNOWN_ACTION' });
+}
+
+/* ============================== PLACEMENT TEST ============================== */
+
+var TAB_PLACEMENT = 'PlacementTest';
+
+/**
+ * Thêm một dòng bài làm vào tab PlacementTest (tự tạo tab + hàng tiêu đề nếu chưa có).
+ * Cột tìm theo TÊN ở hàng 1: đổi thứ tự cột thoải mái; cột mới website gửi lên mà sheet
+ * chưa có thì tự thêm vào cuối. Cùng ma_bai gửi 2 lần (bấm Nộp lại) chỉ ghi 1 dòng.
+ *
+ * Writing Part 2 do giáo viên chấm: website gửi kèm
+ *   congThuc  { ten_cot: '=IF({cot_a}="",...)' }  — {cot_a} đổi thành ô cùng dòng (vd H5),
+ *             để giáo viên gõ điểm vào diem_writing_p2_gv là diem_writing, tong_diem tự tính.
+ *   chuThich  { ten_cot: 'ghi chú' }   — gắn vào ô tiêu đề (đáp án gợi ý cho giáo viên).
+ *   rangBuoc  { ten_cot: [min, max] }  — cột chỉ nhận số trong khoảng này.
+ * Chú thích và ràng buộc chỉ gắn lúc cột vừa được tạo, sửa tay trên sheet sẽ được giữ nguyên.
+ */
+function nopBaiTest(dong, congThuc, chuThich, rangBuoc) {
+  var maBai = String(dong.ma_bai || '');
+  if (!/^[a-zA-Z0-9-]{8,64}$/.test(maBai)) return { error: 'INVALID', message: 'Thiếu mã bài làm.' };
+
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(8000)) return { error: 'BUSY', message: 'Máy chủ đang bận, vui lòng nộp lại.' };
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName(TAB_PLACEMENT);
+    var cacKhoa = Object.keys(dong);
+    var cotMoi = [];
+    if (!sh) {
+      sh = ss.insertSheet(TAB_PLACEMENT);
+      sh.getRange(1, 1, 1, cacKhoa.length).setValues([cacKhoa]).setFontWeight('bold');
+      sh.setFrozenRows(1);
+      sh.setFrozenColumns(3);
+      cotMoi = cacKhoa.slice();
+    }
+    var tieuDe = sh.getRange(1, 1, 1, Math.max(sh.getLastColumn(), 1)).getValues()[0].map(function (h) {
+      return String(h).trim();
+    });
+    for (var i = 0; i < cacKhoa.length; i++) {
+      if (tieuDe.indexOf(cacKhoa[i]) < 0) {
+        tieuDe.push(cacKhoa[i]);
+        sh.getRange(1, tieuDe.length).setValue(cacKhoa[i]).setFontWeight('bold');
+        cotMoi.push(cacKhoa[i]);
+      }
+    }
+
+    // Cột vừa tạo: gắn chú thích, ràng buộc điểm và tô vàng cột giáo viên nhập.
+    for (var m = 0; m < cotMoi.length; m++) {
+      var ten = cotMoi[m];
+      var cot = tieuDe.indexOf(ten) + 1;
+      if (chuThich[ten]) sh.getRange(1, cot).setNote(String(chuThich[ten]));
+      var khoang = rangBuoc[ten];
+      if (khoang && khoang.length === 2) {
+        var luat = SpreadsheetApp.newDataValidation()
+          .requireNumberBetween(Number(khoang[0]), Number(khoang[1]))
+          .setAllowInvalid(false)
+          .setHelpText('Nhập điểm từ ' + khoang[0] + ' đến ' + khoang[1] + '.')
+          .build();
+        var vung = sh.getRange(2, cot, Math.max(sh.getMaxRows() - 1, 1), 1);
+        vung.setDataValidation(luat);
+        vung.setBackground('#fff7d6');
+        sh.getRange(1, cot).setBackground('#ffe08a');
+      }
+    }
+
+    var cotMa = tieuDe.indexOf('ma_bai');
+    var cuoi = sh.getLastRow();
+    if (cotMa >= 0 && cuoi >= 2) {
+      var cacMa = sh.getRange(2, cotMa + 1, cuoi - 1, 1).getDisplayValues();
+      for (var r = 0; r < cacMa.length; r++) {
+        if (cacMa[r][0] === maBai) return { ok: true, trung: true };
+      }
+    }
+
+    var dongMoi = cuoi + 1;
+    if (dongMoi > sh.getMaxRows()) sh.insertRowsAfter(sh.getMaxRows(), 100);
+    /** '{ten_cot}' → địa chỉ ô của cột đó trên dòng mới, vd 'H5'. */
+    var diaChi = function (_, ten) {
+      var c = tieuDe.indexOf(ten);
+      return c < 0 ? '0' : sh.getRange(dongMoi, c + 1).getA1Notation();
+    };
+    var hang = tieuDe.map(function (h) {
+      if (congThuc[h]) return String(congThuc[h]).replace(/\{([a-zA-Z0-9_-]+)\}/g, diaChi);
+      if (!(h in dong)) return '';
+      var v = dong[h];
+      if (typeof v === 'number') return v;
+      var s = String(v == null ? '' : v);
+      // Chữ ghi dạng chữ: ngày sinh không bị đổi kiểu Mỹ, "=..." không thành công thức.
+      return s === '' ? '' : "'" + s;
+    });
+    // setValues với chuỗi bắt đầu bằng "=" thì Sheets hiểu là công thức (chữ thường đã có dấu ').
+    sh.getRange(dongMoi, 1, 1, hang.length).setValues([hang]);
+    SpreadsheetApp.flush();
+    return { ok: true, trung: false };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function chuanMa(v) {
@@ -232,7 +335,7 @@ function kiemTraTruocKhiGhi(ss, hs) {
     var d = hs['diem_' + kn];
     if (d != null && String(d).trim() !== '') {
       var n = Number(String(d).replace(',', '.'));
-      if (!isFinite(n) || n < 0 || n > DIEM_TOI_DA) loi['diem_' + kn] = 'Điểm từ 0 đến ' + DIEM_TOI_DA + '.';
+      if (!isFinite(n) || n < 0 || n > DIEM_TOI_DA[kn]) loi['diem_' + kn] = 'Điểm từ 0 đến ' + DIEM_TOI_DA[kn] + '.';
     }
   }
 
@@ -276,27 +379,29 @@ function thietLapRangBuoc() {
     var cotDiem = tieuDe.indexOf('diem_' + kn);
     if (cotDiem >= 0) {
       var luatDiem = SpreadsheetApp.newDataValidation()
-        .requireNumberBetween(0, DIEM_TOI_DA)
+        .requireNumberBetween(0, DIEM_TOI_DA[kn])
         .setAllowInvalid(false)
-        .setHelpText('Nhập điểm ' + kn + ' từ 0 đến ' + DIEM_TOI_DA + '.')
+        .setHelpText('Nhập điểm ' + kn + ' từ 0 đến ' + DIEM_TOI_DA[kn] + '.')
         .build();
       sh.getRange(2, cotDiem + 1, soDong, 1).setDataValidation(luatDiem);
-      daLam.push('diem_' + kn + ': 0–' + DIEM_TOI_DA);
+      daLam.push('diem_' + kn + ': 0–' + DIEM_TOI_DA[kn]);
     }
 
     var cotOpt = tieuDe.indexOf('option_' + kn);
     if (cotOpt >= 0 && cotKyNang >= 0 && cotOption >= 0) {
       var dsOption = [];
       for (var r = 1; r < moTa.length; r++) {
-        if (String(moTa[r][cotKyNang]).trim().toLowerCase() === kn && moTa[r][cotOption]) {
-          dsOption.push(String(moTa[r][cotOption]).trim());
+        var tenOpt = String(moTa[r][cotOption]).trim();
+        // Mỗi khoảng điểm đều có Option 1–3 → chỉ lấy mỗi tên một lần.
+        if (String(moTa[r][cotKyNang]).trim().toLowerCase() === kn && tenOpt && dsOption.indexOf(tenOpt) < 0) {
+          dsOption.push(tenOpt);
         }
       }
       if (dsOption.length) {
         var luatOption = SpreadsheetApp.newDataValidation()
           .requireValueInList(dsOption, true)
           .setAllowInvalid(false)
-          .setHelpText('Chọn mô tả chung cho ' + kn + '. Để trống thì website tự chọn theo điểm.')
+          .setHelpText('Chọn cách diễn đạt cho ' + kn + '. Khoảng điểm do điểm quyết định; để trống = Option 1.')
           .build();
         sh.getRange(2, cotOpt + 1, soDong, 1).setDataValidation(luatOption);
         daLam.push('option_' + kn + ': ' + dsOption.join(', '));

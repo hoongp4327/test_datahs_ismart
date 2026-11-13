@@ -18,9 +18,10 @@ Tham chiếu thiết kế: `https://student.edupiatutor.vn/demo-result?dealId=11
 
 Trang kết quả gồm 2 phần:
 
-1. **Kết quả học tập** — điểm 4 kỹ năng **Listening, Reading, Writing, Speaking** (0–20 mỗi
-   kỹ năng, tổng 80), **Level tương ứng** (Pre-A1 / A1 / A2 / Pre-B1), biểu đồ radar, mô tả chung
-   từng kỹ năng, và nhận xét riêng của giáo viên cho Speaking
+1. **Kết quả học tập** — điểm 4 kỹ năng theo **khung iLEAD**: Listening 20, Reading 20,
+   **Writing 15**, Speaking 20 (tổng **75**), **Level tương ứng** (Pre-A1 / A1 / A2 / Pre-B1) kèm
+   **lớp xếp** (iLEAD 1–4), biểu đồ radar, mô tả chung từng kỹ năng, và nhận xét riêng của
+   giáo viên cho Speaking
 2. **Lộ trình học tập** — % cơ bản/nâng cao + **gợi ý luyện tập** cho từng kỹ năng
 
 Đã **bỏ** so với bản đầu: Tinh thần học tập (số cúp, giơ tay), Xếp loại A/B/C/D, Khung năng
@@ -97,9 +98,9 @@ Sheet có **3 tab**. **Không đổi tên tab và không đổi tên cột ở h
 | `ngay_cham` | Ngày chấm, dạng **ngày/tháng/năm** | `05/11/2026` |
 | `diem_listening` | Điểm Listening, **0–20** | `14` |
 | `diem_reading` | Điểm Reading, 0–20 | `12` |
-| `diem_writing` | Điểm Writing, 0–20 | `11` |
+| `diem_writing` | Điểm Writing, **0–15** | `11` |
 | `diem_speaking` | Điểm Speaking, 0–20 | `15` |
-| `option_listening` | Mô tả chung Listening — chọn từ tab `MoTaKyNang` | `Option 3` |
+| `option_listening` | Cách diễn đạt mô tả Listening (Option 1–3) — khoảng điểm do điểm quyết định | `Option 2` |
 | `option_reading` | Mô tả chung Reading | `Option 3` |
 | `option_writing` | Mô tả chung Writing | `Option 3` |
 | `option_speaking` | Mô tả chung Speaking | `Option 3` |
@@ -108,50 +109,64 @@ Sheet có **3 tab**. **Không đổi tên tab và không đổi tên cột ở h
 | `pct_nang_cao` | % kiến thức nâng cao | `10%` |
 | `nhan_xet_lo_trinh` | Mô tả lộ trình cá nhân hoá | (đoạn văn) |
 
-**Tổng điểm và Level không có cột** — website tự cộng 4 điểm (tối đa 80) rồi tra tab
+**Tổng điểm và Level không có cột** — website tự cộng 4 điểm (tối đa 75) rồi tra tab
 `ThangLevel`. Nhờ vậy không bao giờ có chuyện tổng 70 mà ghi A1.
 
 Quy tắc khi dữ liệu không đủ:
 
-- **Điểm để trống, ngoài 0–20 hoặc không phải số** → hiện "—". Thà trống còn hơn hiện số sai.
+- **Điểm để trống, vượt điểm tối đa của kỹ năng hoặc không phải số** → hiện "—". Thà trống còn hơn hiện số sai.
 - **Thiếu bất kỳ điểm nào trong 4 kỹ năng** → chưa xếp Level, chưa vẽ biểu đồ. Một Level tính
   trên 3/4 kỹ năng sẽ sai mà phụ huynh không có cách nào nhận ra.
-- **Ô option để trống** → website **tự chọn option theo khoảng điểm**. Giáo viên chỉ cần nhập
-  điểm cũng ra báo cáo đầy đủ; chỉ chọn tay khi muốn mô tả khác với mặc định.
+- **Khoảng điểm luôn do điểm quyết định.** Option chỉ chọn *cách diễn đạt* trong khoảng đó
+  (3 câu cùng một mức năng lực, để báo cáo các bạn cùng mức không giống hệt nhau).
+  **Ô option để trống, hoặc option không có trong khoảng** → dùng Option 1. Giáo viên chỉ cần
+  nhập điểm cũng ra báo cáo đầy đủ.
 - **Một mã có nhiều dòng** → lấy dòng **dưới cùng** (bản mới nhất).
 - Mã tra cứu không phân biệt hoa thường, dấu gạch, khoảng trắng: `hs7k3m9q` = `HS-7K3M9Q`.
 
 ### Tab `MoTaKyNang` — nội dung mô tả và gợi ý (dùng chung mọi học sinh)
 
+Nguồn: file Excel của trung tâm (tab iLead) → `node scripts/doc-khung-ilead.mjs "<file.xlsx>"`
+ghi ra `data/khung-ilead.json` → `npm run tao-template` sinh tab này (48 dòng = 4 kỹ năng ×
+4 khoảng điểm × 3 option).
+
 | Cột | Ý nghĩa | Ví dụ |
 |---|---|---|
-| `ky_nang` | `Listening` / `Reading` / `Writing` / `Speaking` | `Listening` |
-| `option` | Tên option — giáo viên chọn đúng chữ này ở tab `KetQua` | `Option 1` |
-| `diem_tu` | Option này hợp với điểm **từ bao nhiêu trở lên** | `0` |
+| `ky_nang` | `Listening` / `Reading` / `Writing` / `Speaking` | `Writing` |
+| `khoang` | Nhãn khoảng điểm, chỉ để đọc | `4–7` |
+| `diem_tu` | Khoảng này áp dụng **từ bao nhiêu điểm trở lên** | `4` |
+| `option` | Tên cách diễn đạt — giáo viên chọn đúng chữ này ở tab `KetQua` | `Option 2` |
 | `mo_ta` | Mô tả chung — hiện ở mục *Kết quả học tập* | (đoạn văn) |
 | `goi_y` | Gợi ý luyện tập — hiện ở mục *Lộ trình học tập* | (đoạn văn) |
 
-Mặc định mỗi kỹ năng 4 option: Option 1 từ 0, Option 2 từ 6, Option 3 từ 11, Option 4 từ 16.
+Khoảng điểm khung iLEAD:
+
+| Kỹ năng | Tối đa | Khoảng |
+|---|---|---|
+| Listening | 20 | 0–5 · 6–10 · 11–15 · 16–20 |
+| Reading | 20 | 0–5 · 6–10 · 11–15 · 16–20 |
+| Writing | 15 | 0–3 · 4–7 · 8–11 · 12–15 |
+| Speaking | 20 | 0–8 · 9–14 · 15–17 · 18–20 |
 
 **Sửa câu chữ ở đây là mọi báo cáo — cũ lẫn mới — đổi theo ngay**, vì `KetQua` chỉ lưu tên
-option chứ không lưu nguyên văn. Thêm option thứ 5 cũng chỉ cần thêm một dòng.
+option chứ không lưu nguyên văn. File Excel chưa có gợi ý luyện tập nên `goi_y` đang giữ nội
+dung cũ, ghép theo thứ tự khoảng điểm.
+
+**Điểm tối đa từng kỹ năng nằm trong code** (đổi thì sửa cả 3 nơi): `KY_NANG` trong
+`shared/bao-cao.ts`, `DIEM_TOI_DA` trong `apps-script/Code.gs` và `scripts/kiem-tra-ket-noi.mjs`.
 
 ### Tab `ThangLevel` — tổng điểm từ bao nhiêu thì đạt Level nào
 
-| `level` | `diem_tu` | `mo_ta` |
-|---|---|---|
-| Pre-A1 | 0 | Mô tả năng lực, hiện dưới Level trên báo cáo |
-| A1 | 25 | … |
-| A2 | 50 | … |
-| Pre-B1 | 70 | … |
+| `level` | `diem_tu` | `lop_xep` | `mo_ta` |
+|---|---|---|---|
+| Pre-A1 | 0 | iLEAD 1 | Mô tả năng lực đầu vào, hiện dưới Level trên báo cáo |
+| A1 | 19 | iLEAD 2 | … |
+| A2 | 38 | iLEAD 3 | … |
+| Pre-B1 | 57 | iLEAD 4 | … (CEFR trong file Excel: A2+ / tiệm cận B1) |
 
-Mỗi Level áp dụng **từ `diem_tu` trở lên cho tới mốc của Level kế tiếp**. Chỉ cần mốc dưới nên
-không bao giờ có khe hở giữa hai khoảng, và điểm lẻ như 24,5 vẫn rơi đúng một Level.
-
-Mốc được chia để khớp với 4 dòng mẫu ban đầu của trung tâm khi quy từ thang 60 lên thang 80
-(17/60 → Pre-A1, 36/60 → A1, 52/60 → A2, 60/60 → Pre-B1). **Muốn đổi thì sửa thẳng cột
-`diem_tu` trên sheet** — không cần sửa code, không cần deploy lại. Thêm Level mới (ví dụ B1)
-cũng chỉ là thêm một dòng.
+Mỗi Level áp dụng **từ `diem_tu` trở lên cho tới mốc của Level kế tiếp**. Khớp ví dụ trong tab
+Template của file Excel: 17 → Pre-A1, 36 → A1, 52 → A2, 60 → Pre-B1. Muốn đổi thì sửa thẳng
+cột `diem_tu` trên sheet — không cần deploy lại. `lop_xep` hiện trên báo cáo dưới tổng điểm.
 
 ### Ràng buộc nhập liệu ngay trên sheet
 

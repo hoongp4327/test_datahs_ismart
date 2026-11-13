@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { DIEM_TOI_DA, KY_NANG, TONG_TOI_DA, docDiem, normalizeCode, timLevel, timMoTa, type Row } from "../../shared/bao-cao";
+import { KY_NANG, OPTION_MAC_DINH, TONG_TOI_DA, docDiem, normalizeCode, timLevel, timMoTa, type Row } from "../../shared/bao-cao";
 import { COT_SUA, KY_TU_MA, NHAN_COT, kiemTraHocSinh, type CotSua } from "../../shared/hoc-sinh-sua";
 import Icon from "../components/Icon";
 import { giaoDienKyNang } from "../components/kyNangGiaoDien";
@@ -13,7 +13,7 @@ import "../quan-tri.css";
  * header x-admin-key. Sai khoá thì server từ chối mọi thao tác.
  */
 
-type MoTaOption = { ky_nang: string; option: string; diem_tu: string; mo_ta: string };
+type MoTaOption = { ky_nang: string; option: string; diem_tu: string; khoang?: string; mo_ta: string };
 type DuLieu = {
   nguon: string;
   coTheGhi: boolean;
@@ -44,7 +44,7 @@ function taoMa(daCo: Set<string>) {
 }
 
 function tongVaLevel(f: Form, d: DuLieu | null) {
-  const diem = KY_NANG.map((k) => docDiem(f[`diem_${k.key}` as CotSua]));
+  const diem = KY_NANG.map((k) => docDiem(f[`diem_${k.key}` as CotSua], k.toiDa));
   const thieu = diem.filter((x) => x === null).length;
   if (thieu || !d) return { tong: null, level: null, thieu };
   const tong = diem.reduce<number>((s, x) => s + (x ?? 0), 0);
@@ -714,22 +714,22 @@ function DongKyNang({
   const gd = giaoDienKyNang(kn.key);
   const cotDiem = `diem_${kn.key}` as CotSua;
   const cotOpt = `option_${kn.key}` as CotSua;
-  const diem = docDiem(form[cotDiem]);
+  const diem = docDiem(form[cotDiem], kn.toiDa);
   const tuChon = form[cotOpt];
 
-  const cacOption = useMemo(
+  // Khoảng điểm do điểm quyết định; option chỉ là cách diễn đạt trong khoảng đó.
+  const macDinh = timMoTa(moTa as unknown as Row[], kn.ten, "", diem);
+  const cungKhoang = useMemo(
     () =>
-      moTa
-        .filter((m) => m.ky_nang.trim().toLowerCase() === kn.ten.toLowerCase() && m.option)
-        .sort((a, b) => Number(a.diem_tu) - Number(b.diem_tu)),
-    [moTa, kn.ten]
+      macDinh
+        ? moTa.filter((m) => m.ky_nang.trim().toLowerCase() === kn.ten.toLowerCase() && m.diem_tu === macDinh.diem_tu)
+        : [],
+    [moTa, kn.ten, macDinh]
   );
-
-  // Option website sẽ dùng: chọn tay, hoặc tự động theo điểm.
   const dangDung = timMoTa(moTa as unknown as Row[], kn.ten, tuChon, diem);
-  const tuDong = diem !== null ? timMoTa(moTa as unknown as Row[], kn.ten, "", diem) : undefined;
-  // Giáo viên chọn option khác với khoảng điểm → nhắc nhẹ, không chặn.
-  const lech = Boolean(tuChon && tuDong && dangDung && tuDong.option !== dangDung.option);
+  // Option đã lưu nhưng khoảng hiện tại không có (dữ liệu cũ) → báo, website dùng Option 1.
+  const khongCo = Boolean(tuChon && diem !== null && !cungKhoang.some((m) => m.option === tuChon));
+  const rutGon = (s: string) => (s.length > 70 ? s.slice(0, 68) + "…" : s);
 
   return (
     <div className="qt-kn" style={{ ["--mau" as string]: gd.mau, ["--nen" as string]: gd.nen }}>
@@ -749,39 +749,42 @@ function DongKyNang({
           type="number"
           inputMode="decimal"
           min={0}
-          max={DIEM_TOI_DA}
+          max={kn.toiDa}
           step={0.5}
           value={form[cotDiem]}
           onChange={(e) => sua(cotDiem, e.target.value)}
           placeholder="—"
         />
-        <span>/{DIEM_TOI_DA}</span>
+        <span>/{kn.toiDa}</span>
       </label>
 
       <div className="qt-kn-thanh" aria-hidden="true">
-        <span style={{ width: `${((diem ?? 0) / DIEM_TOI_DA) * 100}%` }} />
+        <span style={{ width: `${((diem ?? 0) / kn.toiDa) * 100}%` }} />
       </div>
 
       <label className={`qt-o qt-kn-opt${loi[cotOpt] ? " co-loi" : ""}`}>
-        <span className="qt-o-nhan">Mô tả chung</span>
-        <select value={tuChon} onChange={(e) => sua(cotOpt, e.target.value)}>
-          <option value="">Tự động theo điểm{tuDong ? ` (${tuDong.option})` : ""}</option>
-          {cacOption.map((m) => (
+        <span className="qt-o-nhan">
+          Mô tả chung{macDinh?.khoang ? ` · khoảng ${macDinh.khoang} điểm` : ""}
+        </span>
+        <select value={tuChon} onChange={(e) => sua(cotOpt, e.target.value)} disabled={diem === null}>
+          <option value="">{diem === null ? "Nhập điểm trước" : `Mặc định (${OPTION_MAC_DINH})`}</option>
+          {cungKhoang.map((m) => (
             <option key={m.option} value={m.option}>
-              {m.option} — từ {m.diem_tu} điểm
+              {m.option} — {rutGon(m.mo_ta)}
             </option>
           ))}
+          {khongCo ? <option value={tuChon}>{tuChon} (không có trong khoảng này)</option> : null}
         </select>
         {loi[cotOpt] ? <span className="qt-o-loi">{loi[cotOpt]}</span> : null}
       </label>
 
       <p className={`qt-kn-mo-ta${dangDung ? "" : " is-trong"}`}>
-        {lech ? (
+        {khongCo ? (
           <span className="qt-lech">
-            Điểm {diem} thường ứng với {tuDong?.option}. Kiểm tra lại nếu chọn nhầm.
+            "{tuChon}" không có trong khoảng điểm này — phụ huynh sẽ thấy {OPTION_MAC_DINH}. Chọn lại để lưu đúng.
           </span>
         ) : null}
-        {dangDung?.mo_ta || "Nhập điểm hoặc chọn option để xem mô tả phụ huynh sẽ thấy."}
+        {dangDung?.mo_ta || "Nhập điểm để xem mô tả phụ huynh sẽ thấy."}
       </p>
 
       {kn.key === "speaking" ? (

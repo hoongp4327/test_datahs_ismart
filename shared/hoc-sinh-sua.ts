@@ -2,7 +2,7 @@
  * Cột giáo viên được sửa trên trang quản trị và quy tắc kiểm tra.
  * File này KHÔNG dùng API riêng của Node — trình duyệt và server dùng chung.
  */
-import { DIEM_TOI_DA, KY_NANG, docDiem } from "./bao-cao";
+import { KY_NANG, docDiem, toiDaCua } from "./bao-cao";
 
 /** Thứ tự cũng là thứ tự cột khi tạo tab KetQua mới. Đổi ở đây nhớ đổi COT_GHI trong Code.gs. */
 export const COT_SUA = [
@@ -71,8 +71,9 @@ export function kiemTraHocSinh(dauVao: unknown): { loi: Record<string, string>; 
     if (v.length > toiDa) loi[cot] = `Tối đa ${toiDa} ký tự.`;
 
     if (cot.startsWith("diem_") && v) {
-      const d = docDiem(v);
-      if (d === null) loi[cot] = `Điểm từ 0 đến ${DIEM_TOI_DA}.`;
+      const toiDaDiem = toiDaCua(cot.slice("diem_".length));
+      const d = docDiem(v, toiDaDiem);
+      if (d === null) loi[cot] = `Điểm từ 0 đến ${toiDaDiem}.`;
       else v = String(d);
     }
     if (cot === "ngay_cham" && v) {

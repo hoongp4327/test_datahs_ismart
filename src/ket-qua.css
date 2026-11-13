@@ -419,6 +419,13 @@
   font-variant-numeric: tabular-nums;
 }
 .bc-points span { font-size: 15px; font-weight: 700; color: #e8f2ff; }
+.bc-lop-xep {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 8px;
+  padding: 4px 12px; border-radius: 999px;
+  background: #ffffff1a; border: 1px solid #ffb46a66;
+  font-size: 13px; font-weight: 650; color: #e8f2ff;
+}
+.bc-lop-xep b { color: #ffc47b; font-weight: 800; }
 .bc-description { max-width: 340px; margin: 6px 0 60px; /* chừa chỗ cho nhãn số trên kim */ font-size: 13px; line-height: 1.7; font-weight: 550; color: #f4f8ff; }
 
 /* Thang Level */

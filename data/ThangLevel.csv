@@ -1,5 +1,5 @@
-﻿level,diem_tu,mo_ta
-Pre-A1,0,"Con đang làm quen với tiếng Anh: nhận biết từ và cụm từ quen thuộc, hiểu hướng dẫn rất đơn giản khi có hình ảnh hỗ trợ."
-A1,25,"Con hiểu và dùng được câu đơn giản về bản thân và môi trường quen thuộc, giao tiếp được khi người đối diện nói chậm và rõ."
-A2,50,"Con giao tiếp được trong các tình huống hằng ngày, hiểu ý chính của đoạn văn và hội thoại ngắn về chủ đề quen thuộc."
-Pre-B1,70,"Con sử dụng tiếng Anh khá độc lập, diễn đạt được ý kiến và trải nghiệm, sẵn sàng chuyển sang chương trình trình độ B1."
+﻿level,diem_tu,lop_xep,mo_ta
+Pre-A1,0,iLEAD 1,"Chưa có hoặc mới bắt đầu tiếng Anh. Nhận biết từ đơn, chưa đọc – viết được câu."
+A1,19,iLEAD 2,"Hiểu và nói được cụm từ, câu đơn ở chủ đề bản thân. Còn ghép âm khi đọc."
+A2,38,iLEAD 3,"Đọc liền mạch, nói và viết được câu hoàn chỉnh. Dùng được hiện tại đơn."
+Pre-B1,57,iLEAD 4,"Nối được ý, có thì quá khứ / tương lai, viết được vài câu liền mạch. Sẵn sàng A2 — đủ điều kiện lên iGLOBAL 1."

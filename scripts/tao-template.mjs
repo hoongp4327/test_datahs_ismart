@@ -8,7 +8,7 @@
  *   shared/du-lieu-mau.ts               — dữ liệu chạy thử khi chưa nối Google Sheet
  */
 import * as XLSX from "xlsx";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -49,11 +49,14 @@ function taoMaHocSinh(daCo) {
 }
 
 /* ------------------------------------------------------------------ *
- * Tab MoTaKyNang — 4 kỹ năng × 4 option (NỘI DUNG ẢO, sửa trực tiếp trên sheet)
- * diem_tu: option này áp dụng từ điểm bao nhiêu trở lên (dùng khi giáo viên
- * để trống ô option, và để kiểm tra option có khớp điểm không).
+ * Tab MoTaKyNang — lấy từ khung iLEAD (data/khung-ilead.json, sinh bởi
+ * scripts/doc-khung-ilead.mjs từ file Excel của trung tâm):
+ *   mỗi kỹ năng 4 khoảng điểm × 3 option (3 cách diễn đạt cùng một mức năng lực).
+ *
+ * File Excel chưa có gợi ý luyện tập → GOI_Y dưới đây giữ nguyên nội dung đang dùng,
+ * ghép theo thứ tự khoảng điểm (khoảng 1 ↔ gợi ý 1...). Dùng chung cho cả 3 option.
  * ------------------------------------------------------------------ */
-const MO_TA = {
+const GOI_Y_CU = {
   Listening: [
     {
       mo_ta: "Con nhận ra được một số từ quen thuộc khi nghe chậm, nhưng chưa theo kịp câu hoàn chỉnh. Con thường cần nghe lại 2–3 lần mới nắm được yêu cầu.",
@@ -128,46 +131,36 @@ const MO_TA = {
   ],
 };
 
-const MOC_OPTION = [0, 6, 11, 16]; // Option 1: 0–5, Option 2: 6–10, Option 3: 11–15, Option 4: 16–20
+const KHUNG = JSON.parse(readFileSync(join(OUT, "khung-ilead.json"), "utf8"));
 
-const moTaRows = Object.entries(MO_TA).flatMap(([kyNang, ds]) =>
-  ds.map((x, i) => ({
-    ky_nang: kyNang,
-    option: `Option ${i + 1}`,
-    diem_tu: MOC_OPTION[i],
-    mo_ta: x.mo_ta,
-    goi_y: x.goi_y,
-  }))
+const moTaRows = KHUNG.kyNang.flatMap((kn) =>
+  kn.khoang.flatMap((kh, i) =>
+    kh.options.map((mo_ta, j) => ({
+      ky_nang: kn.ten,
+      khoang: `${kh.tu}–${kh.den}`,
+      diem_tu: kh.tu,
+      option: `Option ${j + 1}`,
+      mo_ta,
+      goi_y: GOI_Y_CU[kn.ten]?.[i]?.goi_y ?? "",
+    }))
+  )
 );
 
+/** Điểm tối đa từng kỹ năng, key thường: { listening: 20, ..., writing: 15 } */
+const TOI_DA = Object.fromEntries(KHUNG.kyNang.map((k) => [k.ten.toLowerCase(), k.toiDa]));
+
 /* ------------------------------------------------------------------ *
- * Tab ThangLevel — tổng điểm (0–80) từ bao nhiêu thì đạt Level nào.
- *
- * Chia sao cho khớp với 4 dòng mẫu ban đầu của trung tâm khi quy đổi từ thang
- * 60 lên thang 80: 17/60 → Pre-A1, 36/60 → A1, 52/60 → A2, 60/60 → Pre-B1.
+ * Tab ThangLevel — tổng điểm (0–${KHUNG.tong}) từ bao nhiêu thì đạt Level nào, xếp lớp nào.
+ * Tên Level theo tab Template của file Excel (Pre-A1 / A1 / A2 / Pre-B1); CEFR đầy đủ
+ * của mức 4 trong file là "A2+ / tiệm cận B1". mo_ta = mô tả năng lực đầu vào.
  * ------------------------------------------------------------------ */
-const thangLevelRows = [
-  {
-    level: "Pre-A1",
-    diem_tu: 0,
-    mo_ta: "Con đang làm quen với tiếng Anh: nhận biết từ và cụm từ quen thuộc, hiểu hướng dẫn rất đơn giản khi có hình ảnh hỗ trợ.",
-  },
-  {
-    level: "A1",
-    diem_tu: 25,
-    mo_ta: "Con hiểu và dùng được câu đơn giản về bản thân và môi trường quen thuộc, giao tiếp được khi người đối diện nói chậm và rõ.",
-  },
-  {
-    level: "A2",
-    diem_tu: 50,
-    mo_ta: "Con giao tiếp được trong các tình huống hằng ngày, hiểu ý chính của đoạn văn và hội thoại ngắn về chủ đề quen thuộc.",
-  },
-  {
-    level: "Pre-B1",
-    diem_tu: 70,
-    mo_ta: "Con sử dụng tiếng Anh khá độc lập, diễn đạt được ý kiến và trải nghiệm, sẵn sàng chuyển sang chương trình trình độ B1.",
-  },
-];
+const TEN_LEVEL = ["Pre-A1", "A1", "A2", "Pre-B1"];
+const thangLevelRows = KHUNG.level.map((l, i) => ({
+  level: TEN_LEVEL[i] ?? l.cefr,
+  diem_tu: l.tu,
+  lop_xep: l.lop,
+  mo_ta: l.dauVao,
+}));
 
 /* ------------------------------------------------------------------ *
  * Tab KetQua — 20 học sinh ảo
@@ -203,8 +196,7 @@ const NX_LO_TRINH = [
 ];
 
 const at = (arr, i) => arr[i % arr.length];
-const kep = (n) => Math.max(0, Math.min(20, Math.round(n)));
-const optionTheoDiem = (d) => `Option ${MOC_OPTION.filter((m) => d >= m).length}`;
+const kep = (n, max) => Math.max(0, Math.min(max, Math.round(n)));
 
 // Mức trung bình mỗi kỹ năng của từng học sinh, trải đều từ Pre-A1 đến Pre-B1.
 const MUC_TB = [4, 7, 9, 12, 14, 17, 19, 5, 10, 13, 15, 18, 8, 11, 6, 16, 12, 9, 14, 18];
@@ -213,7 +205,11 @@ const maDaCo = new Set();
 const ketQuaRows = HOC_SINH.map((ten, i) => {
   const tb = MUC_TB[i];
   // Mỗi kỹ năng lệch -3..+3 quanh mức trung bình để biểu đồ có hình dạng thật.
-  const [l, r, w, s] = [0, 1, 2, 3].map(() => kep(tb + Math.floor(rand() * 7) - 3));
+  const [l, r, w, s] = ["listening", "reading", "writing", "speaking"].map((k) =>
+    kep(((tb + Math.floor(rand() * 7) - 3) * TOI_DA[k]) / 20, TOI_DA[k])
+  );
+  // Option = cách diễn đạt trong khoảng điểm; để trống một số học sinh để thử mặc định Option 1.
+  const opt = () => (rand() < 0.25 ? "" : `Option ${1 + Math.floor(rand() * 3)}`);
   const ngay = ((i * 3) % 28) + 1;
   return {
     ma_hoc_sinh: taoMaHocSinh(maDaCo),
@@ -225,10 +221,10 @@ const ketQuaRows = HOC_SINH.map((ten, i) => {
     diem_reading: r,
     diem_writing: w,
     diem_speaking: s,
-    option_listening: optionTheoDiem(l),
-    option_reading: optionTheoDiem(r),
-    option_writing: optionTheoDiem(w),
-    option_speaking: optionTheoDiem(s),
+    option_listening: opt(),
+    option_reading: opt(),
+    option_writing: opt(),
+    option_speaking: opt(),
     mo_ta_rieng_speaking: at(MO_TA_RIENG_SPEAKING, i),
     pct_co_ban: "100%",
     pct_nang_cao: `${10 + (i % 4) * 5}%`,
@@ -237,8 +233,8 @@ const ketQuaRows = HOC_SINH.map((ten, i) => {
 });
 
 const COT_KET_QUA = Object.keys(ketQuaRows[0]);
-const COT_MO_TA = ["ky_nang", "option", "diem_tu", "mo_ta", "goi_y"];
-const COT_THANG_LEVEL = ["level", "diem_tu", "mo_ta"];
+const COT_MO_TA = ["ky_nang", "khoang", "diem_tu", "option", "mo_ta", "goi_y"];
+const COT_THANG_LEVEL = ["level", "diem_tu", "lop_xep", "mo_ta"];
 
 /* ------------------------------------------------------------------ *
  * Xuất file
@@ -253,11 +249,11 @@ wsKetQua["!freeze"] = { xSplit: 2, ySplit: 1 };
 XLSX.utils.book_append_sheet(wb, wsKetQua, "KetQua");
 
 const wsMoTa = XLSX.utils.json_to_sheet(moTaRows, { header: COT_MO_TA });
-wsMoTa["!cols"] = [{ wch: 12 }, { wch: 10 }, { wch: 8 }, { wch: 80 }, { wch: 80 }];
+wsMoTa["!cols"] = [{ wch: 12 }, { wch: 8 }, { wch: 8 }, { wch: 10 }, { wch: 80 }, { wch: 80 }];
 XLSX.utils.book_append_sheet(wb, wsMoTa, "MoTaKyNang");
 
 const wsLevel = XLSX.utils.json_to_sheet(thangLevelRows, { header: COT_THANG_LEVEL });
-wsLevel["!cols"] = [{ wch: 10 }, { wch: 8 }, { wch: 100 }];
+wsLevel["!cols"] = [{ wch: 10 }, { wch: 8 }, { wch: 10 }, { wch: 100 }];
 XLSX.utils.book_append_sheet(wb, wsLevel, "ThangLevel");
 
 const xlsxPath = join(OUT, "Template_KetQua_HocSinh.xlsx");
@@ -303,6 +299,6 @@ writeFileSync(
 
 console.log(`Đã tạo: ${xlsxPath}`);
 console.log(`  - KetQua:     ${ketQuaRows.length} học sinh`);
-console.log(`  - MoTaKyNang: ${moTaRows.length} dòng (4 kỹ năng × 4 option)`);
+console.log(`  - MoTaKyNang: ${moTaRows.length} dòng (4 kỹ năng × 4 khoảng điểm × 3 option)`);
 console.log(`  - ThangLevel: ${thangLevelRows.length} mức`);
 console.log(`  Mã mẫu: ${ketQuaRows.slice(0, 3).map((r) => r.ma_hoc_sinh).join(", ")} ...`);

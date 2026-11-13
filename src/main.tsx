@@ -7,6 +7,7 @@ import "./styles.css";
 
 // Trang quản trị tách thành file riêng: phụ huynh tra cứu không phải tải phần này.
 const QuanTri = lazy(() => import("./pages/QuanTri"));
+const PlacementTest = lazy(() => import("./pages/PlacementTest"));
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -19,6 +20,14 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           element={
             <Suspense fallback={null}>
               <QuanTri />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/placement-test"
+          element={
+            <Suspense fallback={null}>
+              <PlacementTest />
             </Suspense>
           }
         />

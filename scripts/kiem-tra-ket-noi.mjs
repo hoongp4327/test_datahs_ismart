@@ -23,8 +23,9 @@ const TAB = {
   thangLevel: env("SHEET_TAB_THANG_LEVEL") || "ThangLevel",
 };
 
-const DIEM_TOI_DA = 20;
-const KY_NANG = ["listening", "reading", "writing", "speaking"];
+/** Điểm tối đa từng kỹ năng — khớp KY_NANG trong shared/bao-cao.ts (khung iLEAD). */
+const DIEM_TOI_DA = { listening: 20, reading: 20, writing: 15, speaking: 20 };
+const KY_NANG = Object.keys(DIEM_TOI_DA);
 
 function thoat(msg, goiY) {
   console.log(`\n${X} ${msg}`);
@@ -299,37 +300,26 @@ console.log(`${OK} KetQua: ${hs.length} học sinh`);
 
 const diemSai = [];
 const optionKhongCo = [];
-const optionLechDiem = [];
 for (const r of hs) {
   for (const kn of KY_NANG) {
     let d = docSo(r[`diem_${kn}`]);
-    if (d !== null && (!Number.isFinite(d) || d < 0 || d > DIEM_TOI_DA)) {
-      diemSai.push(`${r.ma_hoc_sinh} ${kn} = "${r[`diem_${kn}`]}"`);
-      d = null; // điểm đã sai thì không so option với nó nữa, tránh báo trùng
+    if (d !== null && (!Number.isFinite(d) || d < 0 || d > DIEM_TOI_DA[kn])) {
+      diemSai.push(`${r.ma_hoc_sinh} ${kn} = "${r[`diem_${kn}`]}" (tối đa ${DIEM_TOI_DA[kn]})`);
+      d = null;
     }
     const opt = r[`option_${kn}`];
-    if (!opt) continue;
-    const cacOpt = mt.dong.filter((m) => cung(m.ky_nang, kn));
-    const chon = cacOpt.find((m) => cung(m.option, opt));
-    if (!chon) {
-      optionKhongCo.push(`${r.ma_hoc_sinh} ${kn} = "${opt}"`);
-      continue;
-    }
-    // Option hợp với điểm nếu là option có diem_tu lớn nhất mà vẫn ≤ điểm.
-    if (d !== null && Number.isFinite(d)) {
-      const dung = cacOpt
-        .filter((m) => Number.isFinite(docSo(m.diem_tu)) && docSo(m.diem_tu) <= d)
-        .sort((a, b) => docSo(b.diem_tu) - docSo(a.diem_tu))[0];
-      if (dung && !cung(dung.option, chon.option)) {
-        optionLechDiem.push(`${r.ma_hoc_sinh} ${kn}: ${d} điểm nhưng chọn ${chon.option} (khoảng điểm hợp là ${dung.option})`);
-      }
+    if (!opt || d === null || !Number.isFinite(d)) continue;
+    // Khoảng điểm do điểm quyết định; option phải là một cách diễn đạt có trong khoảng đó.
+    const cacOpt = mt.dong.filter((m) => cung(m.ky_nang, kn) && Number.isFinite(docSo(m.diem_tu)));
+    const moc = Math.max(...cacOpt.map((m) => docSo(m.diem_tu)).filter((x) => x <= d));
+    if (!cacOpt.some((m) => docSo(m.diem_tu) === moc && cung(m.option, opt))) {
+      optionKhongCo.push(`${r.ma_hoc_sinh} ${kn}: ${d} điểm, "${opt}" không có trong khoảng này`);
     }
   }
 }
-if (diemSai.length) canhBao(`${diemSai.length} ô điểm ngoài khoảng 0–${DIEM_TOI_DA} — website sẽ hiện "—"`, diemSai);
-if (optionKhongCo.length) canhBao(`${optionKhongCo.length} ô option không có trong MoTaKyNang — mô tả sẽ trống`, optionKhongCo);
-if (optionLechDiem.length) {
-  canhBao(`${optionLechDiem.length} ô option không khớp khoảng điểm — kiểm tra lại có chọn nhầm không`, optionLechDiem);
+if (diemSai.length) canhBao(`${diemSai.length} ô điểm vượt điểm tối đa của kỹ năng — website sẽ hiện "—"`, diemSai);
+if (optionKhongCo.length) {
+  canhBao(`${optionKhongCo.length} ô option không có trong khoảng điểm tương ứng — website dùng Option 1`, optionKhongCo);
 }
 
 const thieuDiem = hs.filter((r) => KY_NANG.some((kn) => docSo(r[`diem_${kn}`]) === null));

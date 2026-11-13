@@ -53,7 +53,8 @@ function dongKyTen(ngayCham: string) {
 
 /* --------------------------------- Thẻ kỹ năng --------------------------------- */
 
-function TheKyNang({ k, diemToiDa, daHien, thuTu }: { k: KyNangKetQua; diemToiDa: number; daHien: boolean; thuTu: number }) {
+function TheKyNang({ k, daHien, thuTu }: { k: KyNangKetQua; daHien: boolean; thuTu: number }) {
+  const diemToiDa = k.toiDa;
   const gd = giaoDienKyNang(k.key);
   // Chỉ đếm khi thẻ đã lên màn hình, để phụ huynh kịp thấy số chạy.
   const dangDem = useDemSo(k.diem === null ? null : daHien ? k.diem : 0, thuTu * 70, 700);
@@ -99,13 +100,17 @@ function TheKyNang({ k, diemToiDa, daHien, thuTu }: { k: KyNangKetQua; diemToiDa
   );
 }
 
-/** Kỹ năng điểm cao nhất / thấp nhất — chỉ khi đủ 4 điểm. */
-function DiemNoiBat({ kyNang, diemToiDa }: { kyNang: KyNangKetQua[]; diemToiDa: number }) {
+/**
+ * Kỹ năng điểm cao nhất / thấp nhất — chỉ khi đủ 4 điểm. So theo TỈ LỆ vì mỗi kỹ năng có
+ * điểm tối đa khác nhau (Writing 15, còn lại 20): 12/15 = 80% cao hơn 14/20 = 70%.
+ */
+function DiemNoiBat({ kyNang }: { kyNang: KyNangKetQua[] }) {
   if (kyNang.some((k) => k.diem === null)) return null;
-  const cao = kyNang.reduce((a, b) => ((b.diem ?? 0) > (a.diem ?? 0) ? b : a));
-  const thap = kyNang.reduce((a, b) => ((b.diem ?? 0) < (a.diem ?? 0) ? b : a));
+  const tiLe = (k: KyNangKetQua) => (k.diem ?? 0) / k.toiDa;
+  const cao = kyNang.reduce((a, b) => (tiLe(b) > tiLe(a) ? b : a));
+  const thap = kyNang.reduce((a, b) => (tiLe(b) < tiLe(a) ? b : a));
 
-  if (cao.diem === thap.diem) {
+  if (tiLe(cao) === tiLe(thap)) {
     return (
       <section className="bc-insights is-mot" aria-label="Điểm nổi bật">
         <div className="bc-insight">
@@ -115,7 +120,7 @@ function DiemNoiBat({ kyNang, diemToiDa }: { kyNang: KyNangKetQua[]; diemToiDa: 
           <div>
             <small>Đồng đều</small>
             <strong>
-              Cả 4 kỹ năng cùng đạt {so(cao.diem ?? 0)}/{diemToiDa}
+              Cả 4 kỹ năng cùng đạt {Math.round(tiLe(cao) * 100)}% số điểm
             </strong>
           </div>
         </div>
@@ -132,7 +137,7 @@ function DiemNoiBat({ kyNang, diemToiDa }: { kyNang: KyNangKetQua[]; diemToiDa: 
         <div>
           <small>Điểm cao nhất</small>
           <strong>
-            {cao.ten} · {so(cao.diem ?? 0)}/{diemToiDa} — kỹ năng nổi bật trong bài đánh giá
+            {cao.ten} · {so(cao.diem ?? 0)}/{cao.toiDa} — kỹ năng nổi bật trong bài đánh giá
           </strong>
         </div>
       </div>
@@ -143,7 +148,7 @@ function DiemNoiBat({ kyNang, diemToiDa }: { kyNang: KyNangKetQua[]; diemToiDa: 
         <div>
           <small>Ưu tiên cải thiện</small>
           <strong>
-            {thap.ten} · {so(thap.diem ?? 0)}/{diemToiDa} — kỹ năng có điểm thấp nhất
+            {thap.ten} · {so(thap.diem ?? 0)}/{thap.toiDa} — kỹ năng có điểm thấp nhất
           </strong>
         </div>
       </div>
@@ -219,11 +224,11 @@ export default function Report({ bc }: { bc: BaoCao }) {
       </h2>
       <section ref={refKyNang} className={`bc-cards${hienKyNang ? " da-hien" : ""}`} aria-label="Nhận xét kỹ năng">
         {kyNang.map((k, i) => (
-          <TheKyNang key={k.key} k={k} diemToiDa={bc.diemToiDa} daHien={hienKyNang} thuTu={i} />
+          <TheKyNang key={k.key} k={k} daHien={hienKyNang} thuTu={i} />
         ))}
       </section>
 
-      <DiemNoiBat kyNang={kyNang} diemToiDa={bc.diemToiDa} />
+      <DiemNoiBat kyNang={kyNang} />
 
       {/* Lộ trình + gợi ý */}
       <div ref={refDuoi} className={`bc-hai-cot${hienDuoi ? " da-hien" : ""}`}>
