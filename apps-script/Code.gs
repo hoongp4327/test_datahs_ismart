@@ -198,16 +198,22 @@ function nopBaiTest(dong, congThuc, chuThich, rangBuoc) {
       return c < 0 ? '0' : sh.getRange(dongMoi, c + 1).getA1Notation();
     };
     var hang = tieuDe.map(function (h) {
-      if (congThuc[h]) return String(congThuc[h]).replace(/\{([a-zA-Z0-9_-]+)\}/g, diaChi);
-      if (!(h in dong)) return '';
+      if (congThuc[h] || !(h in dong)) return '';
       var v = dong[h];
       if (typeof v === 'number') return v;
       var s = String(v == null ? '' : v);
       // Chữ ghi dạng chữ: ngày sinh không bị đổi kiểu Mỹ, "=..." không thành công thức.
       return s === '' ? '' : "'" + s;
     });
-    // setValues với chuỗi bắt đầu bằng "=" thì Sheets hiểu là công thức (chữ thường đã có dấu ').
     sh.getRange(dongMoi, 1, 1, hang.length).setValues([hang]);
+
+    // Công thức ghi riêng bằng setFormula: hàm này LUÔN hiểu cú pháp tiếng Anh (dấu phẩy),
+    // bất kể vùng của sheet. Ghi qua setValues thì sheet đặt vùng Việt Nam (dùng dấu ;)
+    // đọc sai cú pháp và báo #ERROR!.
+    for (var f = 0; f < tieuDe.length; f++) {
+      var ct = congThuc[tieuDe[f]];
+      if (ct) sh.getRange(dongMoi, f + 1).setFormula(String(ct).replace(/\{([a-zA-Z0-9_-]+)\}/g, diaChi));
+    }
     SpreadsheetApp.flush();
     return { ok: true, trung: false };
   } finally {
