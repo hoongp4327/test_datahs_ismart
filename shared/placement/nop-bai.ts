@@ -14,17 +14,22 @@ const TIMEOUT_MS = 9_000;
 
 const KY_HIEU = { dung: "✓", sai: "✗", trong: "", "chua-co-dap-an": "?", "gv-cham": "" } as const;
 
-/** Cột giáo viên nhập điểm Writing Part 2. */
+/** Cột giáo viên nhập điểm Writing Part 2 và Speaking. */
 const COT_GV = "diem_writing_p2_gv";
+const COT_NOI = "diem_speaking";
 
 /**
- * Cột tính bằng công thức trên sheet: giáo viên gõ điểm Part 2 là tổng tự cập nhật.
- * {ten_cot} = ô của cột đó trên cùng dòng — Apps Script đổi thành địa chỉ A1 thật.
+ * Cột tính bằng công thức trên sheet: giáo viên gõ điểm là tổng tự cập nhật.
+ * {ten_cot} = ô của cột đó trên cùng dòng — Apps Script đổi thành địa chỉ A1 thật, nên
+ * cột diem_speaking ở đâu trên sheet (kể cả cuối bảng) công thức vẫn trỏ đúng.
+ *
+ * tong_diem = TỔNG THỰC TẾ /75 (L + R + W + S). Còn thiếu Writing Part 2 hoặc Speaking thì
+ * để trống — không hiện một con số /55 dễ bị đọc nhầm là tổng.
  */
 const CONG_THUC: Record<string, string> = {
   diem_writing: `=IF({${COT_GV}}="","",{diem_writing_p1}+{${COT_GV}})`,
-  tong_diem: `=IF({${COT_GV}}="","",{diem_listening}+{diem_reading}+{diem_writing})`,
-  trang_thai: `=IF({${COT_GV}}="","Chờ GV chấm Writing P2","Đã chấm xong")`,
+  tong_diem: `=IF(OR({${COT_GV}}="",{${COT_NOI}}=""),"",{diem_listening}+{diem_reading}+{diem_writing}+{${COT_NOI}})`,
+  trang_thai: `=IF(AND({${COT_GV}}="",{${COT_NOI}}=""),"Chờ chấm Writing P2 + Speaking",IF({${COT_GV}}="","Chờ chấm Writing P2",IF({${COT_NOI}}="","Chờ chấm Speaking","Đã chấm xong")))`,
 };
 
 type BaiNop = {
@@ -85,6 +90,7 @@ export function taoDong(b: BaiNop, bayGio = Date.now()) {
     diem_writing_p1: kq.writing, // chỉ phần máy chấm (Part 1)
     [COT_GV]: "",
     diem_writing: "",
+    [COT_NOI]: "",
     tong_diem: "",
     ...Object.fromEntries(cauGv.map((c) => [`cau_${c.id}`, c.traLoi])),
     thoi_gian_lam_phut: phut,
@@ -100,13 +106,21 @@ export function taoDong(b: BaiNop, bayGio = Date.now()) {
   const chuThich: Record<string, string> = {
     [COT_GV]: `Giáo viên nhập điểm Writing Part 2: 0–${kq.toiDaGv} (${cauGv.length} câu × ${cauGv[0]?.toiDa ?? 0} điểm). Nhập xong, diem_writing và tong_diem tự tính.`,
     diem_writing_p1: "Writing Part 1 (sắp xếp chữ) — máy chấm.",
+    [COT_NOI]: "Giáo viên nhập điểm Speaking: 0–20.",
+    tong_diem: "Tổng thực tế /75 = Listening + Reading + Writing + Speaking. Trống khi chưa chấm đủ.",
   };
   for (const c of cauGv) {
     const da = DAP_AN[c.id];
     if (da && "goiY" in da) chuThich[`cau_${c.id}`] = `Gợi ý: ${da.goiY} (tối đa ${c.toiDa} điểm)`;
   }
 
-  return { dong, kq, congThuc: CONG_THUC, chuThich, rangBuoc: { [COT_GV]: [0, kq.toiDaGv] as [number, number] } };
+  return {
+    dong,
+    kq,
+    congThuc: CONG_THUC,
+    chuThich,
+    rangBuoc: { [COT_GV]: [0, kq.toiDaGv] as [number, number], [COT_NOI]: [0, 20] as [number, number] },
+  };
 }
 
 /** Bộ nhớ tạm khi chưa có Apps Script — để chạy thử giao diện. */
