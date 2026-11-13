@@ -390,7 +390,7 @@ export default {
       "diem_tu": "0",
       "option": "Option 1",
       "mo_ta": "Nhận biết được các từ đơn giản, gần gũi (vật dụng, động vật) khi người nói phát âm rõ ràng và với tốc độ chậm.",
-      "goi_y": "Nghe bài hát thiếu nhi và truyện tranh có audio 10 phút mỗi ngày. Ba mẹ cho con chỉ tay vào hình khi nghe thấy từ quen để luyện phản ứng."
+      "goi_y": ""
     },
     {
       "ky_nang": "Listening",
@@ -398,7 +398,7 @@ export default {
       "diem_tu": "0",
       "option": "Option 2",
       "mo_ta": "Nghe hiểu và phân biệt được một số từ lẻ thuộc chủ đề thân thuộc như con vật hay đồ vật nếu tốc độ nói chậm rãi, rõ tiếng.",
-      "goi_y": "Nghe bài hát thiếu nhi và truyện tranh có audio 10 phút mỗi ngày. Ba mẹ cho con chỉ tay vào hình khi nghe thấy từ quen để luyện phản ứng."
+      "goi_y": ""
     },
     {
       "ky_nang": "Listening",
@@ -406,7 +406,7 @@ export default {
       "diem_tu": "0",
       "option": "Option 3",
       "mo_ta": "Có thể nghe và bắt kịp các từ đơn lẻ về các chủ đề quen thuộc (đồ vật, loài vật) trong điều kiện người nói giao tiếp chậm và rõ từ.",
-      "goi_y": "Nghe bài hát thiếu nhi và truyện tranh có audio 10 phút mỗi ngày. Ba mẹ cho con chỉ tay vào hình khi nghe thấy từ quen để luyện phản ứng."
+      "goi_y": ""
     },
     {
       "ky_nang": "Listening",
@@ -414,7 +414,7 @@ export default {
       "diem_tu": "6",
       "option": "Option 1",
       "mo_ta": "Nắm bắt được ý chính trong các đoạn tương tác hỏi - đáp ngắn xoay quanh các chủ đề đời thường như sở thích hay món ăn.",
-      "goi_y": "Luyện nghe hội thoại ngắn 1–2 phút, sau khi nghe hỏi con 2–3 câu về chi tiết (ai, ở đâu, làm gì) để tập nghe có chủ đích."
+      "goi_y": ""
     },
     {
       "ky_nang": "Listening",
@@ -422,7 +422,7 @@ export default {
       "diem_tu": "6",
       "option": "Option 2",
       "mo_ta": "Hiểu được nội dung cốt lõi của những câu hỏi và câu trả lời ngắn gọn về các chủ đề gần gũi (thức ăn, sở thích)",
-      "goi_y": "Luyện nghe hội thoại ngắn 1–2 phút, sau khi nghe hỏi con 2–3 câu về chi tiết (ai, ở đâu, làm gì) để tập nghe có chủ đích."
+      "goi_y": ""
     },
     {
       "ky_nang": "Listening",
@@ -430,7 +430,7 @@ export default {
       "diem_tu": "6",
       "option": "Option 3",
       "mo_ta": "Tiếp thu được thông tin trọng tâm từ các hội thoại giao tiếp ngắn thuộc các chủ đề quen thuộc (sở thích, đồ ăn)",
-      "goi_y": "Luyện nghe hội thoại ngắn 1–2 phút, sau khi nghe hỏi con 2–3 câu về chi tiết (ai, ở đâu, làm gì) để tập nghe có chủ đích."
+      "goi_y": ""
     },
     {
       "ky_nang": "Listening",
@@ -438,7 +438,7 @@ export default {
       "diem_tu": "11",
       "option": "Option 1",
       "mo_ta": "Hiểu nội dung hội thoại ngắn ngay cả khi có thông tin gây nhiễu hoặc đổi ý, đồng thời bước đầu ghi chép lại được các chi tiết từ thông báo ngắn.",
-      "goi_y": "Xem video hoạt hình tiếng Anh có phụ đề tiếng Anh, sau đó tắt phụ đề xem lại. Tập ghi chú từ khoá khi nghe."
+      "goi_y": ""
     },
     {
       "ky_nang": "Listening",
@@ -446,7 +446,7 @@ export default {
       "diem_tu": "11",
       "option": "Option 2",
       "mo_ta": "Nắm được ý nghĩa bài hội thoại ngắn dù có chi tiết xao nhãng/bẫy, và khởi đầu việc ghi nhận chính xác chi tiết trong một bản thông báo ngắn.",
-      "goi_y": "Xem video hoạt hình tiếng Anh có phụ đề tiếng Anh, sau đó tắt phụ đề xem lại. Tập ghi chú từ khoá khi nghe."
+      "goi_y": ""
     },
     {
       "ky_nang": "Listening",
@@ -454,7 +454,7 @@ export default {
       "diem_tu": "11",
       "option": "Option 3",
       "mo_ta": "Lắng nghe và xử lý tốt hội thoại ngắn chứa thông tin gây nhiễu; bắt đầu ghi chép lại được thông tin chi tiết từ thông báo ngắn.",
-      "goi_y": "Xem video hoạt hình tiếng Anh có phụ đề tiếng Anh, sau đó tắt phụ đề xem lại. Tập ghi chú từ khoá khi nghe."
+      "goi_y": ""
     },
     {
       "ky_nang": "Listening",
@@ -462,7 +462,7 @@ export default {
       "diem_tu": "16",
       "option": "Option 1",
       "mo_ta": "Nắm trọn vẹn nội dung một đoạn thông báo ngắn liền mạch và ghi lại chính xác các thông tin cụ thể (thời gian, địa điểm, trang phục).",
-      "goi_y": "Nâng độ khó bằng podcast thiếu nhi hoặc bản tin dành cho trẻ em. Tập tóm tắt lại nội dung bằng tiếng Anh sau khi nghe."
+      "goi_y": ""
     },
     {
       "ky_nang": "Listening",
@@ -470,7 +470,7 @@ export default {
       "diem_tu": "16",
       "option": "Option 2",
       "mo_ta": "Hiểu thông suốt bài thông báo ngắn không ngắt quãng và ghi chép chuẩn xác từng chi tiết như giờ giấc, địa điểm hay yêu cầu trang phục.",
-      "goi_y": "Nâng độ khó bằng podcast thiếu nhi hoặc bản tin dành cho trẻ em. Tập tóm tắt lại nội dung bằng tiếng Anh sau khi nghe."
+      "goi_y": ""
     },
     {
       "ky_nang": "Listening",
@@ -478,7 +478,7 @@ export default {
       "diem_tu": "16",
       "option": "Option 3",
       "mo_ta": "Theo kịp và hiểu chính xác thông báo ngắn mạch lạc, đồng thời chép lại đúng các chi tiết quan trọng về địa điểm, thời gian và trang phục.",
-      "goi_y": "Nâng độ khó bằng podcast thiếu nhi hoặc bản tin dành cho trẻ em. Tập tóm tắt lại nội dung bằng tiếng Anh sau khi nghe."
+      "goi_y": ""
     },
     {
       "ky_nang": "Reading",
@@ -486,7 +486,7 @@ export default {
       "diem_tu": "0",
       "option": "Option 1",
       "mo_ta": "Nhận biết và định danh được một số từ đơn lẻ nhờ vào minh họa hình ảnh đi kèm.",
-      "goi_y": "Đọc sách tranh song ngữ cùng con mỗi tối. Dùng flashcard có hình để củng cố mặt chữ của các từ thường gặp."
+      "goi_y": ""
     },
     {
       "ky_nang": "Reading",
@@ -494,7 +494,7 @@ export default {
       "diem_tu": "0",
       "option": "Option 2",
       "mo_ta": "Đọc hiểu được các từ đơn đơn giản khi có sự trợ giúp từ các hình ảnh trực quan.",
-      "goi_y": "Đọc sách tranh song ngữ cùng con mỗi tối. Dùng flashcard có hình để củng cố mặt chữ của các từ thường gặp."
+      "goi_y": ""
     },
     {
       "ky_nang": "Reading",
@@ -502,7 +502,7 @@ export default {
       "diem_tu": "0",
       "option": "Option 3",
       "mo_ta": "Có khả năng nhận diện các từ đơn cơ bản thông qua gợi ý bằng hình ảnh.",
-      "goi_y": "Đọc sách tranh song ngữ cùng con mỗi tối. Dùng flashcard có hình để củng cố mặt chữ của các từ thường gặp."
+      "goi_y": ""
     },
     {
       "ky_nang": "Reading",
@@ -510,7 +510,7 @@ export default {
       "diem_tu": "6",
       "option": "Option 1",
       "mo_ta": "Đọc hiểu các câu đơn dùng để miêu tả hình ảnh và xác định được tính đúng hay sai của thông tin.",
-      "goi_y": "Cho con đọc to các đoạn ngắn 3–5 câu mỗi ngày. Khuyến khích con đoán nghĩa từ dựa vào hình và câu xung quanh trước khi tra từ điển."
+      "goi_y": ""
     },
     {
       "ky_nang": "Reading",
@@ -518,7 +518,7 @@ export default {
       "diem_tu": "6",
       "option": "Option 2",
       "mo_ta": "Phân định chính xác thông tin đúng/sai dựa trên việc đọc hiểu các câu đơn mô tả bức tranh.",
-      "goi_y": "Cho con đọc to các đoạn ngắn 3–5 câu mỗi ngày. Khuyến khích con đoán nghĩa từ dựa vào hình và câu xung quanh trước khi tra từ điển."
+      "goi_y": ""
     },
     {
       "ky_nang": "Reading",
@@ -526,7 +526,7 @@ export default {
       "diem_tu": "6",
       "option": "Option 3",
       "mo_ta": "Có thể đọc và nắm được nội dung các câu đơn miêu tả tranh, từ đó đưa ra đánh giá đúng/sai tương ứng.",
-      "goi_y": "Cho con đọc to các đoạn ngắn 3–5 câu mỗi ngày. Khuyến khích con đoán nghĩa từ dựa vào hình và câu xung quanh trước khi tra từ điển."
+      "goi_y": ""
     },
     {
       "ky_nang": "Reading",
@@ -534,7 +534,7 @@ export default {
       "diem_tu": "11",
       "option": "Option 1",
       "mo_ta": "Đọc hiểu các câu miêu tả và bước đầu trích xuất được những dữ liệu chi tiết trong một đoạn văn ngắn.",
-      "goi_y": "Luyện đọc truyện ngắn phân cấp (graded readers) đúng trình độ. Sau mỗi chương, cho con kể lại ý chính bằng 2–3 câu."
+      "goi_y": ""
     },
     {
       "ky_nang": "Reading",
@@ -542,7 +542,7 @@ export default {
       "diem_tu": "11",
       "option": "Option 2",
       "mo_ta": "Nắm bắt ý nghĩa câu mô tả và tìm đúng thông tin cụ thể nằm trong bài đọc ngắn.",
-      "goi_y": "Luyện đọc truyện ngắn phân cấp (graded readers) đúng trình độ. Sau mỗi chương, cho con kể lại ý chính bằng 2–3 câu."
+      "goi_y": ""
     },
     {
       "ky_nang": "Reading",
@@ -550,7 +550,7 @@ export default {
       "diem_tu": "11",
       "option": "Option 3",
       "mo_ta": "Có khả năng hiểu văn bản mô tả, đồng thời biết cách tra cứu và định vị thông tin chi tiết trong bài đọc ngắn.",
-      "goi_y": "Luyện đọc truyện ngắn phân cấp (graded readers) đúng trình độ. Sau mỗi chương, cho con kể lại ý chính bằng 2–3 câu."
+      "goi_y": ""
     },
     {
       "ky_nang": "Reading",
@@ -558,7 +558,7 @@ export default {
       "diem_tu": "16",
       "option": "Option 1",
       "mo_ta": "Đọc hiểu bài văn dài khoảng 200 từ viết ở thì quá khứ, xác định đúng các thông tin chi tiết và nắm được nguyện vọng của nhân vật.",
-      "goi_y": "Mở rộng sang nhiều thể loại: báo thiếu nhi, văn bản thông tin, truyện dài. Tập nêu ý kiến của con về nội dung vừa đọc."
+      "goi_y": ""
     },
     {
       "ky_nang": "Reading",
@@ -566,7 +566,7 @@ export default {
       "diem_tu": "16",
       "option": "Option 2",
       "mo_ta": "Trích xuất chính xác chi tiết và thấu hiểu mong muốn của nhân vật qua bài đọc độ dài khoảng 200 từ có sử dụng thì quá khứ.",
-      "goi_y": "Mở rộng sang nhiều thể loại: báo thiếu nhi, văn bản thông tin, truyện dài. Tập nêu ý kiến của con về nội dung vừa đọc."
+      "goi_y": ""
     },
     {
       "ky_nang": "Reading",
@@ -574,7 +574,7 @@ export default {
       "diem_tu": "16",
       "option": "Option 3",
       "mo_ta": "Có khả năng xử lý bài đọc dài khoảng 200 từ ở thì quá khứ, vừa tìm kiếm thông tin chi tiết chuẩn xác vừa cảm nhận được ý định/mong muốn của nhân vật.",
-      "goi_y": "Mở rộng sang nhiều thể loại: báo thiếu nhi, văn bản thông tin, truyện dài. Tập nêu ý kiến của con về nội dung vừa đọc."
+      "goi_y": ""
     },
     {
       "ky_nang": "Writing",
@@ -582,7 +582,7 @@ export default {
       "diem_tu": "0",
       "option": "Option 1",
       "mo_ta": "Điền hoặc sắp xếp lại thứ tự chữ cái của một số từ đơn quen thuộc, tuy nhiên chưa tạo lập được một câu hoàn chỉnh.",
-      "goi_y": "Luyện chép chính tả 5 từ mới mỗi ngày. Cho con viết nhãn tên tiếng Anh cho đồ vật quen thuộc trong nhà."
+      "goi_y": ""
     },
     {
       "ky_nang": "Writing",
@@ -590,7 +590,7 @@ export default {
       "diem_tu": "0",
       "option": "Option 2",
       "mo_ta": "Tạo lập được các từ đơn gần gũi bằng cách viết hoặc ghép từ, nhưng chưa thể dựng thành một câu đầy đủ.",
-      "goi_y": "Luyện chép chính tả 5 từ mới mỗi ngày. Cho con viết nhãn tên tiếng Anh cho đồ vật quen thuộc trong nhà."
+      "goi_y": ""
     },
     {
       "ky_nang": "Writing",
@@ -598,7 +598,7 @@ export default {
       "diem_tu": "0",
       "option": "Option 3",
       "mo_ta": "Có khả năng viết hoặc sắp xếp một số từ ngữ cơ bản, song chưa thể tự hoàn thiện một câu trọn vẹn.",
-      "goi_y": "Luyện chép chính tả 5 từ mới mỗi ngày. Cho con viết nhãn tên tiếng Anh cho đồ vật quen thuộc trong nhà."
+      "goi_y": ""
     },
     {
       "ky_nang": "Writing",
@@ -606,7 +606,7 @@ export default {
       "diem_tu": "4",
       "option": "Option 1",
       "mo_ta": "Đạt độ chính xác về chính tả với các từ vựng quen thuộc và đặt được khoảng một câu phản hồi ngắn tương ứng với nội dung bức tranh.",
-      "goi_y": "Mỗi tối viết 3 câu về một việc trong ngày theo mẫu \"Today I...\". Ba mẹ cùng con kiểm tra viết hoa và dấu chấm cuối câu."
+      "goi_y": ""
     },
     {
       "ky_nang": "Writing",
@@ -614,7 +614,7 @@ export default {
       "diem_tu": "4",
       "option": "Option 2",
       "mo_ta": "Viết chuẩn chính tả các từ ngữ cơ bản và đưa ra câu trả lời ngắn chính xác dựa theo hình ảnh minh họa.",
-      "goi_y": "Mỗi tối viết 3 câu về một việc trong ngày theo mẫu \"Today I...\". Ba mẹ cùng con kiểm tra viết hoa và dấu chấm cuối câu."
+      "goi_y": ""
     },
     {
       "ky_nang": "Writing",
@@ -622,7 +622,7 @@ export default {
       "diem_tu": "4",
       "option": "Option 3",
       "mo_ta": "Có thể ghi đúng chính tả từ ngữ gần gũi và bước đầu diễn đạt được 1 câu trả lời ngắn phù hợp với ngữ cảnh trong tranh.",
-      "goi_y": "Mỗi tối viết 3 câu về một việc trong ngày theo mẫu \"Today I...\". Ba mẹ cùng con kiểm tra viết hoa và dấu chấm cuối câu."
+      "goi_y": ""
     },
     {
       "ky_nang": "Writing",
@@ -630,7 +630,7 @@ export default {
       "diem_tu": "8",
       "option": "Option 1",
       "mo_ta": "Đặt được 2–3 câu trả lời trọn vẹn, áp dụng chuẩn xác các mẫu câu nền tảng (như There are…, He is …ing).",
-      "goi_y": "Luyện viết nhật ký ngắn 4–6 câu. Mỗi tuần chọn 5 từ mới và thử dùng chúng trong bài viết của con."
+      "goi_y": ""
     },
     {
       "ky_nang": "Writing",
@@ -638,7 +638,7 @@ export default {
       "diem_tu": "8",
       "option": "Option 2",
       "mo_ta": "Hoàn thành 2–3 câu trả lời đầy đủ ngữ pháp dựa trên các cấu trúc câu thông dụng (ví dụ: There are…, He is …ing).",
-      "goi_y": "Luyện viết nhật ký ngắn 4–6 câu. Mỗi tuần chọn 5 từ mới và thử dùng chúng trong bài viết của con."
+      "goi_y": ""
     },
     {
       "ky_nang": "Writing",
@@ -646,7 +646,7 @@ export default {
       "diem_tu": "8",
       "option": "Option 3",
       "mo_ta": "Có khả năng diễn đạt 2–3 câu phản hồi hoàn chỉnh, sử dụng đúng các mô hình câu cơ bản (như There are…, He is …ing).",
-      "goi_y": "Luyện viết nhật ký ngắn 4–6 câu. Mỗi tuần chọn 5 từ mới và thử dùng chúng trong bài viết của con."
+      "goi_y": ""
     },
     {
       "ky_nang": "Writing",
@@ -654,7 +654,7 @@ export default {
       "diem_tu": "12",
       "option": "Option 1",
       "mo_ta": "Trả lời đầy đủ và chính xác bằng các câu trọn vẹn (bao gồm cả các câu hỏi liên quan đến bản thân) với rất ít lỗi về chính tả hay ngữ pháp.",
-      "goi_y": "Thử các dạng bài dài hơn: kể chuyện, viết thư, mô tả. Khuyến khích con tự đọc lại và sửa bài trước khi nộp."
+      "goi_y": ""
     },
     {
       "ky_nang": "Writing",
@@ -662,7 +662,7 @@ export default {
       "diem_tu": "12",
       "option": "Option 2",
       "mo_ta": "Đưa ra phản hồi chuẩn xác và trọn ý cho các câu hỏi (gồm cả chủ đề cá nhân) dưới dạng câu hoàn chỉnh, hầu như không mắc lỗi chính tả hay ngữ pháp.",
-      "goi_y": "Thử các dạng bài dài hơn: kể chuyện, viết thư, mô tả. Khuyến khích con tự đọc lại và sửa bài trước khi nộp."
+      "goi_y": ""
     },
     {
       "ky_nang": "Writing",
@@ -670,7 +670,7 @@ export default {
       "diem_tu": "12",
       "option": "Option 3",
       "mo_ta": "Viết được các câu trả lời hoàn chỉnh, đáp ứng đúng và đủ nội dung được hỏi (kể cả thông tin về bản thân), đảm bảo độ chính xác cao về mặt chính tả và ngữ pháp.",
-      "goi_y": "Thử các dạng bài dài hơn: kể chuyện, viết thư, mô tả. Khuyến khích con tự đọc lại và sửa bài trước khi nộp."
+      "goi_y": ""
     },
     {
       "ky_nang": "Speaking",
@@ -678,7 +678,7 @@ export default {
       "diem_tu": "0",
       "option": "Option 1",
       "mo_ta": "Nhận biết và phát âm được tên một số vật dụng thân thuộc, tương tác phản hồi phần lớn bằng các từ lẻ hoặc từ khẳng định/phủ định (Yes/No).",
-      "goi_y": "Tạo thói quen chào hỏi, cảm ơn bằng tiếng Anh ở nhà. Khen ngợi khi con dám nói, không sửa lỗi ngay lúc con đang nói."
+      "goi_y": ""
     },
     {
       "ky_nang": "Speaking",
@@ -686,7 +686,7 @@ export default {
       "diem_tu": "0",
       "option": "Option 2",
       "mo_ta": "Độc lập gọi tên một vài đồ vật gần gũi và hoàn thành việc trả lời câu hỏi bằng từ đơn hoặc lựa chọn \"Yes/No\" là chính.",
-      "goi_y": "Tạo thói quen chào hỏi, cảm ơn bằng tiếng Anh ở nhà. Khen ngợi khi con dám nói, không sửa lỗi ngay lúc con đang nói."
+      "goi_y": ""
     },
     {
       "ky_nang": "Speaking",
@@ -694,7 +694,7 @@ export default {
       "diem_tu": "0",
       "option": "Option 3",
       "mo_ta": "Có khả năng đọc tên một số vật dụng cơ bản, chủ yếu sử dụng từ đơn lẻ hoặc cách đáp ngắn gọn \"Yes/No\" khi giao tiếp.",
-      "goi_y": "Tạo thói quen chào hỏi, cảm ơn bằng tiếng Anh ở nhà. Khen ngợi khi con dám nói, không sửa lỗi ngay lúc con đang nói."
+      "goi_y": ""
     },
     {
       "ky_nang": "Speaking",
@@ -702,7 +702,7 @@ export default {
       "diem_tu": "9",
       "option": "Option 1",
       "mo_ta": "Gọi tên vật dụng với phản xạ khá nhanh, phát âm thành tiếng các từ và cụm từ ngắn (còn thao tác ghép âm) và giao tiếp bằng các cụm từ hoặc mẫu câu đã học thuộc.",
-      "goi_y": "Luyện nói theo chủ đề 1 phút mỗi ngày (gia đình, sở thích, trường học). Nghe và nhại lại câu mẫu để sửa âm cuối."
+      "goi_y": ""
     },
     {
       "ky_nang": "Speaking",
@@ -710,7 +710,7 @@ export default {
       "diem_tu": "9",
       "option": "Option 2",
       "mo_ta": "Nhận diện và phát âm tên đồ vật tương đối nhanh chóng, đọc được từ/cụm từ ngắn (cần đánh vần/ghép âm) và đưa ra câu trả lời dưới dạng cụm từ hoặc câu khuôn mẫu.",
-      "goi_y": "Luyện nói theo chủ đề 1 phút mỗi ngày (gia đình, sở thích, trường học). Nghe và nhại lại câu mẫu để sửa âm cuối."
+      "goi_y": ""
     },
     {
       "ky_nang": "Speaking",
@@ -718,7 +718,7 @@ export default {
       "diem_tu": "9",
       "option": "Option 3",
       "mo_ta": "Có phản xạ gọi tên đồ vật khá nhanh, đọc được các từ và cụm ngắn (vẫn cần thời gian ghép âm) và phản hồi câu hỏi bằng cụm từ hoặc câu ghi nhớ sẵn.",
-      "goi_y": "Luyện nói theo chủ đề 1 phút mỗi ngày (gia đình, sở thích, trường học). Nghe và nhại lại câu mẫu để sửa âm cuối."
+      "goi_y": ""
     },
     {
       "ky_nang": "Speaking",
@@ -726,7 +726,7 @@ export default {
       "diem_tu": "15",
       "option": "Option 1",
       "mo_ta": "Đọc phát âm mượt mà các từ cùng câu ngắn, đồng thời trả lời các thắc mắc về cá nhân bằng các câu đơn trọn vẹn, chủ yếu áp dụng thì hiện tại.",
-      "goi_y": "Đóng vai các tình huống thực tế (mua hàng, hỏi đường). Ghi âm con nói rồi cùng nghe lại để con tự nhận ra lỗi."
+      "goi_y": ""
     },
     {
       "ky_nang": "Speaking",
@@ -734,7 +734,7 @@ export default {
       "diem_tu": "15",
       "option": "Option 2",
       "mo_ta": "Thể hiện khả năng đọc thành tiếng liền mạch các câu ngắn và từ ngữ, đưa ra câu trả lời đầy đủ cấu trúc về bản thân dựa trên thì hiện tại là chính.",
-      "goi_y": "Đóng vai các tình huống thực tế (mua hàng, hỏi đường). Ghi âm con nói rồi cùng nghe lại để con tự nhận ra lỗi."
+      "goi_y": ""
     },
     {
       "ky_nang": "Speaking",
@@ -742,7 +742,7 @@ export default {
       "diem_tu": "15",
       "option": "Option 3",
       "mo_ta": "Có thể đọc rõ ràng, không đứt đoạn các từ và câu ngắn, đồng thời tự tin đáp lại các câu hỏi bản thân bằng câu đơn hoàn chỉnh ở thì hiện tại.",
-      "goi_y": "Đóng vai các tình huống thực tế (mua hàng, hỏi đường). Ghi âm con nói rồi cùng nghe lại để con tự nhận ra lỗi."
+      "goi_y": ""
     },
     {
       "ky_nang": "Speaking",
@@ -750,7 +750,7 @@ export default {
       "diem_tu": "18",
       "option": "Option 1",
       "mo_ta": "Đọc phát âm lưu loát các câu dài, trả lời trọn vẹn và biết liên kết ý tưởng (bằng because, and then), chủ động mở rộng ý và linh hoạt dùng thì quá khứ/tương lai.",
-      "goi_y": "Tham gia hoạt động thuyết trình, kể chuyện, tranh luận nhỏ. Khuyến khích con nói về chủ đề con yêu thích trong 2–3 phút."
+      "goi_y": ""
     },
     {
       "ky_nang": "Speaking",
@@ -758,7 +758,7 @@ export default {
       "diem_tu": "18",
       "option": "Option 2",
       "mo_ta": "Đạt độ trôi chảy khi đọc thành tiếng các câu dài, đưa ra phản hồi đầy đủ có tính kết nối (because, and then), áp dụng được thì quá khứ/tương lai và tự giác phát triển thêm câu trả lời.",
-      "goi_y": "Tham gia hoạt động thuyết trình, kể chuyện, tranh luận nhỏ. Khuyến khích con nói về chủ đề con yêu thích trong 2–3 phút."
+      "goi_y": ""
     },
     {
       "ky_nang": "Speaking",
@@ -766,7 +766,7 @@ export default {
       "diem_tu": "18",
       "option": "Option 3",
       "mo_ta": "Có khả năng đọc trôi chảy câu dài, tự tin trả lời chi tiết và biết nối các liên kết ý (because, and then), chủ động mở rộng câu trả lời kết hợp thì quá khứ hoặc tương lai.",
-      "goi_y": "Tham gia hoạt động thuyết trình, kể chuyện, tranh luận nhỏ. Khuyến khích con nói về chủ đề con yêu thích trong 2–3 phút."
+      "goi_y": ""
     }
   ],
   "thangLevel": [

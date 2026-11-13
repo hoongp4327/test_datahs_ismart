@@ -149,8 +149,9 @@ Khoảng điểm khung iLEAD:
 | Speaking | 20 | 0–8 · 9–14 · 15–17 · 18–20 |
 
 **Sửa câu chữ ở đây là mọi báo cáo — cũ lẫn mới — đổi theo ngay**, vì `KetQua` chỉ lưu tên
-option chứ không lưu nguyên văn. File Excel chưa có gợi ý luyện tập nên `goi_y` đang giữ nội
-dung cũ, ghép theo thứ tự khoảng điểm.
+option chứ không lưu nguyên văn. File Excel chưa có gợi ý luyện tập nên `goi_y` đang **để trống**
+(nội dung mẫu cũ đã bỏ vì chưa được duyệt). Trung tâm viết thẳng trên sheet; báo cáo tự ẩn mục gợi ý
+khi cả 4 kỹ năng đều trống, và chỉ hiện kỹ năng nào có gợi ý.
 
 **Điểm tối đa từng kỹ năng nằm trong code** (đổi thì sửa cả 3 nơi): `KY_NANG` trong
 `shared/bao-cao.ts`, `DIEM_TOI_DA` trong `apps-script/Code.gs` và `scripts/kiem-tra-ket-noi.mjs`.
