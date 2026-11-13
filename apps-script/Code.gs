@@ -2,7 +2,8 @@
  * Apps Script gắn trong Google Sheet:
  *   - doGet:             trả dữ liệu 3 tab dạng JSON cho website
  *   - doPost:            trang quản trị lưu điểm / thêm học sinh vào tab KetQua;
- *                        học sinh nộp bài placement test vào tab PlacementTest
+ *                        học sinh nộp bài placement test vào tab PlacementTest;
+ *                        trang quản trị đọc bài chờ chấm và chấm xong → chuyển sang KetQua
  *   - thietLapRangBuoc:  chạy tay MỘT lần để sheet tự chặn điểm sai và tạo dropdown option
  *   - kiemTra:           chạy tay để xem sheet có đúng cấu trúc không
  *
@@ -110,6 +111,12 @@ function doPost(e) {
   }
   if (body.action === 'luu') {
     return traVeJson(luuHocSinh(body.hocSinh || {}, body.truoc || null));
+  }
+  if (body.action === 'docPlacement') {
+    return traVeJson({ ok: true, rows: docTab(SpreadsheetApp.getActiveSpreadsheet(), TAB_PLACEMENT) });
+  }
+  if (body.action === 'chamPlacement') {
+    return traVeJson(chamPlacement(String(body.maBai || ''), body.hocSinh || {}, body.cham || {}));
   }
   if (body.action === 'nopBaiTest') {
     return traVeJson(nopBaiTest(body.dong || {}, body.congThuc || {}, body.chuThich || {}, body.rangBuoc || {}));
@@ -221,6 +228,94 @@ function nopBaiTest(dong, congThuc, chuThich, rangBuoc) {
   }
 }
 
+/**
+ * Giáo viên chấm xong bài placement trên trang quản trị → trong MỘT lần khoá:
+ *   1. Tìm bài theo ma_bai; bài đã chuyển rồi (có ma_hoc_sinh) thì báo DA_CHAM, không tạo trùng.
+ *   2. Lấy điểm Listening, Reading, Writing Part 1 từ CHÍNH dòng bài làm (không tin số trình duyệt
+ *      gửi), cộng điểm Writing Part 2 giáo viên chấm → tạo học sinh mới trong tab KetQua.
+ *   3. Ghi lại vào dòng bài làm: điểm GV chấm, mã học sinh, trạng thái "Đã chuyển".
+ * cham = { w2: tổng điểm Writing Part 2 (0–12), speaking: 0–20 }
+ */
+function chamPlacement(maBai, hs, cham) {
+  if (!/^[a-zA-Z0-9-]{8,64}$/.test(maBai)) return { error: 'INVALID', message: 'Thiếu mã bài làm.' };
+  var ma = String(hs.ma_hoc_sinh || '').trim().toUpperCase();
+  if (!/^[A-Z0-9][A-Z0-9-]{3,19}$/.test(ma)) {
+    return { error: 'INVALID', loi: { ma_hoc_sinh: 'Mã học sinh không hợp lệ.' } };
+  }
+  var w2 = Number(cham.w2);
+  if (!isFinite(w2) || w2 < 0 || w2 > 12) return { error: 'INVALID', loi: { w2: 'Writing Part 2 từ 0 đến 12.' } };
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(8000)) return { error: 'BUSY', message: 'Có người khác đang lưu, thử lại sau vài giây.' };
+  try {
+    var sh = ss.getSheetByName(TAB_PLACEMENT);
+    if (!sh) return { error: 'NO_TAB', message: 'Chưa có tab ' + TAB_PLACEMENT + '.' };
+    var duLieu = sh.getDataRange().getDisplayValues();
+    var tieuDe = duLieu[0].map(function (h) { return String(h).trim(); });
+    var c = function (ten) { return tieuDe.indexOf(ten); };
+    var dong = -1;
+    for (var r = 1; r < duLieu.length; r++) {
+      if (duLieu[r][c('ma_bai')] === maBai) { dong = r; break; }
+    }
+    if (dong < 0) return { error: 'GONE', message: 'Không tìm thấy bài làm này trên sheet (có thể đã bị xoá).' };
+    var hang = duLieu[dong];
+    var daCo = c('ma_hoc_sinh') >= 0 ? String(hang[c('ma_hoc_sinh')]).trim() : '';
+    if (daCo) return { error: 'DA_CHAM', ma_hoc_sinh: daCo, message: 'Bài này đã được chấm và chuyển sang ' + daCo + '.' };
+
+    var so = function (ten) {
+      var v = c(ten) >= 0 ? String(hang[c(ten)]).replace(',', '.').trim() : '';
+      return v === '' ? 0 : Number(v);
+    };
+    var hocSinh = {
+      ma_hoc_sinh: ma,
+      ho_ten: String(hs.ho_ten || hang[c('ho_ten')] || '').trim(),
+      lop: hs.lop || '',
+      giao_vien: hs.giao_vien || '',
+      ngay_cham: Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'dd/MM/yyyy'),
+      diem_listening: so('diem_listening'),
+      diem_reading: so('diem_reading'),
+      diem_writing: Math.min(DIEM_TOI_DA.writing, so('diem_writing_p1') + w2),
+      diem_speaking: hs.diem_speaking,
+      mo_ta_rieng_speaking: hs.mo_ta_rieng_speaking || ''
+    };
+    var loi = kiemTraTruocKhiGhi(ss, hocSinh);
+    if (Object.keys(loi).length) return { error: 'INVALID', loi: loi };
+
+    // Mã mới phải chưa có trong KetQua — ghiHocSinh gặp mã đã có sẽ GHI ĐÈ học sinh đó.
+    var kqTab = docTab(ss, TAB_KET_QUA);
+    var cMa = (kqTab[0] || []).indexOf('ma_hoc_sinh');
+    for (var k = 1; k < kqTab.length && cMa >= 0; k++) {
+      if (chuanMa(kqTab[k][cMa]) === chuanMa(ma)) return { error: 'MA_TRUNG', message: 'Mã ' + ma + ' đã có, bấm Xác nhận lại để tạo mã khác.' };
+    }
+
+    var kq = ghiHocSinh(ss, hocSinh, null, ma);
+    if (kq.error) return kq;
+
+    // Đánh dấu bài làm: thêm cột còn thiếu ở cuối, ghi giá trị (trạng thái ghi đè công thức).
+    var ghi = {
+      diem_writing_p2_gv: w2,
+      diem_speaking: Number(hs.diem_speaking),
+      ma_hoc_sinh: "'" + ma,
+      nguoi_cham: hocSinh.giao_vien ? "'" + hocSinh.giao_vien : '',
+      trang_thai: "'Đã chuyển → " + ma
+    };
+    for (var ten in ghi) {
+      var cot = tieuDe.indexOf(ten);
+      if (cot < 0) {
+        tieuDe.push(ten);
+        cot = tieuDe.length - 1;
+        sh.getRange(1, cot + 1).setValue(ten).setFontWeight('bold');
+      }
+      sh.getRange(dong + 1, cot + 1).setValue(ghi[ten]);
+    }
+    SpreadsheetApp.flush();
+    return { ok: true, ma_hoc_sinh: ma, hocSinh: hocSinh };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 function chuanMa(v) {
   return String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
@@ -252,6 +347,15 @@ function luuHocSinh(hs, truoc) {
     return { error: 'BUSY', message: 'Có người khác đang lưu, thử lại sau vài giây.' };
   }
   try {
+    return ghiHocSinh(ss, hs, truoc, ma);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** Phần ghi của luuHocSinh — người gọi PHẢI đang giữ khoá script. */
+function ghiHocSinh(ss, hs, truoc, ma) {
+  {
     var sh = ss.getSheetByName(TAB_KET_QUA);
     if (!sh) return { error: 'NO_TAB', message: 'Không tìm thấy tab "' + TAB_KET_QUA + '".' };
 
@@ -307,8 +411,6 @@ function luuHocSinh(hs, truoc) {
     }
     SpreadsheetApp.flush();
     return { ok: true, moi: moi, dong: dong };
-  } finally {
-    lock.releaseLock();
   }
 }
 

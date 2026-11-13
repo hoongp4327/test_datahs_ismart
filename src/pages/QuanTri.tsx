@@ -4,6 +4,7 @@ import { COT_SUA, KY_TU_MA, NHAN_COT, kiemTraHocSinh, type CotSua } from "../../
 import Icon from "../components/Icon";
 import { giaoDienKyNang } from "../components/kyNangGiaoDien";
 import "../quan-tri.css";
+import ChamPlacement, { type ChoCham } from "./ChamPlacement";
 
 /**
  * Trang quản trị — giáo viên chọn học sinh, nhập điểm, lưu thẳng vào Google Sheet.
@@ -19,7 +20,9 @@ type DuLieu = {
   coTheGhi: boolean;
   hocSinh: Row[];
   moTa: MoTaOption[];
-  thangLevel: { level: string; diem_tu: string }[];
+  thangLevel: { level: string; diem_tu: string; lop_xep?: string }[];
+  /** Bài placement đã nộp, chưa chấm xong (chưa chuyển sang KetQua). */
+  choCham?: ChoCham;
 };
 type Form = Record<"ma_hoc_sinh" | CotSua, string>;
 
@@ -86,6 +89,10 @@ export default function QuanTri() {
   const [thongBao, setThongBao] = useState<{ loai: "ok" | "loi"; chu: string } | null>(null);
   /** Ô bị người khác sửa trong lúc mình đang sửa → giá trị hiện tại trên sheet. */
   const [xungDot, setXungDot] = useState<Partial<Record<CotSua, string>> | null>(null);
+
+  /** Tab đang xem: danh sách học sinh, hoặc bài placement chờ chấm. */
+  const [tab, setTab] = useState<"hoc-sinh" | "cho-cham">("hoc-sinh");
+  const [chamDangChon, setChamDangChon] = useState(false);
 
   useEffect(() => {
     document.title = "Quản trị kết quả — iSMART";
@@ -313,6 +320,39 @@ export default function QuanTri() {
     }
   };
 
+  /** Chấm xong một bài placement → bỏ khỏi "Chờ chấm", thêm vào danh sách và mở học sinh đó
+   *  để giáo viên chọn option mô tả, viết nhận xét lộ trình nếu muốn. */
+  const daChuyenPlacement = (maBai: string, hs: Row) => {
+    setDuLieu((d) =>
+      d
+        ? {
+            ...d,
+            hocSinh: [...d.hocSinh, hs],
+            choCham: d.choCham ? { ...d.choCham, bai: d.choCham.bai.filter((b) => b.ma_bai !== maBai) } : d.choCham,
+          }
+        : d
+    );
+    setTab("hoc-sinh");
+    setChamDangChon(false);
+    setChon(normalizeCode(hs.ma_hoc_sinh));
+    setLaMoi(false);
+    setForm(tuRow(hs));
+    setGoc(tuRow(hs));
+    setLoi({});
+    setXungDot(null);
+    setThongBao({ loai: "ok", chu: `Đã tạo ${hs.ho_ten} — mã ${hs.ma_hoc_sinh}. Có thể chọn mô tả và lộ trình rồi Lưu.` });
+    window.scrollTo(0, 0);
+  };
+
+  const guiAdmin = useCallback(
+    (body: unknown) =>
+      goiApi<Record<string, unknown> & { message?: string; loi?: Record<string, string>; error?: string }>(khoa, {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    [khoa]
+  );
+
   /* ------------------------------ Trạng thái chặn ------------------------------ */
 
   if (trangThai === "dang-tai") {
@@ -351,7 +391,7 @@ export default function QuanTri() {
   const tl = form ? tongVaLevel(form, duLieu) : null;
 
   return (
-    <div className={`qt qt-trang${form ? " dang-sua" : ""}`}>
+    <div className={`qt qt-trang${(tab === "hoc-sinh" ? form : chamDangChon) ? " dang-sua" : ""}`}>
       <header className="qt-dau">
         <img src="/images/ismart-logo.png" alt="iSMART Education" className="qt-logo" />
         <span className="qt-dau-ten">Chấm điểm học viên</span>
@@ -372,6 +412,36 @@ export default function QuanTri() {
         </p>
       ) : null}
 
+      <nav className="qt-tab" aria-label="Chế độ">
+        <button
+          className={tab === "hoc-sinh" ? "is-chon" : ""}
+          aria-current={tab === "hoc-sinh" ? "page" : undefined}
+          onClick={() => setTab("hoc-sinh")}
+        >
+          Học sinh <span>{danhSach.length}</span>
+        </button>
+        <button
+          className={tab === "cho-cham" ? "is-chon" : ""}
+          aria-current={tab === "cho-cham" ? "page" : undefined}
+          onClick={() => setTab("cho-cham")}
+        >
+          Chờ chấm placement{" "}
+          <span className={duLieu.choCham?.bai.length ? "is-co" : ""}>{duLieu.choCham?.bai.length ?? 0}</span>
+        </button>
+      </nav>
+
+      {tab === "cho-cham" ? (
+        <ChamPlacement
+          choCham={duLieu.choCham ?? { bai: [], cauW2: [], toiDaW2: 12, loi: "Máy chủ chưa hỗ trợ — cần deploy bản mới." }}
+          thangLevel={duLieu.thangLevel as unknown as Row[]}
+          daCoMa={daCoMa}
+          goiY={goiY}
+          coTheGhi={duLieu.coTheGhi}
+          gui={guiAdmin}
+          onDaChuyen={daChuyenPlacement}
+          onChon={setChamDangChon}
+        />
+      ) : (
       <div className="qt-than">
         {/* --------------------------- Danh sách --------------------------- */}
         <aside className="qt-ds" aria-label="Danh sách học sinh">
@@ -640,6 +710,7 @@ export default function QuanTri() {
           )}
         </main>
       </div>
+      )}
     </div>
   );
 }

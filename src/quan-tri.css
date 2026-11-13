@@ -304,3 +304,68 @@
 .qt-xung-dot td.la-toi { font-weight: 700; color: var(--navy); }
 .qt-xung-dot td i { color: var(--muted); font-weight: 500; }
 .qt-xung-dot-nut { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+
+/* ------------------------------ Thanh tab ------------------------------ */
+
+.qt-tab {
+  display: flex; gap: 4px; padding: 0 20px;
+  background: #fff; border-bottom: 1px solid var(--line);
+}
+.qt-tab button {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 44px; padding: 0 14px; border: 0; background: none; cursor: pointer;
+  font-weight: 700; color: var(--ink-2); border-bottom: 3px solid transparent;
+}
+.qt-tab button:hover { color: var(--navy); }
+.qt-tab button.is-chon { color: var(--navy); border-bottom-color: var(--orange); }
+.qt-tab span {
+  min-width: 22px; padding: 1px 7px; border-radius: 999px;
+  background: #eef2f8; color: var(--ink-2); font-size: 12px; text-align: center;
+}
+.qt-tab span.is-co { background: var(--orange); color: #fff; }
+
+/* --------------------------- Chấm placement --------------------------- */
+
+.qt-cc-loi { margin: 0 16px 8px; padding: 8px 10px; border-radius: 8px; background: #fff4e0; color: #8a4b00; font-size: 13px; }
+
+.qt-cc-diem { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.qt-cc-o { display: grid; gap: 2px; padding: 10px 12px; border-radius: 10px; background: var(--bg); }
+.qt-cc-o span { font-size: 12.5px; font-weight: 700; color: var(--ink-2); }
+.qt-cc-o b { font-size: 22px; font-weight: 900; color: var(--navy); }
+.qt-cc-o small { font-size: 13px; color: var(--muted); font-weight: 700; }
+
+.qt-cc-chi-tiet { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px 16px; font-size: 13px; }
+.qt-cc-chi-tiet b { color: var(--navy); font-size: 12.5px; }
+.qt-cc-chi-tiet ul { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 2px; }
+.qt-cc-chi-tiet li.is-dung { color: var(--ok); }
+.qt-cc-chi-tiet li.is-sai { color: var(--err); }
+.qt-cc-chi-tiet li.is-trong { color: var(--muted); }
+
+.qt-cc-tranh { width: 100%; max-width: 560px; border-radius: 10px; border: 1px solid var(--line); }
+
+.qt-cc-cau {
+  display: grid; gap: 6px; padding: 12px 14px;
+  border: 1px solid var(--line); border-radius: 10px;
+}
+.qt-cc-cau.co-loi { border-color: var(--err); background: #fff7f6; }
+.qt-cc-cau-de { font-size: 14px; }
+.qt-cc-tra-loi {
+  padding: 8px 12px; border-radius: 8px; background: #f3f7ff; border-left: 3px solid #2b8cee;
+  font-size: 15.5px; font-weight: 700; color: var(--ink);
+}
+.qt-cc-tra-loi.is-trong { color: var(--muted); font-style: italic; font-weight: 500; background: var(--bg); border-left-color: var(--line); }
+.qt-cc-goi-y { font-size: 12.5px; color: var(--muted); }
+.qt-cc-chon { display: flex; align-items: center; gap: 6px; }
+.qt-cc-chon button {
+  width: 40px; height: 36px; border-radius: 8px; cursor: pointer;
+  border: 1px solid #d4dce8; background: #fff; font-weight: 800; color: var(--ink-2);
+}
+.qt-cc-chon button:hover { border-color: var(--orange); }
+.qt-cc-chon button.is-chon { background: var(--orange); border-color: var(--orange); color: #fff; }
+.qt-cc-tong { font-size: 18px; color: var(--navy); margin: 0 2px; }
+
+@media (max-width: 640px) {
+  .qt-tab { padding: 0 8px; }
+  .qt-tab button { padding: 0 10px; font-size: 14px; }
+  .qt-cc-diem { grid-template-columns: 1fr 1fr; }
+}

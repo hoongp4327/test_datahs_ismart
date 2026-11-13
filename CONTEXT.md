@@ -469,3 +469,21 @@ giữa — Apps Script đọc theo vùng dữ liệu liền mạch.
 > `GOOGLE_SHEET_ID`, `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PRIVATE_KEY`, rồi chạy
 > `npm run kiem-tra` để xác nhận. Sau đó đo lại độ trễ thật và cập nhật con số ước
 > lượng "~0,5 s" trong README mục 4.
+
+---
+
+## Placement test online và flow chấm
+
+1. Học sinh làm bài ở `/placement-test` → `/api/placement` chấm Listening, Reading, Writing Part 1
+   (đáp án ở `shared/placement/dap-an.ts`, chỉ server đọc) → Apps Script `nopBaiTest` thêm 1 dòng
+   vào tab `PlacementTest` (tự tạo tab nếu chưa có).
+2. Giáo viên vào `/quan-tri` → tab **Chờ chấm placement** (bài có `ma_bai` mà chưa có `ma_hoc_sinh`):
+   chấm 4 câu Writing Part 2 (0–3 mỗi câu) + Speaking (0–20) → **Xác nhận**.
+3. Apps Script `chamPlacement` (một lần khoá): lấy điểm L/R/W-P1 từ chính dòng bài làm, tạo học sinh
+   mới trong `KetQua` (mã ngẫu nhiên, chặn trùng mã), ghi vào dòng bài làm `ma_hoc_sinh`,
+   `diem_writing_p2_gv`, `diem_speaking`, `nguoi_cham`, `trang_thai = Đã chuyển → HS-…`.
+   Bài đã chuyển thì không chấm lại được (`DA_CHAM`).
+4. Trang quản trị mở luôn học sinh vừa tạo để chọn option mô tả, lộ trình; phụ huynh tra cứu bằng mã đó.
+
+Vẫn chấm tay trên sheet được: gõ điểm vào `diem_writing_p2_gv`, công thức `diem_writing`/`tong_diem`
+tự tính — nhưng cách đó KHÔNG tạo học sinh trong `KetQua`.

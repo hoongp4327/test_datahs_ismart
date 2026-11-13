@@ -13,6 +13,7 @@ import { normalizeCode, type Row } from "./bao-cao";
 import { COT_SUA, kiemTraHocSinh, lamSachTruoc, timXungDot, type CotSua, type HocSinhSua } from "./hoc-sinh-sua";
 import { docDuLieu, type CauHinh } from "./nguon-du-lieu";
 import duLieuMau from "./du-lieu-mau";
+import { CAU_GV_CHAM, LoiCham, TOI_DA_W2, chamBaiPlacement, docBaiChoCham } from "./placement/cham";
 
 /* ------------------------------------------------------------------ *
  * Khoá quản trị
@@ -148,7 +149,11 @@ export async function xuLyQuanTri(req: Request, ch: CauHinh, adminKey: string): 
   try {
     if (req.method === "GET") {
       // Không cache: giáo viên vừa sửa trên sheet thì mở trang là phải thấy ngay.
-      const { data, nguon } = await docDuLieu(ch);
+      // Đọc bài placement chờ chấm song song; lỗi phần này không làm hỏng cả trang.
+      const [{ data, nguon }, choCham] = await Promise.all([
+        docDuLieu(ch),
+        docBaiChoCham(ch, dungMau).catch((e) => ({ bai: [], loi: (e as Error).message })),
+      ]);
       return traJson({
         nguon,
         coTheGhi: dungMau || Boolean(ch.appsScriptUrl),
@@ -161,17 +166,26 @@ export async function xuLyQuanTri(req: Request, ch: CauHinh, adminKey: string): 
           mo_ta: r.mo_ta,
         })),
         thangLevel: data.thangLevel.map((r) => ({ level: r.level, diem_tu: r.diem_tu, lop_xep: r.lop_xep ?? "" })),
+        choCham: { ...choCham, cauW2: CAU_GV_CHAM, toiDaW2: TOI_DA_W2 },
       });
     }
 
     if (req.method === "POST") {
-      let body: { hocSinh?: unknown; truoc?: unknown };
+      let body: { action?: string; hocSinh?: unknown; truoc?: unknown; maBai?: unknown; w2?: unknown };
       try {
         const text = await req.text();
         if (text.length > 20_000) return traJson({ error: "TOO_LARGE", message: "Dữ liệu quá lớn." }, 413);
         body = JSON.parse(text);
       } catch {
         return traJson({ error: "BAD_REQUEST", message: "Dữ liệu gửi lên không đọc được." }, 400);
+      }
+
+      if (!dungMau && !ch.appsScriptUrl && body.action === "chamPlacement") {
+        return traJson({ error: "READ_ONLY", message: "Chưa cấu hình APPS_SCRIPT_URL nên chưa lưu vào sheet được." }, 501);
+      }
+      if (body.action === "chamPlacement") {
+        const kq = await chamBaiPlacement(ch, dungMau, body, (hs) => ghiVaoMau(hs, null));
+        return traJson({ ok: true, ...kq, nguon: dungMau ? "dữ liệu mẫu" : "Apps Script" });
       }
 
       const { loi, sach } = kiemTraHocSinh(body.hocSinh);
@@ -192,6 +206,9 @@ export async function xuLyQuanTri(req: Request, ch: CauHinh, adminKey: string): 
 
     return traJson({ error: "METHOD_NOT_ALLOWED" }, 405);
   } catch (err) {
+    if (err instanceof LoiCham) {
+      return traJson({ error: err.ma, message: err.message, loi: err.chiTiet }, err.trangThai);
+    }
     if (err instanceof LoiGhi) {
       return traJson({ error: err.ma, message: err.message, loi: err.chiTiet, xungDot: err.xungDot }, err.trangThai);
     }
