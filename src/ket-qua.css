@@ -968,3 +968,6 @@
 }
 
 /* In ấn: trang web không in. Bản in A4 trắng đen riêng nằm ở ban-in.css (components/BanIn.tsx). */
+
+/* Mã có thật nhưng chưa có kết quả (chờ chấm Speaking / chưa làm bài) */
+.bc-state-icon { font-size: 36px; line-height: 1; }

@@ -478,18 +478,43 @@ giữa — Apps Script đọc theo vùng dữ liệu liền mạch.
 
 ---
 
-## Placement test online và flow chấm
+## Placement test online và flow chấm (mã cấp trước, Speaking chấm sau)
 
-1. Học sinh làm bài ở `/placement-test` → `/api/placement` chấm Listening, Reading, Writing Part 1
-   (đáp án ở `shared/placement/dap-an.ts`, chỉ server đọc) → Apps Script `nopBaiTest` thêm 1 dòng
-   vào tab `PlacementTest` (tự tạo tab nếu chưa có).
-2. Giáo viên vào `/quan-tri` → tab **Chờ chấm placement** (bài có `ma_bai` mà chưa có `ma_hoc_sinh`):
-   chấm 4 câu Writing Part 2 (0–3 mỗi câu) + Speaking (0–20) → **Xác nhận**.
-3. Apps Script `chamPlacement` (một lần khoá): lấy điểm L/R/W-P1 từ chính dòng bài làm, tạo học sinh
-   mới trong `KetQua` (mã ngẫu nhiên, chặn trùng mã), ghi vào dòng bài làm `ma_hoc_sinh`,
-   `diem_writing_p2_gv`, `diem_speaking`, `nguoi_cham`, `trang_thai = Đã chuyển → HS-…`.
-   Bài đã chuyển thì không chấm lại được (`DA_CHAM`).
-4. Trang quản trị mở luôn học sinh vừa tạo để chọn option mô tả, lộ trình; phụ huynh tra cứu bằng mã đó.
+**Vì sao đổi flow:** trước đây ai có link `/placement-test` cũng làm bài được chỉ với họ tên + ngày
+sinh → dữ liệu rác, không kiểm chứng được. Giờ **mã học sinh do giáo viên cấp trước** là chìa khoá
+vào làm bài, và kết quả lưu vào đúng mã đó.
 
-Vẫn chấm tay trên sheet được: gõ điểm vào `diem_writing_p2_gv`, công thức `diem_writing`/`tong_diem`
-tự tính — nhưng cách đó KHÔNG tạo học sinh trong `KetQua`.
+1. **Giáo viên tạo mã** ở `/quan-tri` → nút **Tạo mã làm bài cho học sinh** (1–60 mã một lần, kèm
+   lớp / giáo viên nếu muốn). Apps Script `taoMa` thêm mỗi mã một dòng vào `KetQua` (chỉ có mã, chưa
+   tên, chưa điểm) → danh sách hiện nhãn **Chưa làm bài**. Giáo viên gửi mã, hoặc link
+   `/placement-test?ma=HS-XXXXXX` (mã điền sẵn). Nút **Thêm** cũ (tạo một học sinh có tên) cũng cho
+   ra mã dùng được để làm bài.
+2. **Học sinh làm bài** ở `/placement-test`: nhập mã + họ tên + ngày sinh. Bấm Bắt đầu →
+   `POST /api/placement { action: "kiemTraMa" }`: mã phải **có trong KetQua** và **chưa có điểm nào**.
+   Nộp bài → Apps Script `nopBaiTest` kiểm tra lại trong khoá (`MA_KHONG_CO` / `MA_DA_DUNG`; cùng
+   `ma_bai` gửi lại thì coi như đã nộp), thêm 1 dòng vào `PlacementTest` (có cột `ma_hoc_sinh`) và
+   **ghi điểm Listening + Reading vào dòng của mã trong KetQua**; `ho_ten` chỉ ghi khi giáo viên chưa
+   nhập sẵn. Mỗi mã làm bài đúng một lần — muốn cho làm lại thì cấp mã mới.
+3. **Giáo viên chấm** ở tab **Chờ chấm placement** (bài còn thiếu `diem_writing_p2_gv` hoặc
+   `diem_speaking`). Hai phần **độc lập**: chấm Writing Part 2 trước, Speaking gom chấm sau — bài vẫn
+   nằm ở Chờ chấm với nhãn *Chờ Speaking*. Phần đã có điểm thì khoá, không ghi đè (sửa ở tab Học
+   sinh). Apps Script `chamPlacement` (action `chamPlacement2`, một lần khoá) lấy L/R/W-P1 từ chính
+   dòng bài làm, ghi vào dòng của mã trong `KetQua` chỉ những cột có giá trị; đủ cả hai phần thì ghi
+   `ngay_cham` và trang quản trị mở học sinh đó để chọn option mô tả, lộ trình.
+4. **Phụ huynh tra cứu** bằng mã. `ketQuaDangCho()` trong `shared/bao-cao.ts` quyết định:
+   - chưa có điểm nào → "…chưa làm bài kiểm tra nên chưa có kết quả"
+   - đã có điểm nhưng **thiếu Speaking** → "Học sinh <tên> chưa làm xong bài Speaking nên chưa đánh
+     giá được…" (API trả `200 { cho: { loai, hoTen, message } }`, không dựng báo cáo dở dang)
+   - còn lại → báo cáo như cũ.
+
+Ghi chú:
+
+- **Phải dán `apps-script/Code.gs` mới và triển khai phiên bản mới** thì flow này mới chạy đủ. Code.gs
+  cũ: tạo mã và chấm bài báo lỗi "bản cũ" (tên action mới `chamPlacement2`, `taoMa`); nộp bài vẫn ghi
+  được dòng bài làm nhưng không kiểm tra mã trong khoá và không ghi điểm vào KetQua (server log cảnh báo).
+- Bài nộp theo flow cũ (dòng `PlacementTest` chưa có `ma_hoc_sinh`) vẫn chấm được: lúc lưu, trang
+  quản trị tạo mã mới và thêm học sinh vào `KetQua` như trước.
+- Logic chế độ dữ liệu mẫu (`npm run dev:mau`) là bản sao trong `shared/placement/nop-bai.ts` và
+  `cham.ts` — sửa Code.gs thì sửa cả hai nơi.
+- Vẫn chấm tay trên sheet được (gõ điểm vào `diem_writing_p2_gv`, `diem_speaking` của tab
+  `PlacementTest`) — nhưng cách đó KHÔNG ghi sang `KetQua`, phụ huynh tra cứu vẫn thấy "chờ Speaking".

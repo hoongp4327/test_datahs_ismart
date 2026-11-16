@@ -155,6 +155,38 @@ export function timLevel(thangLevel: Row[], tong: number): Row | undefined {
   return theoMocDiem(thangLevel, tong);
 }
 
+/** Học sinh đã có điểm kỹ năng nào chưa — mã mới cấp, chưa làm bài thì chưa có điểm nào. */
+export function coDiemNao(row: Row): boolean {
+  return KY_NANG.some((k) => docDiem(row[`diem_${k.key}`], k.toiDa) !== null);
+}
+
+/**
+ * Mã có trên sheet nhưng CHƯA đủ để ra báo cáo:
+ *   - "chua-lam"     mã giáo viên vừa cấp, học sinh chưa làm bài (chưa có điểm nào)
+ *   - "cho-speaking" đã làm bài trên máy, giáo viên chưa chấm Speaking (chấm gom sau)
+ * Trả null = dựng báo cáo như bình thường.
+ */
+export function ketQuaDangCho(row: Row): { loai: "chua-lam" | "cho-speaking"; hoTen: string; message: string } | null {
+  const hoTen = String(row.ho_ten ?? "").trim();
+  if (!coDiemNao(row)) {
+    return {
+      loai: "chua-lam",
+      hoTen,
+      message: hoTen
+        ? `Học sinh ${hoTen} chưa làm bài kiểm tra nên chưa có kết quả.`
+        : "Mã này đã được cấp nhưng học sinh chưa làm bài kiểm tra nên chưa có kết quả.",
+    };
+  }
+  if (docDiem(row.diem_speaking, toiDaCua("speaking")) === null) {
+    return {
+      loai: "cho-speaking",
+      hoTen,
+      message: `Học sinh ${hoTen || "này"} chưa làm xong bài Speaking nên chưa đánh giá được. Vui lòng tra cứu lại sau khi giáo viên chấm Speaking.`,
+    };
+  }
+  return null;
+}
+
 export function buildReport(row: Row, data: SheetData) {
   const kyNang = KY_NANG.map((kn) => {
     const diem = docDiem(row[`diem_${kn.key}`], kn.toiDa);

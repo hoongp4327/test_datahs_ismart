@@ -284,3 +284,14 @@
   .plc-q.is-row { flex-direction: column; align-items: flex-start; }
   .plc-pills .plc-opt { min-width: 44px; }
 }
+
+/* Mã học sinh do giáo viên cấp */
+.plc-field input.plc-ma { font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.plc-field input.plc-ma::placeholder { font-weight: 600; letter-spacing: 0.04em; opacity: 0.55; }
+.plc-field input:disabled { background: #f1f4f9; color: var(--p-ink-2); cursor: not-allowed; }
+.plc-hint { display: block; color: var(--p-ink-2); margin-top: 4px; font-size: 13px; }
+.plc-link {
+  display: block; width: 100%; margin-top: 12px; padding: 6px; border: 0; background: none; cursor: pointer;
+  font: inherit; font-size: 14px; font-weight: 700; color: var(--p-ink-2); text-decoration: underline;
+}
+.plc-link:hover { color: var(--p-ink); }

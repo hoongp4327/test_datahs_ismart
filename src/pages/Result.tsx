@@ -11,6 +11,8 @@ import "../ban-in.css";
 type TrangThai =
   | { loai: "dang-tai" }
   | { loai: "xong"; baoCao: BaoCao }
+  /** Mã có thật nhưng chưa đánh giá được: chưa làm bài, hoặc đang chờ giáo viên chấm Speaking. */
+  | { loai: "cho"; message: string }
   | { loai: "loi"; message: string };
 
 export default function Result() {
@@ -36,8 +38,12 @@ export default function Result() {
       try {
         // Mở bằng link trực tiếp thì không có bước gõ mã để đọc sẵn, nên đọc mới tại đây.
         const res = await fetch(`/api/result?code=${encodeURIComponent(ma)}&refresh=1`);
-        const json = (await res.json()) as { data?: BaoCao; message?: string };
+        const json = (await res.json()) as { data?: BaoCao; message?: string; cho?: { message: string } };
         if (huy) return;
+        if (res.ok && json.cho) {
+          setTt({ loai: "cho", message: json.cho.message });
+          return;
+        }
         if (!res.ok || !json.data) {
           setTt({
             loai: "loi",
@@ -77,6 +83,17 @@ export default function Result() {
             <div className="bc-state" role="status">
               <span className="bc-spinner" aria-hidden="true" />
               Đang tải kết quả…
+            </div>
+          ) : null}
+
+          {tt.loai === "cho" ? (
+            <div className="bc-state" role="status">
+              <span className="bc-state-icon" aria-hidden="true">⏳</span>
+              <p>{tt.message}</p>
+              <Link to="/" className="bc-btn bc-btn-chinh">
+                <Icon ten="arrowLeft" size={16} />
+                Về trang tra cứu
+              </Link>
             </div>
           ) : null}
 

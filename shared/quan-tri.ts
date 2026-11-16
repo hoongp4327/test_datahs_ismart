@@ -8,9 +8,9 @@
  *   - Có đặt     → bắt buộc link /quan-tri#<ADMIN_KEY>. Phần sau # không gửi lên server
  *                  hay lọt vào log; trình duyệt gửi khoá qua header x-admin-key.
  */
-import { createHash, timingSafeEqual } from "node:crypto";
+import { createHash, randomInt, timingSafeEqual } from "node:crypto";
 import { normalizeCode, type Row } from "./bao-cao";
-import { COT_SUA, kiemTraHocSinh, lamSachTruoc, timXungDot, type CotSua, type HocSinhSua } from "./hoc-sinh-sua";
+import { COT_SUA, KY_TU_MA, kiemTraHocSinh, lamSachTruoc, timXungDot, type CotSua, type HocSinhSua } from "./hoc-sinh-sua";
 import { docDuLieu, type CauHinh } from "./nguon-du-lieu";
 import duLieuMau from "./du-lieu-mau";
 import { CAU_GV_CHAM, LoiCham, TOI_DA_W2, chamBaiPlacement, docBaiChoCham } from "./placement/cham";
@@ -122,6 +122,71 @@ function ghiVaoMau(hs: HocSinhSua, truoc: Truoc) {
 }
 
 /* ------------------------------------------------------------------ *
+ * Tạo mã làm bài — giáo viên cấp mã TRƯỚC, gửi cho học sinh
+ * ------------------------------------------------------------------ */
+
+/** Một lần tạo tối đa bấy nhiêu mã — đủ cho một lớp, mà lỡ tay không làm đầy sheet. */
+export const TOI_DA_MA_MOT_LAN = 60;
+
+const maNgauNhien = () => "HS-" + Array.from({ length: 6 }, () => KY_TU_MA[randomInt(KY_TU_MA.length)]).join("");
+
+/**
+ * Thêm N dòng vào KetQua, mỗi dòng chỉ có mã (kèm thông tin lớp / giáo viên nếu nhập).
+ * Học sinh nhập mã này ở /placement-test; bài làm và điểm sẽ ghi vào đúng dòng đó.
+ * Mã sinh ở server bằng crypto; Apps Script (trong khoá) bỏ mã nào lỡ trùng mã đã có.
+ */
+async function taoMaLamBai(ch: CauHinh, dungMau: boolean, vao: { soLuong?: unknown; lop?: unknown; giao_vien?: unknown }) {
+  const soLuong = Math.floor(Number(vao.soLuong));
+  if (!Number.isFinite(soLuong) || soLuong < 1 || soLuong > TOI_DA_MA_MOT_LAN) {
+    throw new LoiGhi("Dữ liệu chưa hợp lệ.", 400, { soLuong: `Số lượng từ 1 đến ${TOI_DA_MA_MOT_LAN}.` }, "INVALID");
+  }
+  // Mượn kiemTraHocSinh để làm sạch + giới hạn độ dài hai ô chữ.
+  const { loi, sach } = kiemTraHocSinh({ ma_hoc_sinh: "HS-TAM", lop: vao.lop ?? "", giao_vien: vao.giao_vien ?? "" });
+  if (Object.keys(loi).length) throw new LoiGhi("Dữ liệu chưa hợp lệ.", 400, loi, "INVALID");
+  const chung = { lop: sach.lop ?? "", giao_vien: sach.giao_vien ?? "" };
+
+  const ma = new Set<string>();
+  while (ma.size < soLuong) ma.add(maNgauNhien());
+
+  if (dungMau) {
+    const ds = (duLieuMau as { ketQua: Row[] }).ketQua;
+    const daCo = new Set(ds.map((r) => normalizeCode(r.ma_hoc_sinh)));
+    const tao = [...ma].filter((m) => !daCo.has(normalizeCode(m)));
+    const moi = tao.map((m) => ({ ...(Object.fromEntries(COT_SUA.map((c) => [c, ""])) as Row), ma_hoc_sinh: m, ...chung }));
+    ds.push(...moi);
+    return moi;
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(ch.appsScriptUrl, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ token: ch.appsScriptToken, action: "taoMa", ma: [...ma], ...chung }),
+      redirect: "follow",
+      signal: AbortSignal.timeout(TIMEOUT_GHI_MS),
+    });
+  } catch (err) {
+    if ((err as Error).name === "TimeoutError") {
+      throw new LoiGhi("Google phản hồi quá chậm. Có thể đã tạo — bấm Tải lại để kiểm tra trước khi tạo lại.", 504);
+    }
+    throw err;
+  }
+  let json: { ok?: boolean; error?: string; message?: string; ma?: string[] };
+  try {
+    json = JSON.parse(await res.text());
+  } catch {
+    throw new LoiGhi(`Apps Script không trả về JSON (${res.status}).`);
+  }
+  if (json.error === "UNAUTHORIZED") throw new LoiGhi("APPS_SCRIPT_TOKEN không khớp TOKEN trong Code.gs.");
+  if (json.error === "UNKNOWN_ACTION") {
+    throw new LoiGhi("Code.gs trên sheet là bản cũ, chưa có chức năng tạo mã — dán Code.gs mới rồi triển khai phiên bản mới.");
+  }
+  if (json.error || !Array.isArray(json.ma)) throw new LoiGhi(json.message || `Apps Script báo lỗi: ${json.error}`);
+  return json.ma.map((m) => ({ ...(Object.fromEntries(COT_SUA.map((c) => [c, ""])) as Row), ma_hoc_sinh: String(m), ...chung }));
+}
+
+/* ------------------------------------------------------------------ *
  * Handler — nhận Request chuẩn web, trả Response
  * ------------------------------------------------------------------ */
 
@@ -171,7 +236,16 @@ export async function xuLyQuanTri(req: Request, ch: CauHinh, adminKey: string): 
     }
 
     if (req.method === "POST") {
-      let body: { action?: string; hocSinh?: unknown; truoc?: unknown; maBai?: unknown; w2?: unknown };
+      let body: {
+        action?: string;
+        hocSinh?: unknown;
+        truoc?: unknown;
+        maBai?: unknown;
+        w2?: unknown;
+        soLuong?: unknown;
+        lop?: unknown;
+        giao_vien?: unknown;
+      };
       try {
         const text = await req.text();
         if (text.length > 20_000) return traJson({ error: "TOO_LARGE", message: "Dữ liệu quá lớn." }, 413);
@@ -180,12 +254,16 @@ export async function xuLyQuanTri(req: Request, ch: CauHinh, adminKey: string): 
         return traJson({ error: "BAD_REQUEST", message: "Dữ liệu gửi lên không đọc được." }, 400);
       }
 
-      if (!dungMau && !ch.appsScriptUrl && body.action === "chamPlacement") {
+      if (!dungMau && !ch.appsScriptUrl && (body.action === "chamPlacement" || body.action === "taoMa")) {
         return traJson({ error: "READ_ONLY", message: "Chưa cấu hình APPS_SCRIPT_URL nên chưa lưu vào sheet được." }, 501);
       }
       if (body.action === "chamPlacement") {
         const kq = await chamBaiPlacement(ch, dungMau, body, (hs) => ghiVaoMau(hs, null));
         return traJson({ ok: true, ...kq, nguon: dungMau ? "dữ liệu mẫu" : "Apps Script" });
+      }
+      if (body.action === "taoMa") {
+        const hocSinh = await taoMaLamBai(ch, dungMau, body);
+        return traJson({ ok: true, hocSinh, nguon: dungMau ? "dữ liệu mẫu" : "Apps Script" });
       }
 
       const { loi, sach } = kiemTraHocSinh(body.hocSinh);

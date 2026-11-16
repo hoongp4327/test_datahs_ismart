@@ -2,8 +2,16 @@
  * POST /api/placement — học sinh nộp bài: chấm điểm ở server rồi ghi 1 dòng vào tab
  * PlacementTest của Google Sheet (qua Apps Script, action "nopBaiTest").
  * Dùng chung giữa Netlify Function và Vite dev server.
+ *
+ * CHỐNG DỮ LIỆU RÁC: học sinh phải nhập MÃ HỌC SINH do giáo viên cấp trước (trang quản trị
+ * → "Tạo mã làm bài"). Mã phải có trong tab KetQua và chưa làm bài lần nào:
+ *   - { action: "kiemTraMa" }  kiểm tra ngay lúc bấm Bắt đầu, để không làm 35 phút rồi mới biết sai mã
+ *   - lúc nộp bài              Apps Script kiểm tra lại trong khoá (đây mới là chốt chặn thật),
+ *                              rồi ghi điểm Listening/Reading vào đúng dòng của mã đó trong KetQua.
+ * Writing Part 2 và Speaking giáo viên chấm sau ở tab "Chờ chấm" (shared/placement/cham.ts).
  */
-import type { CauHinh } from "../nguon-du-lieu";
+import { coDiemNao, normalizeCode, timHocSinh, type Row } from "../bao-cao";
+import { docDuLieu, type CauHinh } from "../nguon-du-lieu";
 import { MOI_CAU } from "./de-thi";
 import { chamBai, DAP_AN } from "./dap-an";
 
@@ -34,6 +42,8 @@ const CONG_THUC: Record<string, string> = {
 
 type BaiNop = {
   maBai: string;
+  /** Mã do giáo viên cấp — học sinh gõ kiểu nào cũng được ("hs 7k3m9q"), so khớp theo normalizeCode. */
+  maHocSinh: string;
   hoTen: string;
   ngaySinh: string;
   batDau: number;
@@ -51,10 +61,39 @@ function json(body: unknown, status = 200) {
 function kiemTra(b: Partial<BaiNop>): string | null {
   if (!b || typeof b !== "object") return "Dữ liệu không hợp lệ.";
   if (!/^[a-zA-Z0-9-]{8,64}$/.test(String(b.maBai ?? ""))) return "Thiếu mã bài làm.";
+  if (!maHopLe(b.maHocSinh)) return "Vui lòng nhập mã học sinh thầy cô đã gửi.";
   if (!String(b.hoTen ?? "").trim()) return "Vui lòng nhập họ tên.";
   if (!String(b.ngaySinh ?? "").trim()) return "Vui lòng nhập ngày sinh.";
   if (!b.traLoi || typeof b.traLoi !== "object") return "Thiếu bài làm.";
   return null;
+}
+
+const gonMa = (v: unknown) => String(v ?? "").trim().toUpperCase().slice(0, 40);
+/** Chỉ xét phần chữ-số: học sinh gõ "hs 7k3m9q" hay "HS-7K3M9Q" đều được, so khớp theo normalizeCode. */
+const maHopLe = (v: unknown) => {
+  const n = normalizeCode(gonMa(v)).length;
+  return n >= 4 && n <= 20;
+};
+
+const LOI_MA = {
+  MA_KHONG_CO: "Mã học sinh không đúng. Con kiểm tra lại mã thầy cô đã gửi nhé.",
+  MA_DA_DUNG: "Mã học sinh này đã được dùng để làm bài rồi. Con báo thầy cô để được hỗ trợ.",
+} as const;
+type LoiMa = keyof typeof LOI_MA;
+
+const traLoiMa = (loi: LoiMa) => json({ error: loi, message: LOI_MA[loi] }, loi === "MA_KHONG_CO" ? 404 : 409);
+
+/**
+ * Mã được làm bài khi: có trong KetQua (giáo viên đã cấp) và chưa có điểm nào (chưa làm bài).
+ * Đọc thẳng nguồn dữ liệu, không qua cache — mã giáo viên vừa tạo 1 giây trước cũng phải dùng được.
+ */
+async function kiemTraMa(ch: CauHinh, ma: string): Promise<{ loi: LoiMa } | { loi: null; row: Row }> {
+  const { data } = await docDuLieu(ch);
+  const row = timHocSinh(data.ketQua, ma);
+  if (!row) return { loi: "MA_KHONG_CO" };
+  const daNop = BAI_NOP_MAU.some((d) => normalizeCode(String(d.ma_hoc_sinh ?? "")) === normalizeCode(ma));
+  if (coDiemNao(row) || daNop) return { loi: "MA_DA_DUNG" };
+  return { loi: null, row };
 }
 
 /** Giờ Việt Nam dạng dd/MM/yyyy HH:mm:ss — không phụ thuộc múi giờ của server. */
@@ -81,6 +120,8 @@ export function taoDong(b: BaiNop, bayGio = Date.now()) {
   // ô nhập điểm) → chi tiết từng câu máy chấm.
   const dong: Record<string, string | number> = {
     ma_bai: b.maBai,
+    // Apps Script đổi lại thành đúng cách viết trên tab KetQua (HS-7K3M9Q) trước khi ghi.
+    ma_hoc_sinh: gonMa(b.maHocSinh),
     thoi_gian_nop: gioVN(bayGio),
     ho_ten: String(b.hoTen).trim().slice(0, 120),
     ngay_sinh: String(b.ngaySinh).trim().slice(0, 20),
@@ -135,7 +176,7 @@ async function ghiQuaAppsScript(ch: CauHinh, banGhi: Omit<ReturnType<typeof taoD
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
   const text = await res.text();
-  let j: { ok?: boolean; error?: string; message?: string; trung?: boolean };
+  let j: { ok?: boolean; error?: string; message?: string; trung?: boolean; daGhiKetQua?: boolean };
   try {
     j = JSON.parse(text);
   } catch {
@@ -144,19 +185,35 @@ async function ghiQuaAppsScript(ch: CauHinh, banGhi: Omit<ReturnType<typeof taoD
   if (j.error === "UNKNOWN_ACTION") {
     throw new Error("Apps Script chưa có chức năng nộp bài — dán Code.gs mới rồi triển khai phiên bản mới.");
   }
+  if (j.error === "MA_KHONG_CO" || j.error === "MA_DA_DUNG") return { trung: false, loiMa: j.error as LoiMa, scriptCu: false };
   if (j.error) throw new Error(j.message || `Apps Script báo lỗi: ${j.error}`);
-  return { trung: Boolean(j.trung) };
+  // Code.gs bản cũ vẫn ghi được dòng bài làm nhưng KHÔNG kiểm tra mã và không ghi điểm vào KetQua.
+  return { trung: Boolean(j.trung), loiMa: null, scriptCu: !j.trung && !j.daGhiKetQua };
 }
 
 export async function xuLyNopBai(req: Request, ch: CauHinh, log: (m: string) => void = console.log) {
   if (req.method !== "POST") return json({ error: "METHOD", message: "Chỉ nhận POST." }, 405);
 
-  let b: BaiNop;
+  let b: BaiNop & { action?: string };
   try {
-    b = (await req.json()) as BaiNop;
+    b = (await req.json()) as BaiNop & { action?: string };
   } catch {
     return json({ error: "BAD_REQUEST", message: "Dữ liệu không hợp lệ." }, 400);
   }
+
+  // Bấm "Bắt đầu làm bài": chỉ kiểm tra mã, chưa ghi gì.
+  if (b?.action === "kiemTraMa") {
+    if (!maHopLe(b.maHocSinh)) return traLoiMa("MA_KHONG_CO");
+    try {
+      const kt = await kiemTraMa(ch, gonMa(b.maHocSinh));
+      log(`[placement] kiểm tra mã ${gonMa(b.maHocSinh)} → ${kt.loi ?? "được làm bài"}`);
+      return kt.loi ? traLoiMa(kt.loi) : json({ ok: true });
+    } catch (err) {
+      log(`[placement] LỖI kiểm tra mã: ${(err as Error).message}`);
+      return json({ error: "CHECK_FAILED", message: "Chưa kiểm tra được mã học sinh, con bấm lại sau vài giây nhé." }, 502);
+    }
+  }
+
   const loi = kiemTra(b);
   if (loi) return json({ error: "INVALID", message: loi }, 400);
 
@@ -165,15 +222,30 @@ export async function xuLyNopBai(req: Request, ch: CauHinh, log: (m: string) => 
   for (const c of MOI_CAU) traLoi[c.id] = String(b.traLoi[c.id] ?? "").slice(0, 300);
   const { kq, ...banGhi } = taoDong({ ...b, traLoi });
   const { dong } = banGhi;
-  const tomTat = `L ${kq.listening} · R ${kq.reading} · W-P1 ${kq.writing} · chờ GV chấm W-P2`;
+  const tomTat = `L ${kq.listening} · R ${kq.reading} · W-P1 ${kq.writing} · chờ GV chấm W-P2 + Speaking`;
 
   try {
     if (ch.chiDungMau || !ch.appsScriptUrl) {
-      if (!BAI_NOP_MAU.some((d) => d.ma_bai === dong.ma_bai)) BAI_NOP_MAU.push(dong);
-      log(`[placement] (chưa nối sheet) ${dong.ho_ten} → ${tomTat}`);
+      // Cùng ma_bai gửi lại (bấm Nộp lại) thì coi như đã nộp, không kiểm tra mã lần nữa.
+      if (!BAI_NOP_MAU.some((d) => d.ma_bai === dong.ma_bai)) {
+        const kt = await kiemTraMa(ch, String(dong.ma_hoc_sinh));
+        if (kt.loi) return traLoiMa(kt.loi);
+        dong.ma_hoc_sinh = kt.row.ma_hoc_sinh;
+        BAI_NOP_MAU.push(dong);
+        // Giống Apps Script: điểm máy chấm vào thẳng dòng của mã này; tên giáo viên đã nhập thì giữ.
+        kt.row.diem_listening = String(kq.listening);
+        kt.row.diem_reading = String(kq.reading);
+        if (!kt.row.ho_ten) kt.row.ho_ten = String(dong.ho_ten);
+      }
+      log(`[placement] (chưa nối sheet) ${dong.ma_hoc_sinh} ${dong.ho_ten} → ${tomTat}`);
     } else {
-      const { trung } = await ghiQuaAppsScript(ch, banGhi);
-      log(`[placement] ${dong.ho_ten} → ${tomTat}${trung ? " (đã có, bỏ qua)" : ""}`);
+      const { trung, loiMa, scriptCu } = await ghiQuaAppsScript(ch, banGhi);
+      if (loiMa) {
+        log(`[placement] ${dong.ma_hoc_sinh} ${dong.ho_ten} → TỪ CHỐI (${loiMa})`);
+        return traLoiMa(loiMa);
+      }
+      if (scriptCu) log("[placement] CẢNH BÁO: Code.gs trên sheet là bản cũ — chưa kiểm tra mã, chưa ghi điểm vào KetQua. Dán Code.gs mới rồi triển khai phiên bản mới.");
+      log(`[placement] ${dong.ma_hoc_sinh} ${dong.ho_ten} → ${tomTat}${trung ? " (đã có, bỏ qua)" : ""}`);
     }
   } catch (err) {
     const timeout = (err as Error).name === "TimeoutError";

@@ -7,6 +7,8 @@ export default function Lookup() {
   const [ma, setMa] = useState("");
   const [dangTai, setDangTai] = useState(false);
   const [loi, setLoi] = useState("");
+  /** Mã có thật nhưng chưa có kết quả (chưa làm bài / chờ chấm Speaking) — báo nhẹ, không phải lỗi. */
+  const [cho, setCho] = useState("");
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -25,10 +27,15 @@ export default function Lookup() {
 
     setDangTai(true);
     setLoi("");
+    setCho("");
     try {
       const res = await fetch(`/api/result?code=${encodeURIComponent(code)}`);
-      const json = (await res.json()) as { data?: BaoCao; message?: string };
+      const json = (await res.json()) as { data?: BaoCao; message?: string; cho?: { message: string } };
 
+      if (res.ok && json.cho) {
+        setCho(json.cho.message);
+        return;
+      }
       if (!res.ok || !json.data) {
         setLoi(json.message || "Không tìm thấy kết quả cho mã học sinh này.");
         return;
@@ -80,6 +87,7 @@ export default function Lookup() {
                       onChange={(e) => {
                         setMa(e.target.value);
                         if (loi) setLoi("");
+                        if (cho) setCho("");
                       }}
                       placeholder=""
                       autoComplete="off"
@@ -117,6 +125,13 @@ export default function Lookup() {
                 <div className="alert alert-solid" role="alert">
                   <span className="alert-icon">⚠️</span>
                   <span>{loi}</span>
+                </div>
+              ) : null}
+
+              {cho ? (
+                <div className="alert alert-solid alert-cho" role="status">
+                  <span className="alert-icon">⏳</span>
+                  <span>{cho}</span>
                 </div>
               ) : null}
 

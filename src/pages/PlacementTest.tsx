@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { normalizeCode } from "../../shared/bao-cao";
 import { DE_THI, MOI_CAU, type Cau, type Phan } from "../../shared/placement/de-thi";
 import "../placement.css";
 
@@ -7,6 +8,10 @@ import "../placement.css";
  *
  * Bài làm lưu liên tục vào localStorage: lỡ tải lại trang hay mất mạng thì làm tiếp
  * được, đồng hồ vẫn tính từ lúc bắt đầu. Đáp án KHÔNG có ở trình duyệt — server chấm.
+ *
+ * Học sinh phải nhập MÃ HỌC SINH do giáo viên cấp (chống người lạ vào làm bài tạo dữ liệu
+ * rác). Mã được server kiểm tra lúc bấm Bắt đầu và kiểm tra lại lúc nộp; kết quả lưu vào
+ * đúng mã đó. Link giáo viên gửi có dạng /placement-test?ma=HS-XXXXXX thì mã tự điền sẵn.
  */
 
 const KHO = "ilead-placement-v1";
@@ -17,6 +22,10 @@ const HIEN_DIEM = false;
 type Buoc = "gioi-thieu" | number | "xem-lai" | "xong";
 type TrangThai = {
   maBai: string;
+  /** Mã học sinh đang gõ trong ô. */
+  maHocSinh: string;
+  /** Mã (đã chuẩn hoá) server vừa xác nhận được làm bài — khớp với ô thì không hỏi lại server. */
+  maDaXacNhan: string;
   hoTen: string;
   ngaySinh: string;
   batDau: number | null;
@@ -28,11 +37,24 @@ function maMoi() {
   return (crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`).replace(/[^a-zA-Z0-9-]/g, "");
 }
 
+function trangThaiMoi(maHocSinh = ""): TrangThai {
+  return { maBai: maMoi(), maHocSinh, maDaXacNhan: "", hoTen: "", ngaySinh: "", batDau: null, buoc: "gioi-thieu", traLoi: {} };
+}
+
 function docKho(): TrangThai {
-  const macDinh: TrangThai = { maBai: maMoi(), hoTen: "", ngaySinh: "", batDau: null, buoc: "gioi-thieu", traLoi: {} };
+  /** Mã trong link giáo viên gửi: /placement-test?ma=HS-7K3M9Q */
+  const tuLink = (new URLSearchParams(window.location.search).get("ma") ?? "").trim().toUpperCase().slice(0, 20);
+  const macDinh = trangThaiMoi(tuLink);
   try {
     const s = JSON.parse(localStorage.getItem(KHO) || "null");
-    if (s && typeof s === "object" && s.maBai) return { ...macDinh, ...s, buoc: s.buoc === "xong" ? "gioi-thieu" : s.buoc };
+    if (s && typeof s === "object" && s.maBai) {
+      // Máy dùng chung: bài dở trên máy là của mã KHÁC với link vừa mở → bắt đầu bài mới,
+      // không cho bạn sau làm tiếp bài của bạn trước.
+      if (tuLink && s.maDaXacNhan && s.maDaXacNhan !== normalizeCode(tuLink)) return macDinh;
+      const t: TrangThai = { ...macDinh, ...s, buoc: s.buoc === "xong" ? "gioi-thieu" : s.buoc };
+      if (tuLink && !t.maDaXacNhan) t.maHocSinh = tuLink;
+      return t;
+    }
   } catch {
     /* trình duyệt chặn lưu trữ: vẫn làm bài được, chỉ là không khôi phục */
   }
@@ -84,6 +106,8 @@ export default function PlacementTest() {
   const [dangNop, setDangNop] = useState(false);
   const [loiNop, setLoiNop] = useState("");
   const [diem, setDiem] = useState<Record<string, number> | null>(null);
+  const [dangKiemTraMa, setDangKiemTraMa] = useState(false);
+  const [loiMa, setLoiMa] = useState("");
   const daTuNop = useRef(false);
   const dauTrang = useRef<HTMLDivElement>(null);
 
@@ -107,6 +131,43 @@ export default function PlacementTest() {
 
   const traLoi = (id: string, gt: string) => setTt((t) => ({ ...t, traLoi: { ...t.traLoi, [id]: gt } }));
 
+  /** Bấm Bắt đầu: hỏi server mã có được làm bài không (đã cấp + chưa làm), rồi mới chạy đồng hồ. */
+  const batDau = async () => {
+    const ma = normalizeCode(tt.maHocSinh);
+    if (tt.maDaXacNhan !== ma) {
+      setDangKiemTraMa(true);
+      setLoiMa("");
+      try {
+        const res = await fetch("/api/placement", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "kiemTraMa", maHocSinh: tt.maHocSinh }),
+        });
+        const j = (await res.json().catch(() => ({}))) as { ok?: boolean; message?: string };
+        if (!res.ok || !j.ok) {
+          setLoiMa(j.message || "Chưa kiểm tra được mã học sinh, con bấm lại sau vài giây nhé.");
+          return;
+        }
+      } catch {
+        setLoiMa("Không kết nối được máy chủ. Kiểm tra mạng rồi bấm lại.");
+        return;
+      } finally {
+        setDangKiemTraMa(false);
+      }
+    }
+    setTt((t) => ({ ...t, maDaXacNhan: ma, batDau: t.batDau ?? Date.now() }));
+    chuyen(0);
+  };
+
+  /** Máy dùng chung: bỏ bài đang dở của bạn trước để bạn sau nhập mã của mình. */
+  const lamBaiMoi = () => {
+    if (!window.confirm("Bỏ bài đang làm dở trên máy này và bắt đầu bài mới với mã khác?")) return;
+    daTuNop.current = false;
+    setLoiMa("");
+    setLoiNop("");
+    setTt(trangThaiMoi());
+  };
+
   const nopBai = useCallback(
     async (hetGio = false) => {
       setDangNop(true);
@@ -117,6 +178,7 @@ export default function PlacementTest() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             maBai: tt.maBai,
+            maHocSinh: tt.maHocSinh,
             hoTen: tt.hoTen,
             ngaySinh: tt.ngaySinh,
             batDau: tt.batDau,
@@ -124,8 +186,21 @@ export default function PlacementTest() {
             hetGio,
           }),
         });
-        const j = (await res.json().catch(() => ({}))) as { ok?: boolean; message?: string; diem?: Record<string, number> };
-        if (!res.ok || !j.ok) throw new Error(j.message || "Chưa lưu được bài, vui lòng bấm Nộp lại.");
+        const j = (await res.json().catch(() => ({}))) as {
+          ok?: boolean;
+          error?: string;
+          message?: string;
+          diem?: Record<string, number>;
+        };
+        if (!res.ok || !j.ok) {
+          // Mã bị từ chối lúc nộp (vừa bị xoá, hoặc người khác đã dùng): mở khoá ô mã ở trang đầu
+          // để nhập mã thầy cô cấp lại — bài làm vẫn còn nguyên trên máy.
+          if (j.error === "MA_KHONG_CO" || j.error === "MA_DA_DUNG") {
+            setTt((t) => ({ ...t, maDaXacNhan: "" }));
+            throw new Error(`${j.message} Bài làm vẫn được giữ trên máy này.`);
+          }
+          throw new Error(j.message || "Chưa lưu được bài, vui lòng bấm Nộp lại.");
+        }
         xoaKho();
         setDiem(j.diem ?? null);
         setTt((t) => ({ ...t, buoc: "xong" }));
@@ -174,11 +249,14 @@ export default function PlacementTest() {
         {tt.buoc === "gioi-thieu" && (
           <GioiThieu
             tt={tt}
-            onDoi={(p) => setTt((t) => ({ ...t, ...p }))}
-            onBatDau={() => {
-              setTt((t) => ({ ...t, batDau: t.batDau ?? Date.now() }));
-              chuyen(0);
+            onDoi={(p) => {
+              if ("maHocSinh" in p) setLoiMa("");
+              setTt((t) => ({ ...t, ...p }));
             }}
+            onBatDau={batDau}
+            dangKiemTraMa={dangKiemTraMa}
+            loiMaServer={loiMa}
+            onLamBaiMoi={lamBaiMoi}
           />
         )}
 
@@ -210,8 +288,12 @@ export default function PlacementTest() {
             <div className="plc-done-icon">✓</div>
             <h1>Nộp bài thành công!</h1>
             <p>
-              Cảm ơn <b>{tt.hoTen}</b> đã hoàn thành bài kiểm tra. Thầy cô sẽ xem bài và liên hệ với phụ huynh để thông báo
-              kết quả xếp lớp.
+              Cảm ơn <b>{tt.hoTen}</b> đã hoàn thành bài kiểm tra. Bài làm đã được lưu vào mã học sinh{" "}
+              <b>{tt.maHocSinh.trim().toUpperCase()}</b>.
+            </p>
+            <p>
+              Con còn phần <b>Speaking</b> thi trực tiếp với thầy cô. Sau khi thầy cô chấm xong, phụ huynh dùng mã này để
+              tra cứu kết quả xếp lớp.
             </p>
             {HIEN_DIEM && diem && (
               <div className="plc-done-score">
@@ -237,12 +319,21 @@ function GioiThieu({
   tt,
   onDoi,
   onBatDau,
+  dangKiemTraMa,
+  loiMaServer,
+  onLamBaiMoi,
 }: {
   tt: TrangThai;
   onDoi: (p: Partial<TrangThai>) => void;
   onBatDau: () => void;
+  dangKiemTraMa: boolean;
+  loiMaServer: string;
+  onLamBaiMoi: () => void;
 }) {
   const [daThu, setDaThu] = useState(false);
+  const loiMaNhap = normalizeCode(tt.maHocSinh).length < 4 ? "Vui lòng nhập mã học sinh thầy cô đã gửi." : "";
+  /** Mã đã được server xác nhận và bài đang làm dở → khoá ô, không cho đổi sang mã khác giữa chừng. */
+  const khoaMa = tt.batDau !== null && Boolean(tt.maDaXacNhan);
   const loiTen = !tt.hoTen.trim() ? "Vui lòng nhập họ tên." : "";
   const loiNgay = !ngayHopLe(tt.ngaySinh) ? "Nhập ngày sinh dạng ngày/tháng/năm, ví dụ 05/06/2016." : "";
   const dangLamDo = tt.batDau !== null;
@@ -274,6 +365,29 @@ function GioiThieu({
       <div className="plc-intro-grid">
         <section className="plc-card">
           <h2 className="plc-h2">Thông tin học sinh</h2>
+          <label className="plc-field">
+            <span>
+              Student code <i>Mã học sinh (thầy cô gửi)</i>
+            </span>
+            <input
+              className="plc-ma"
+              value={tt.maHocSinh}
+              onChange={(e) => onDoi({ maHocSinh: e.target.value.toUpperCase().slice(0, 20) })}
+              placeholder="HS-7K3M9Q"
+              autoComplete="off"
+              autoCapitalize="characters"
+              spellCheck={false}
+              maxLength={20}
+              disabled={khoaMa}
+            />
+            {loiMaServer ? (
+              <small className="plc-err">{loiMaServer}</small>
+            ) : daThu && loiMaNhap ? (
+              <small className="plc-err">{loiMaNhap}</small>
+            ) : (
+              <small className="plc-hint">Mỗi mã chỉ làm bài được một lần. Chưa có mã, con hỏi thầy cô nhé.</small>
+            )}
+          </label>
           <label className="plc-field">
             <span>
               Name <i>Họ và tên</i>
@@ -327,13 +441,19 @@ function GioiThieu({
           </ul>
           <button
             className="plc-btn plc-btn-primary plc-btn-lg"
+            disabled={dangKiemTraMa}
             onClick={() => {
               setDaThu(true);
-              if (!loiTen && !loiNgay) onBatDau();
+              if (!loiMaNhap && !loiTen && !loiNgay) onBatDau();
             }}
           >
-            {dangLamDo ? "Làm tiếp bài đang dở →" : "Bắt đầu làm bài →"}
+            {dangKiemTraMa ? "Đang kiểm tra mã…" : dangLamDo ? "Làm tiếp bài đang dở →" : "Bắt đầu làm bài →"}
           </button>
+          {dangLamDo && (
+            <button type="button" className="plc-link" onClick={onLamBaiMoi}>
+              Không phải bài của con? Làm bài mới với mã khác
+            </button>
+          )}
         </section>
       </div>
     </>

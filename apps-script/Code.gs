@@ -2,8 +2,11 @@
  * Apps Script gắn trong Google Sheet:
  *   - doGet:             trả dữ liệu 3 tab dạng JSON cho website
  *   - doPost:            trang quản trị lưu điểm / thêm học sinh vào tab KetQua;
- *                        học sinh nộp bài placement test vào tab PlacementTest;
- *                        trang quản trị đọc bài chờ chấm và chấm xong → chuyển sang KetQua
+ *                        giáo viên TẠO MÃ LÀM BÀI trước (taoMa) → gửi mã cho học sinh;
+ *                        học sinh nộp bài placement test vào tab PlacementTest — chỉ nhận mã
+ *                        đã cấp và chưa làm bài, điểm máy chấm ghi luôn vào dòng của mã đó;
+ *                        trang quản trị đọc bài chờ chấm, chấm Writing Part 2 / Speaking
+ *                        (chấm riêng từng phần được — Speaking thường chấm gom sau)
  *   - thietLapRangBuoc:  chạy tay MỘT lần để sheet tự chặn điểm sai và tạo dropdown option
  *   - kiemTra:           chạy tay để xem sheet có đúng cấu trúc không
  *
@@ -113,10 +116,14 @@ function doPost(e) {
     return traVeJson(luuHocSinh(body.hocSinh || {}, body.truoc || null));
   }
   if (body.action === 'docPlacement') {
-    return traVeJson({ ok: true, rows: docTab(SpreadsheetApp.getActiveSpreadsheet(), TAB_PLACEMENT) });
+    // phienBan: website dựa vào đây để biết Code.gs đã là bản có mã cấp trước + chấm Speaking sau.
+    return traVeJson({ ok: true, phienBan: 2, rows: docTab(SpreadsheetApp.getActiveSpreadsheet(), TAB_PLACEMENT) });
   }
-  if (body.action === 'chamPlacement') {
+  if (body.action === 'chamPlacement2') {
     return traVeJson(chamPlacement(String(body.maBai || ''), body.hocSinh || {}, body.cham || {}));
+  }
+  if (body.action === 'taoMa') {
+    return traVeJson(taoMa(body.ma || [], String(body.lop || ''), String(body.giao_vien || '')));
   }
   if (body.action === 'nopBaiTest') {
     return traVeJson(nopBaiTest(body.dong || {}, body.congThuc || {}, body.chuThich || {}, body.rangBuoc || {}));
@@ -130,6 +137,12 @@ var TAB_PLACEMENT = 'PlacementTest';
 
 /**
  * Thêm một dòng bài làm vào tab PlacementTest (tự tạo tab + hàng tiêu đề nếu chưa có).
+ *
+ * CHỐNG DỮ LIỆU RÁC: dong.ma_hoc_sinh phải là mã giáo viên đã cấp (có trong KetQua) và chưa
+ * làm bài lần nào — sai thì trả MA_KHONG_CO / MA_DA_DUNG, không ghi gì. Hợp lệ thì ngoài dòng
+ * bài làm, điểm Listening + Reading (máy chấm) được ghi luôn vào dòng của mã đó trong KetQua;
+ * Writing và Speaking chờ giáo viên chấm (chamPlacement).
+ *
  * Cột tìm theo TÊN ở hàng 1: đổi thứ tự cột thoải mái; cột mới website gửi lên mà sheet
  * chưa có thì tự thêm vào cuối. Cùng ma_bai gửi 2 lần (bấm Nộp lại) chỉ ghi 1 dòng.
  *
@@ -197,6 +210,24 @@ function nopBaiTest(dong, congThuc, chuThich, rangBuoc) {
       }
     }
 
+    // Mã học sinh: phải do giáo viên cấp và chưa dùng. Kiểm tra SAU bước trùng ma_bai ở trên,
+    // để học sinh bấm "Nộp lại" (bài đã ghi rồi) không bị báo nhầm là mã đã dùng.
+    var hsKq = timTrongKetQua(ss, dong.ma_hoc_sinh);
+    if (!hsKq) return { error: 'MA_KHONG_CO', message: 'Mã học sinh không đúng.' };
+    var daDung = false;
+    for (var d = 0; d < KY_NANG.length; d++) {
+      if (String(hsKq.hang['diem_' + KY_NANG[d]] || '').trim() !== '') daDung = true;
+    }
+    var cotMaHs = tieuDe.indexOf('ma_hoc_sinh');
+    if (!daDung && cotMaHs >= 0 && cuoi >= 2) {
+      var cacMaHs = sh.getRange(2, cotMaHs + 1, cuoi - 1, 1).getDisplayValues();
+      for (var q = 0; q < cacMaHs.length; q++) {
+        if (chuanMa(cacMaHs[q][0]) === chuanMa(hsKq.ma)) daDung = true;
+      }
+    }
+    if (daDung) return { error: 'MA_DA_DUNG', message: 'Mã học sinh này đã được dùng để làm bài.' };
+    dong.ma_hoc_sinh = hsKq.ma; // ghi đúng cách viết trên KetQua, không phải kiểu học sinh gõ
+
     var dongMoi = cuoi + 1;
     if (dongMoi > sh.getMaxRows()) sh.insertRowsAfter(sh.getMaxRows(), 100);
     /** '{ten_cot}' → địa chỉ ô của cột đó trên dòng mới, vd 'H5'. */
@@ -221,29 +252,39 @@ function nopBaiTest(dong, congThuc, chuThich, rangBuoc) {
       var ct = congThuc[tieuDe[f]];
       if (ct) sh.getRange(dongMoi, f + 1).setFormula(String(ct).replace(/\{([a-zA-Z0-9_-]+)\}/g, diaChi));
     }
+
+    // Kết quả lưu vào mã học sinh: điểm máy chấm vào thẳng dòng của mã trong KetQua.
+    // Tên giáo viên đã nhập sẵn thì giữ; chưa có thì lấy tên học sinh tự gõ.
+    var capNhat = { diem_listening: dong.diem_listening, diem_reading: dong.diem_reading };
+    if (String(hsKq.hang.ho_ten || '').trim() === '') capNhat.ho_ten = String(dong.ho_ten || '');
+    var kqGhi = ghiHocSinh(ss, capNhat, null, hsKq.ma);
     SpreadsheetApp.flush();
-    return { ok: true, trung: false };
+    return { ok: true, trung: false, daGhiKetQua: !kqGhi.error, ma_hoc_sinh: hsKq.ma };
   } finally {
     lock.releaseLock();
   }
 }
 
 /**
- * Giáo viên chấm xong bài placement trên trang quản trị → trong MỘT lần khoá:
- *   1. Tìm bài theo ma_bai; bài đã chuyển rồi (có ma_hoc_sinh) thì báo DA_CHAM, không tạo trùng.
- *   2. Lấy điểm Listening, Reading, Writing Part 1 từ CHÍNH dòng bài làm (không tin số trình duyệt
- *      gửi), cộng điểm Writing Part 2 giáo viên chấm → tạo học sinh mới trong tab KetQua.
- *   3. Ghi lại vào dòng bài làm: điểm GV chấm, mã học sinh, trạng thái "Đã chuyển".
- * cham = { w2: tổng điểm Writing Part 2 (0–12), speaking: 0–20 }
+ * Giáo viên chấm bài placement trên trang quản trị → trong MỘT lần khoá:
+ *   1. Tìm bài theo ma_bai. Bài đã có đủ điểm Writing Part 2 + Speaking thì báo DA_CHAM.
+ *   2. Hai phần chấm ĐỘC LẬP: gửi phần nào ghi phần đó (Speaking thường chấm gom sau).
+ *      Phần đã có điểm trên dòng bài làm thì giữ nguyên, không ghi đè.
+ *   3. Lấy điểm Listening, Reading, Writing Part 1 từ CHÍNH dòng bài làm (không tin số trình
+ *      duyệt gửi) rồi ghi vào dòng của MÃ HỌC SINH trong tab KetQua. Mã lấy từ dòng bài làm
+ *      (học sinh nhập lúc làm bài). Bài nộp kiểu cũ chưa có mã → dùng mã trình duyệt tạo và
+ *      thêm học sinh mới như trước.
+ *   4. Ghi lại vào dòng bài làm: điểm GV vừa chấm, người chấm. Cột trang_thai là công thức,
+ *      tự đổi "Chờ chấm Speaking" → "Đã chấm xong".
+ * cham = { w2: tổng điểm Writing Part 2 (0–12) hoặc null nếu lần này chưa chấm phần viết }
+ * hs.diem_speaking trống = lần này chưa chấm Speaking.
  */
 function chamPlacement(maBai, hs, cham) {
   if (!/^[a-zA-Z0-9-]{8,64}$/.test(maBai)) return { error: 'INVALID', message: 'Thiếu mã bài làm.' };
-  var ma = String(hs.ma_hoc_sinh || '').trim().toUpperCase();
-  if (!/^[A-Z0-9][A-Z0-9-]{3,19}$/.test(ma)) {
-    return { error: 'INVALID', loi: { ma_hoc_sinh: 'Mã học sinh không hợp lệ.' } };
-  }
-  var w2 = Number(cham.w2);
-  if (!isFinite(w2) || w2 < 0 || w2 > 12) return { error: 'INVALID', loi: { w2: 'Writing Part 2 từ 0 đến 12.' } };
+  var coW2 = cham.w2 !== null && cham.w2 !== undefined && String(cham.w2).trim() !== '';
+  var w2 = coW2 ? Number(cham.w2) : null;
+  if (coW2 && (!isFinite(w2) || w2 < 0 || w2 > 12)) return { error: 'INVALID', loi: { w2: 'Writing Part 2 từ 0 đến 12.' } };
+  var coNoi = hs.diem_speaking !== null && hs.diem_speaking !== undefined && String(hs.diem_speaking).trim() !== '';
 
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var lock = LockService.getScriptLock();
@@ -260,46 +301,64 @@ function chamPlacement(maBai, hs, cham) {
     }
     if (dong < 0) return { error: 'GONE', message: 'Không tìm thấy bài làm này trên sheet (có thể đã bị xoá).' };
     var hang = duLieu[dong];
-    var daCo = c('ma_hoc_sinh') >= 0 ? String(hang[c('ma_hoc_sinh')]).trim() : '';
-    if (daCo) return { error: 'DA_CHAM', ma_hoc_sinh: daCo, message: 'Bài này đã được chấm và chuyển sang ' + daCo + '.' };
-
+    var chu = function (ten) { return c(ten) >= 0 ? String(hang[c(ten)]).trim() : ''; };
     var so = function (ten) {
-      var v = c(ten) >= 0 ? String(hang[c(ten)]).replace(',', '.').trim() : '';
+      var v = chu(ten).replace(',', '.');
       return v === '' ? 0 : Number(v);
     };
-    var hocSinh = {
-      ma_hoc_sinh: ma,
-      ho_ten: String(hs.ho_ten || hang[c('ho_ten')] || '').trim(),
-      lop: hs.lop || '',
-      giao_vien: hs.giao_vien || '',
-      ngay_cham: Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'dd/MM/yyyy'),
-      diem_listening: so('diem_listening'),
-      diem_reading: so('diem_reading'),
-      diem_writing: Math.min(DIEM_TOI_DA.writing, so('diem_writing_p1') + w2),
-      diem_speaking: hs.diem_speaking,
-      mo_ta_rieng_speaking: hs.mo_ta_rieng_speaking || ''
-    };
+
+    var w2Cu = chu('diem_writing_p2_gv');
+    var noiCu = chu('diem_speaking');
+    if (w2Cu !== '' && noiCu !== '') {
+      return { error: 'DA_CHAM', message: 'Bài này đã được chấm xong cả Writing Part 2 và Speaking.' };
+    }
+    var ghiW2 = w2Cu === '' && coW2;
+    var ghiNoi = noiCu === '' && coNoi;
+    if (!ghiW2 && !ghiNoi) {
+      return { error: 'DA_CHAM', message: 'Phần bạn vừa chấm đã có điểm trên sheet (người khác vừa chấm). Bấm Tải lại.' };
+    }
+
+    // Mã: ưu tiên mã học sinh đã nhập lúc làm bài. Bài kiểu cũ chưa có → mã trình duyệt tạo.
+    var maDong = chu('ma_hoc_sinh');
+    var ma = (maDong || String(hs.ma_hoc_sinh || '')).trim().toUpperCase();
+    if (!/^[A-Z0-9][A-Z0-9-]{3,19}$/.test(ma)) {
+      return { error: 'INVALID', loi: { ma_hoc_sinh: 'Mã học sinh không hợp lệ.' } };
+    }
+    if (!maDong) {
+      // Mã mới phải chưa có trong KetQua — ghiHocSinh gặp mã đã có sẽ GHI ĐÈ học sinh đó.
+      if (timTrongKetQua(ss, ma)) return { error: 'MA_TRUNG', message: 'Mã ' + ma + ' đã có, bấm Lưu lại để tạo mã khác.' };
+    }
+
+    var w2Moi = w2Cu !== '' ? Number(w2Cu.replace(',', '.')) : w2; // null = chưa chấm phần viết
+    var xong = w2Moi !== null && (noiCu !== '' || ghiNoi);
+
+    // Chỉ gửi cột nào có giá trị: ghiHocSinh bỏ qua cột không có trong object, nên thông tin
+    // giáo viên đã nhập sẵn cho mã này (lớp, tên…) không bị xoá trắng.
+    var hocSinh = { ma_hoc_sinh: ma, diem_listening: so('diem_listening'), diem_reading: so('diem_reading') };
+    var ten0 = String(hs.ho_ten || '').trim() || (maDong ? '' : chu('ho_ten'));
+    if (ten0) hocSinh.ho_ten = ten0;
+    if (hs.lop) hocSinh.lop = String(hs.lop);
+    if (hs.giao_vien) hocSinh.giao_vien = String(hs.giao_vien);
+    if (w2Moi !== null) hocSinh.diem_writing = Math.min(DIEM_TOI_DA.writing, so('diem_writing_p1') + w2Moi);
+    if (ghiNoi) {
+      hocSinh.diem_speaking = hs.diem_speaking;
+      if (hs.mo_ta_rieng_speaking) hocSinh.mo_ta_rieng_speaking = String(hs.mo_ta_rieng_speaking);
+    }
+    if (xong) hocSinh.ngay_cham = Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'dd/MM/yyyy');
+
     var loi = kiemTraTruocKhiGhi(ss, hocSinh);
     if (Object.keys(loi).length) return { error: 'INVALID', loi: loi };
-
-    // Mã mới phải chưa có trong KetQua — ghiHocSinh gặp mã đã có sẽ GHI ĐÈ học sinh đó.
-    var kqTab = docTab(ss, TAB_KET_QUA);
-    var cMa = (kqTab[0] || []).indexOf('ma_hoc_sinh');
-    for (var k = 1; k < kqTab.length && cMa >= 0; k++) {
-      if (chuanMa(kqTab[k][cMa]) === chuanMa(ma)) return { error: 'MA_TRUNG', message: 'Mã ' + ma + ' đã có, bấm Xác nhận lại để tạo mã khác.' };
-    }
 
     var kq = ghiHocSinh(ss, hocSinh, null, ma);
     if (kq.error) return kq;
 
-    // Đánh dấu bài làm: thêm cột còn thiếu ở cuối, ghi giá trị (trạng thái ghi đè công thức).
-    var ghi = {
-      diem_writing_p2_gv: w2,
-      diem_speaking: Number(hs.diem_speaking),
-      ma_hoc_sinh: "'" + ma,
-      nguoi_cham: hocSinh.giao_vien ? "'" + hocSinh.giao_vien : '',
-      trang_thai: "'Đã chuyển → " + ma
-    };
+    // Ghi phần vừa chấm vào dòng bài làm (thêm cột còn thiếu ở cuối). KHÔNG đụng trang_thai:
+    // đó là công thức, tự chuyển "Chờ chấm Speaking" → "Đã chấm xong" theo hai ô điểm.
+    var ghi = {};
+    if (ghiW2) ghi.diem_writing_p2_gv = w2;
+    if (ghiNoi) ghi.diem_speaking = Number(String(hs.diem_speaking).replace(',', '.'));
+    if (!maDong) ghi.ma_hoc_sinh = "'" + ma;
+    if (hs.giao_vien) ghi.nguoi_cham = "'" + hs.giao_vien;
     for (var ten in ghi) {
       var cot = tieuDe.indexOf(ten);
       if (cot < 0) {
@@ -310,7 +369,97 @@ function chamPlacement(maBai, hs, cham) {
       sh.getRange(dong + 1, cot + 1).setValue(ghi[ten]);
     }
     SpreadsheetApp.flush();
-    return { ok: true, ma_hoc_sinh: ma, hocSinh: hocSinh };
+    return {
+      ok: true,
+      ma_hoc_sinh: ma,
+      xong: xong,
+      hocSinh: hocSinh,
+      bai: {
+        ma_hoc_sinh: ma,
+        diem_writing_p2_gv: w2Moi === null ? '' : w2Moi,
+        diem_speaking: ghiNoi ? hs.diem_speaking : noiCu
+      }
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * Dòng CUỐI CÙNG trùng mã trong tab KetQua (giống cách website đọc).
+ * Trả { ma: cách viết trên sheet, hang: { ten_cot: giá trị hiển thị } } hoặc null.
+ */
+function timTrongKetQua(ss, maTim) {
+  var khoa = chuanMa(maTim);
+  if (!khoa) return null;
+  var bang = docTab(ss, TAB_KET_QUA);
+  var tieuDe = (bang[0] || []).map(function (h) { return String(h).trim(); });
+  var cMa = tieuDe.indexOf('ma_hoc_sinh');
+  if (cMa < 0) return null;
+  for (var i = bang.length - 1; i >= 1; i--) {
+    if (chuanMa(bang[i][cMa]) !== khoa) continue;
+    var hang = {};
+    for (var j = 0; j < tieuDe.length; j++) if (tieuDe[j]) hang[tieuDe[j]] = bang[i][j];
+    return { ma: String(bang[i][cMa]).trim(), hang: hang };
+  }
+  return null;
+}
+
+/**
+ * Giáo viên tạo mã làm bài TRƯỚC khi học sinh thi: thêm mỗi mã một dòng vào KetQua, chỉ có
+ * mã + thông tin lớp + giáo viên (họ tên, điểm để trống — điền dần khi học sinh làm bài và
+ * giáo viên chấm). Mã lỡ trùng mã đã có thì bỏ qua. Trả về danh sách mã ĐÃ tạo.
+ */
+function taoMa(dsMa, lop, giaoVien) {
+  if (!dsMa || !dsMa.length || dsMa.length > 60) return { error: 'INVALID', message: 'Số lượng mã từ 1 đến 60.' };
+  for (var i = 0; i < dsMa.length; i++) {
+    if (!/^[A-Z0-9][A-Z0-9-]{3,19}$/.test(String(dsMa[i]))) return { error: 'INVALID', message: 'Mã không hợp lệ: ' + dsMa[i] };
+  }
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(8000)) return { error: 'BUSY', message: 'Có người khác đang lưu, thử lại sau vài giây.' };
+  try {
+    var sh = ss.getSheetByName(TAB_KET_QUA);
+    if (!sh) return { error: 'NO_TAB', message: 'Không tìm thấy tab "' + TAB_KET_QUA + '".' };
+    var soCot = sh.getLastColumn();
+    var tieuDe = sh.getRange(1, 1, 1, soCot).getValues()[0].map(function (h) { return String(h).trim(); });
+    var cotMa = tieuDe.indexOf('ma_hoc_sinh');
+    if (cotMa < 0) return { error: 'NO_CODE_COLUMN', message: 'Tab KetQua thiếu cột ma_hoc_sinh.' };
+
+    var dongCuoi = sh.getLastRow();
+    var daCo = {};
+    if (dongCuoi >= 2) {
+      var cacMa = sh.getRange(2, cotMa + 1, dongCuoi - 1, 1).getDisplayValues();
+      for (var r = 0; r < cacMa.length; r++) daCo[chuanMa(cacMa[r][0])] = true;
+    }
+
+    var tao = [];
+    var cacHang = [];
+    for (var k = 0; k < dsMa.length; k++) {
+      var ma = String(dsMa[k]);
+      if (daCo[chuanMa(ma)]) continue;
+      daCo[chuanMa(ma)] = true;
+      tao.push(ma);
+      cacHang.push(tieuDe.map(function (h) {
+        if (h === 'ma_hoc_sinh') return "'" + ma;
+        if (h === 'lop') return giaTriO(h, lop);
+        if (h === 'giao_vien') return giaTriO(h, giaoVien);
+        return '';
+      }));
+    }
+    if (cacHang.length) {
+      var thieuDong = dongCuoi + cacHang.length - sh.getMaxRows();
+      if (thieuDong > 0) sh.insertRowsAfter(sh.getMaxRows(), thieuDong + 50);
+      // Ghi từng ô có giá trị thay vì cả hàng: không đè công thức/cột tự thêm ở các cột khác.
+      for (var n = 0; n < cacHang.length; n++) {
+        for (var cc = 0; cc < tieuDe.length; cc++) {
+          if (cacHang[n][cc] !== '') sh.getRange(dongCuoi + 1 + n, cc + 1).setValue(cacHang[n][cc]);
+        }
+      }
+      SpreadsheetApp.flush();
+    }
+    return { ok: true, ma: tao };
   } finally {
     lock.releaseLock();
   }

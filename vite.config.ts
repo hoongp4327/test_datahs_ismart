@@ -1,6 +1,6 @@
 import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
-import { buildReport, normalizeCode, timHocSinh, type SheetData } from "./shared/bao-cao";
+import { buildReport, ketQuaDangCho, normalizeCode, timHocSinh, type SheetData } from "./shared/bao-cao";
 import { cauHinhTuEnv, docDuLieu } from "./shared/nguon-du-lieu";
 import { xuLyQuanTri } from "./shared/quan-tri";
 import { xuLyNopBai } from "./shared/placement/nop-bai";
@@ -87,6 +87,8 @@ function apiGiaLap(env: Record<string, string>): Plugin {
           cauHinh,
           (m) => log.info("  " + m)
         );
+        // Nộp bài xong điểm Listening/Reading đã vào KetQua → bỏ cache để tra cứu thấy ngay.
+        if (r.ok) cache = null;
         res.statusCode = r.status;
         r.headers.forEach((v, k) => res.setHeader(k, v));
         res.end(Buffer.from(await r.arrayBuffer()));
@@ -130,7 +132,8 @@ function apiGiaLap(env: Record<string, string>): Plugin {
             return;
           }
           res.statusCode = 200;
-          res.end(JSON.stringify({ data: buildReport(row, data) }));
+          const dangCho = ketQuaDangCho(row);
+          res.end(JSON.stringify(dangCho ? { cho: dangCho } : { data: buildReport(row, data) }));
         } catch (err) {
           log.error(`  [api] ${(err as Error).message}`);
           res.statusCode = 500;

@@ -310,6 +310,15 @@ a:hover { text-decoration: underline; }
   font-weight: 600;
 }
 
+/* Mã đúng nhưng chưa có kết quả (chờ chấm Speaking…): thông báo chờ, không phải lỗi */
+.alert-solid.alert-cho {
+  background: #fff7e6;
+  border-color: #fcd9a0;
+  color: #8a4b00;
+  align-items: flex-start;
+  line-height: 1.5;
+}
+
 .lookup-feature-pills {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

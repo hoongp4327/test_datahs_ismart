@@ -4,10 +4,14 @@ import { COT_SUA, KY_TU_MA, NHAN_COT, kiemTraHocSinh, type CotSua } from "../../
 import Icon from "../components/Icon";
 import { giaoDienKyNang } from "../components/kyNangGiaoDien";
 import "../quan-tri.css";
-import ChamPlacement, { type ChoCham } from "./ChamPlacement";
+import ChamPlacement, { type ChoCham, type DaLuuCham } from "./ChamPlacement";
 
 /**
  * Trang quản trị — giáo viên chọn học sinh, nhập điểm, lưu thẳng vào Google Sheet.
+ *
+ * Luồng placement test: giáo viên bấm "Tạo mã làm bài" → gửi mã (hoặc link làm bài) cho học
+ * sinh → học sinh nhập mã mới làm được bài, kết quả lưu vào đúng mã đó → giáo viên chấm
+ * Writing Part 2 / Speaking ở tab "Chờ chấm" (Speaking chấm gom sau được).
  *
  * Server chưa đặt ADMIN_KEY thì mở thẳng /quan-tri là dùng được. Có đặt ADMIN_KEY thì
  * cần link /quan-tri#<khoá>: phần sau # không gửi lên server, trang tự đọc rồi gửi qua
@@ -44,6 +48,15 @@ function taoMa(daCo: Set<string>) {
     const ma = "HS-" + Array.from(so, (n) => KY_TU_MA[n % KY_TU_MA.length]).join("");
     if (!daCo.has(normalizeCode(ma))) return ma;
   }
+}
+
+const linkLamBai = (ma: string) => `${window.location.origin}/placement-test?ma=${encodeURIComponent(ma)}`;
+
+/** Nhãn trạng thái của học sinh chưa đủ điểm, trong danh sách bên trái. */
+function nhanThieu(r: Row, thieu: number) {
+  if (thieu === KY_NANG.length) return "Chưa làm bài";
+  const thieuNoi = docDiem(r.diem_speaking, KY_NANG.find((k) => k.key === "speaking")!.toiDa) === null;
+  return thieuNoi && thieu === 1 ? "Chờ Speaking" : `Thiếu ${thieu} điểm`;
 }
 
 function tongVaLevel(f: Form, d: DuLieu | null) {
@@ -93,6 +106,7 @@ export default function QuanTri() {
   /** Tab đang xem: danh sách học sinh, hoặc bài placement chờ chấm. */
   const [tab, setTab] = useState<"hoc-sinh" | "cho-cham">("hoc-sinh");
   const [chamDangChon, setChamDangChon] = useState(false);
+  const [moTaoMa, setMoTaoMa] = useState(false);
 
   useEffect(() => {
     document.title = "Quản trị kết quả — iSMART";
@@ -139,6 +153,7 @@ export default function QuanTri() {
   }, [duLieu]);
 
   const daCoMa = useMemo(() => new Set(danhSach.map((x) => x.ma)), [danhSach]);
+  const hocSinhTheoMa = useMemo(() => new Map(danhSach.map((x) => [x.ma, x.r] as const)), [danhSach]);
 
   const locDanhSach = useMemo(() => {
     const q = tim.trim().toLowerCase();
@@ -320,18 +335,31 @@ export default function QuanTri() {
     }
   };
 
-  /** Chấm xong một bài placement → bỏ khỏi "Chờ chấm", thêm vào danh sách và mở học sinh đó
-   *  để giáo viên chọn option mô tả, viết nhận xét lộ trình nếu muốn. */
-  const daChuyenPlacement = (maBai: string, hs: Row) => {
-    setDuLieu((d) =>
-      d
-        ? {
-            ...d,
-            hocSinh: [...d.hocSinh, hs],
-            choCham: d.choCham ? { ...d.choCham, bai: d.choCham.bai.filter((b) => b.ma_bai !== maBai) } : d.choCham,
-          }
-        : d
-    );
+  /**
+   * Vừa lưu điểm một bài placement. Server trả các cột KetQua đã ghi (không phải cả dòng) →
+   * trộn vào học sinh có sẵn theo mã (mã cấp trước), chưa có thì thêm (bài nộp kiểu cũ).
+   *   - Mới chấm một phần: bài ở lại "Chờ chấm" với điểm vừa lưu.
+   *   - Đủ Writing Part 2 + Speaking: bỏ khỏi "Chờ chấm", mở học sinh đó để giáo viên chọn
+   *     option mô tả, viết nhận xét lộ trình nếu muốn.
+   */
+  const daLuuPlacement = (maBai: string, kq: DaLuuCham) => {
+    const ma = normalizeCode(kq.hocSinh.ma_hoc_sinh);
+    const hs: Row = { ...(hocSinhTheoMa.get(ma) ?? {}), ...kq.hocSinh };
+    setDuLieu((d) => {
+      if (!d) return d;
+      const ds = d.hocSinh.slice();
+      let i = ds.length - 1;
+      while (i >= 0 && normalizeCode(ds[i].ma_hoc_sinh) !== ma) i--;
+      if (i >= 0) ds[i] = hs;
+      else ds.push(hs);
+      const bai = d.choCham
+        ? kq.xong
+          ? d.choCham.bai.filter((b) => b.ma_bai !== maBai)
+          : d.choCham.bai.map((b) => (b.ma_bai === maBai ? { ...b, ...kq.bai } : b))
+        : [];
+      return { ...d, hocSinh: ds, choCham: d.choCham ? { ...d.choCham, bai } : d.choCham };
+    });
+    if (!kq.xong) return;
     setTab("hoc-sinh");
     setChamDangChon(false);
     setChon(normalizeCode(hs.ma_hoc_sinh));
@@ -340,7 +368,7 @@ export default function QuanTri() {
     setGoc(tuRow(hs));
     setLoi({});
     setXungDot(null);
-    setThongBao({ loai: "ok", chu: `Đã tạo ${hs.ho_ten} — mã ${hs.ma_hoc_sinh}. Có thể chọn mô tả và lộ trình rồi Lưu.` });
+    setThongBao({ loai: "ok", chu: `Đã chấm xong ${hs.ho_ten} — mã ${hs.ma_hoc_sinh}. Có thể chọn mô tả và lộ trình rồi Lưu.` });
     window.scrollTo(0, 0);
   };
 
@@ -435,10 +463,11 @@ export default function QuanTri() {
           choCham={duLieu.choCham ?? { bai: [], cauW2: [], toiDaW2: 12, loi: "Máy chủ chưa hỗ trợ — cần deploy bản mới." }}
           thangLevel={duLieu.thangLevel as unknown as Row[]}
           daCoMa={daCoMa}
+          hocSinhTheoMa={hocSinhTheoMa}
           goiY={goiY}
           coTheGhi={duLieu.coTheGhi}
           gui={guiAdmin}
-          onDaChuyen={daChuyenPlacement}
+          onDaLuu={daLuuPlacement}
           onChon={setChamDangChon}
         />
       ) : (
@@ -459,6 +488,9 @@ export default function QuanTri() {
               <Icon ten="plus" size={16} /> Thêm
             </button>
           </div>
+          <button className="qt-nut qt-nut-phu qt-tao-ma" onClick={() => setMoTaoMa(true)} disabled={!duLieu.coTheGhi}>
+            <Icon ten="plus" size={16} /> Tạo mã làm bài cho học sinh
+          </button>
           <p className="qt-ds-dem">
             {locDanhSach.length === danhSach.length
               ? `${danhSach.length} học sinh`
@@ -492,7 +524,7 @@ export default function QuanTri() {
                         {t.tong} · {t.level ?? "—"}
                       </span>
                     ) : (
-                      <span className="qt-chip is-thieu">Thiếu {t.thieu} điểm</span>
+                      <span className="qt-chip is-thieu">{nhanThieu(r, t.thieu)}</span>
                     )}
                   </button>
                 </li>
@@ -508,6 +540,10 @@ export default function QuanTri() {
             <div className="qt-chua-chon">
               <p>Chọn một học sinh bên trái để nhập điểm, hoặc bấm <b>Thêm</b> để tạo học sinh mới.</p>
               <p className="qt-nho">Mã học sinh được tạo ngẫu nhiên khi thêm mới, không sửa được.</p>
+              <p className="qt-nho">
+                Học sinh sắp làm placement test? Bấm <b>Tạo mã làm bài</b> rồi gửi mã cho các em — phải có mã mới làm
+                được bài, và kết quả lưu vào đúng mã đó.
+              </p>
             </div>
           ) : (
             <form
@@ -526,6 +562,10 @@ export default function QuanTri() {
                 <div className="qt-form-ten">
                   <h1>{form.ho_ten || (laMoi ? "Học sinh mới" : "(chưa có tên)")}</h1>
                   <MaHocSinh ma={form.ma_hoc_sinh} />
+                  {/* Chưa có điểm nào = chưa làm bài: mã này còn dùng được để làm placement test. */}
+                  {!laMoi && tl?.thieu === KY_NANG.length ? (
+                    <NutChep chu={linkLamBai(form.ma_hoc_sinh)} nhan="Chép link làm bài" goiY="Gửi link này cho học sinh — mã đã điền sẵn" />
+                  ) : null}
                 </div>
                 {!laMoi ? (
                   <a
@@ -696,7 +736,181 @@ export default function QuanTri() {
         </main>
       </div>
       )}
+
+      {moTaoMa ? (
+        <TaoMa
+          goiY={goiY}
+          gui={guiAdmin}
+          onDong={() => setMoTaoMa(false)}
+          onDaTao={(moi) => setDuLieu((d) => (d ? { ...d, hocSinh: [...d.hocSinh, ...moi] } : d))}
+        />
+      ) : null}
     </div>
+  );
+}
+
+/* ------------------------------- Tạo mã làm bài ------------------------------- */
+
+/**
+ * Hộp thoại cấp mã TRƯỚC khi học sinh làm bài. Mỗi mã thành một dòng trong KetQua (chưa có
+ * tên, chưa có điểm); học sinh nhập mã ở /placement-test, làm xong kết quả ghi vào dòng đó.
+ */
+function TaoMa({
+  goiY,
+  gui,
+  onDong,
+  onDaTao,
+}: {
+  goiY: { lop: string[]; gv: string[] };
+  gui: (body: unknown) => Promise<{ ok: boolean; json: Record<string, unknown> & { message?: string; loi?: Record<string, string> } }>;
+  onDong: () => void;
+  onDaTao: (moi: Row[]) => void;
+}) {
+  const [soLuong, setSoLuong] = useState("1");
+  const [lop, setLop] = useState("");
+  const [gv, setGv] = useState("");
+  const [dang, setDang] = useState(false);
+  const [loi, setLoi] = useState("");
+  const [daTao, setDaTao] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    const phim = (e: KeyboardEvent) => e.key === "Escape" && !dang && onDong();
+    window.addEventListener("keydown", phim);
+    return () => window.removeEventListener("keydown", phim);
+  }, [dang, onDong]);
+
+  const tao = async () => {
+    const n = Number(soLuong);
+    if (!Number.isInteger(n) || n < 1 || n > 60) {
+      setLoi("Số lượng từ 1 đến 60.");
+      return;
+    }
+    setDang(true);
+    setLoi("");
+    try {
+      const r = await gui({ action: "taoMa", soLuong: n, lop, giao_vien: gv });
+      if (!r.ok) {
+        setLoi(Object.values(r.json.loi ?? {})[0] ?? r.json.message ?? "Chưa tạo được mã.");
+        return;
+      }
+      const moi = (r.json.hocSinh as Row[]) ?? [];
+      onDaTao(moi);
+      setDaTao(moi.map((h) => h.ma_hoc_sinh));
+    } catch {
+      setLoi("Mất kết nối. Bấm Tải lại để xem mã đã tạo chưa trước khi thử lại.");
+    } finally {
+      setDang(false);
+    }
+  };
+
+  return (
+    <div className="qt-hop-nen" onMouseDown={(e) => e.target === e.currentTarget && !dang && onDong()}>
+      <div className="qt-hop" role="dialog" aria-modal="true" aria-labelledby="qt-tao-ma-td">
+        <h2 id="qt-tao-ma-td">Tạo mã làm bài</h2>
+        {!daTao ? (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              tao();
+            }}
+          >
+            <p className="qt-nho">
+              Mỗi học sinh một mã. Học sinh phải nhập đúng mã mới làm được placement test, mỗi mã chỉ làm một lần và kết
+              quả được lưu vào mã đó.
+            </p>
+            <label className="qt-o">
+              <span className="qt-o-nhan">Số lượng mã (1–60)</span>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={60}
+                value={soLuong}
+                onChange={(e) => setSoLuong(e.target.value)}
+                autoFocus
+              />
+            </label>
+            <label className="qt-o">
+              <span className="qt-o-nhan">Thông tin (lớp, trường…) — không bắt buộc</span>
+              <input list="qt-tm-lop" value={lop} onChange={(e) => setLop(e.target.value)} maxLength={200} />
+            </label>
+            <label className="qt-o">
+              <span className="qt-o-nhan">Giáo viên — không bắt buộc</span>
+              <input list="qt-tm-gv" value={gv} onChange={(e) => setGv(e.target.value)} maxLength={80} />
+            </label>
+            <datalist id="qt-tm-lop">
+              {goiY.lop.map((v) => (
+                <option key={v} value={v} />
+              ))}
+            </datalist>
+            <datalist id="qt-tm-gv">
+              {goiY.gv.map((v) => (
+                <option key={v} value={v} />
+              ))}
+            </datalist>
+            {loi ? <p className="qt-hop-loi">{loi}</p> : null}
+            <div className="qt-hop-nut">
+              <button type="button" className="qt-nut qt-nut-phu" onClick={onDong} disabled={dang}>
+                Huỷ
+              </button>
+              <button type="submit" className="qt-nut qt-nut-chinh" disabled={dang}>
+                {dang ? <span className="qt-spinner qt-spinner-nho" aria-hidden="true" /> : <Icon ten="plus" size={16} />}
+                {dang ? "Đang tạo…" : "Tạo mã"}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <>
+            <p className="qt-nho">
+              Đã tạo <b>{daTao.length}</b> mã{daTao.length ? " — đã có trong danh sách học sinh với nhãn “Chưa làm bài”" : ""}.
+              Gửi cho mỗi học sinh một mã, hoặc gửi link làm bài (mã đã điền sẵn).
+            </p>
+            <ul className="qt-hop-ma">
+              {daTao.map((m) => (
+                <li key={m}>
+                  <code>{m}</code>
+                  <NutChep chu={linkLamBai(m)} nhan="Chép link" />
+                </li>
+              ))}
+            </ul>
+            <div className="qt-hop-nut">
+              <NutChep chu={daTao.join("\n")} nhan="Chép tất cả mã" kieu="nut" />
+              <NutChep chu={daTao.map((m) => `${m}  ${linkLamBai(m)}`).join("\n")} nhan="Chép mã kèm link" kieu="nut" />
+              <button type="button" className="qt-nut qt-nut-chinh" onClick={onDong}>
+                Xong
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Nút chép một đoạn chữ vào clipboard, đổi nhãn thành "Đã chép" trong chốc lát. */
+function NutChep({ chu, nhan, goiY, kieu }: { chu: string; nhan: string; goiY?: string; kieu?: "nut" }) {
+  const [daChep, setDaChep] = useState(false);
+  const hen = useRef<number>();
+  useEffect(() => () => window.clearTimeout(hen.current), []);
+  return (
+    <button
+      type="button"
+      className={kieu === "nut" ? "qt-nut qt-nut-phu" : "qt-ma qt-ma-link"}
+      title={goiY}
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(chu);
+          setDaChep(true);
+          window.clearTimeout(hen.current);
+          hen.current = window.setTimeout(() => setDaChep(false), 1500);
+        } catch {
+          /* trình duyệt chặn clipboard — bỏ qua */
+        }
+      }}
+    >
+      <Icon ten={daChep ? "check" : "copy"} size={14} />
+      {daChep ? "Đã chép" : nhan}
+    </button>
   );
 }
 

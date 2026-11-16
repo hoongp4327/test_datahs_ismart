@@ -1,6 +1,6 @@
 import { JWT } from "google-auth-library";
 import type { Context } from "@netlify/functions";
-import { buildReport, normalizeCode, timHocSinh, toObjects, type SheetData } from "../../shared/bao-cao";
+import { buildReport, ketQuaDangCho, normalizeCode, timHocSinh, toObjects, type SheetData } from "../../shared/bao-cao";
 import { cauHinhTuEnv, docDuLieu } from "../../shared/nguon-du-lieu";
 
 /* ------------------------------------------------------------------ *
@@ -128,6 +128,11 @@ export default async (req: Request, _context: Context) => {
         404
       );
     }
+
+    // Mã có thật nhưng chưa đủ điểm để đánh giá (chưa làm bài / chờ chấm Speaking):
+    // trả 200 kèm thông báo có tên học sinh, không dựng báo cáo dở dang.
+    const cho = ketQuaDangCho(row);
+    if (cho) return json({ cho }, 200);
 
     return json({ data: buildReport(row, data) }, 200);
   } catch (err) {
