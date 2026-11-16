@@ -10,6 +10,13 @@ import { hienSoDem, useDemSo, useHienKhiCuon } from "./motion";
 
 const so = (n: number) => String(n).replace(".", ",");
 
+/**
+ * Hiện ô "Kiến thức cơ bản / nâng cao" (cột pct_co_ban, pct_nang_cao) trong mục Lộ trình.
+ * Tạm tắt theo yêu cầu trung tâm; dữ liệu trên sheet vẫn giữ. Bật lại: đổi thành true
+ * (và mở lại 2 ô nhập trong src/pages/QuanTri.tsx).
+ */
+export const HIEN_PHAN_TRAM_LO_TRINH = false;
+
 function chuCaiDau(ten: string) {
   const p = String(ten ?? "").trim().split(/\s+/).filter(Boolean);
   if (!p.length) return "?";
@@ -35,20 +42,6 @@ function AnhDaiDien({ ten }: { ten: string }) {
   ) : (
     <img src={anhDaiDien(ten)} alt="" className="bc-avatar" onError={() => setLoi(true)} />
   );
-}
-
-/**
- * "05/11/2026" hoặc "2026-11-05" → "Hà Nội, ngày 5 tháng 11 năm 2026".
- * Không nhận ra định dạng thì trả nguyên văn để không hiện sai ngày.
- */
-function dongKyTen(ngayCham: string) {
-  const s = String(ngayCham ?? "").trim();
-  if (!s) return "";
-  const dmy = s.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/);
-  const ymd = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-  const [d, m, y] = dmy ? [dmy[1], dmy[2], dmy[3]] : ymd ? [ymd[3], ymd[2], ymd[1]] : [];
-  if (!d) return `Ngày chấm: ${s}`;
-  return `${ORG.diaDiem}, ngày ${Number(d)} tháng ${Number(m)} năm ${y}`;
 }
 
 /* --------------------------------- Thẻ kỹ năng --------------------------------- */
@@ -175,7 +168,7 @@ export default function Report({ bc }: { bc: BaoCao }) {
         <span className="bc-star is-b" aria-hidden="true">
           ✦
         </span>
-        <img className="bc-title-art" src="/images/bao-cao/mu-tot-nghiep.webp" alt="" aria-hidden="true" />
+        <img className="bc-title-art" src="/images/bao-cao/isaac-bao-cao.webp" alt="" aria-hidden="true" />
         <div className="bc-overline">iSMART EDUCATION</div>
         <h1>
           <span>Báo cáo đánh giá</span>
@@ -195,12 +188,13 @@ export default function Report({ bc }: { bc: BaoCao }) {
         </div>
         <dl className="bc-fact-list">
           {[
-            { icon: "layers" as const, k: "Lớp", v: bc.lop },
+            // Cột "lop" trên sheet — hiển thị là "Thông tin", có thể dài (lớp, trường…) nên được xuống dòng.
+            { icon: "layers" as const, k: "Thông tin", v: bc.lop, dai: true },
             { icon: "user" as const, k: "Giáo viên", v: bc.giaoVien },
             { icon: "calendar" as const, k: "Ngày chấm", v: bc.ngayCham },
           ].map((m) =>
             m.v ? (
-              <div key={m.k} className="bc-fact">
+              <div key={m.k} className={`bc-fact${m.dai ? " is-dai" : ""}`}>
                 <span className="bc-fact-icon">
                   <Icon ten={m.icon} size={28} net={1.7} />
                 </span>
@@ -231,24 +225,33 @@ export default function Report({ bc }: { bc: BaoCao }) {
       <DiemNoiBat kyNang={kyNang} />
 
       {/* Lộ trình + gợi ý */}
-      <div ref={refDuoi} className={`bc-hai-cot${hienDuoi ? " da-hien" : ""}`}>
-        <section className="bc-glass bc-hien-dan" style={{ ["--tre" as string]: "0ms" }}>
-          <h2 className="bc-glass-title">Lộ trình học tập</h2>
-          <div className="bc-lo-trinh">
-            <div className="bc-lo-trinh-o">
-              <b>{loTrinh.phanTramCoBan}</b>
-              <span>Kiến thức cơ bản</span>
-            </div>
-            <span className="bc-lo-trinh-cong" aria-hidden="true">
-              +
-            </span>
-            <div className="bc-lo-trinh-o is-nang-cao">
-              <b>{loTrinh.phanTramNangCao}</b>
-              <span>Kiến thức nâng cao</span>
-            </div>
-          </div>
-          {loTrinh.nhanXet ? <p className="bc-doan">{loTrinh.nhanXet}</p> : null}
-        </section>
+      <div
+        ref={refDuoi}
+        className={`bc-hai-cot${hienDuoi ? " da-hien" : ""}${
+          (HIEN_PHAN_TRAM_LO_TRINH || loTrinh.nhanXet) && coGoiY ? "" : " is-mot"
+        }`}
+      >
+        {HIEN_PHAN_TRAM_LO_TRINH || loTrinh.nhanXet ? (
+          <section className="bc-glass bc-hien-dan" style={{ ["--tre" as string]: "0ms" }}>
+            <h2 className="bc-glass-title">Lộ trình học tập</h2>
+            {HIEN_PHAN_TRAM_LO_TRINH ? (
+              <div className="bc-lo-trinh">
+                <div className="bc-lo-trinh-o">
+                  <b>{loTrinh.phanTramCoBan}</b>
+                  <span>Kiến thức cơ bản</span>
+                </div>
+                <span className="bc-lo-trinh-cong" aria-hidden="true">
+                  +
+                </span>
+                <div className="bc-lo-trinh-o is-nang-cao">
+                  <b>{loTrinh.phanTramNangCao}</b>
+                  <span>Kiến thức nâng cao</span>
+                </div>
+              </div>
+            ) : null}
+            {loTrinh.nhanXet ? <p className="bc-doan">{loTrinh.nhanXet}</p> : null}
+          </section>
+        ) : null}
 
         {coGoiY ? (
           <section className="bc-glass bc-hien-dan" style={{ ["--tre" as string]: "80ms" }}>
@@ -275,10 +278,6 @@ export default function Report({ bc }: { bc: BaoCao }) {
       <footer className="bc-footer">
         <span>
           © {new Date().getFullYear()} {ORG.ten} · Hotline {ORG.hotline} · {ORG.website}
-        </span>
-        <span className="bc-ky-ten">
-          {bc.ngayCham ? <>{dongKyTen(bc.ngayCham)} · </> : null}
-          <strong>{ORG.hoiDong}</strong>
         </span>
       </footer>
     </>

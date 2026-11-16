@@ -20,9 +20,10 @@ const so = (n: number) => String(n).replace(".", ",");
 /* ---------------------------------- Radar ---------------------------------- */
 
 const W = 600;
-const H = 482;
+const H = 512;
 const CX = 300;
-const CY = 235;
+/** Tâm dời xuống để nhãn Listening (trên cùng) không chạm vòng ngoài. */
+const CY = 265;
 const R = 150;
 /** Trên, phải, dưới, trái — theo thứ tự Listening, Reading, Writing, Speaking. */
 const HUONG: [number, number][] = [
@@ -37,9 +38,9 @@ const MAU_DINH = ["#2fe1ff", "#9dea75", "#ffbc4d", "#ff7446"];
 /** Vị trí nhãn quanh radar: icon, tên, điểm. */
 const NHAN = [
   { x: CX, y: 0, neo: "middle" as const }, // trên
-  { x: CX + R + 30, y: 190, neo: "start" as const }, // phải
+  { x: CX + R + 30, y: CY - 45, neo: "start" as const }, // phải
   { x: CX, y: CY + R + 8, neo: "middle" as const }, // dưới
-  { x: CX - R - 30, y: 190, neo: "end" as const }, // trái
+  { x: CX - R - 30, y: CY - 45, neo: "end" as const }, // trái
 ];
 
 /** Mỗi trục co theo điểm tối đa của kỹ năng đó (Writing 15, còn lại 20), nên vòng lưới ghi %. */
@@ -84,8 +85,9 @@ function Radar({ kyNang }: { kyNang: KyNangKetQua[] }) {
         />
       ))}
       <path d={`M ${CX - R} ${CY} H ${CX + R} M ${CX} ${CY - R} V ${CY + R}`} className="bc-radar-truc" />
+      {/* Nhãn % đặt trên đường chéo, tránh các trục nơi có điểm của kỹ năng */}
       {[0.25, 0.5, 0.75, 1].map((k) => (
-        <text key={k} x={CX + 9} y={CY - R * k + 4} className="bc-radar-so">
+        <text key={k} x={CX + R * k * 0.7071 + 4} y={CY - R * k * 0.7071 - 4} className="bc-radar-so">
           {k * 100}%
         </text>
       ))}
@@ -132,7 +134,7 @@ function Radar({ kyNang }: { kyNang: KyNangKetQua[] }) {
 
 /* --------------------------------- Thang Level --------------------------------- */
 
-function ThangLevel({ bc, tongDangDem }: { bc: BaoCao; tongDangDem: string }) {
+function ThangLevel({ bc }: { bc: BaoCao }) {
   const thang = bc.thangLevel;
   if (!thang.length) return null;
   const pt = (d: number) => Math.min(100, Math.max(0, (d / bc.tongToiDa) * 100));
@@ -148,12 +150,8 @@ function ThangLevel({ bc, tongDangDem }: { bc: BaoCao; tongDangDem: string }) {
           : `Điểm ${so(bc.tongDiem)} trên tổng ${bc.tongToiDa}, cấp độ ${bc.level?.ten ?? "chưa xếp"}`
       }
     >
-      {bc.tongDiem !== null ? (
-        <span className="bc-meter-kim" style={{ ["--vi-tri" as string]: `${pt(bc.tongDiem)}%` }} aria-hidden="true">
-          <b>{tongDangDem}</b>
-        </span>
-      ) : null}
-      <div className="bc-meter-thanh" aria-hidden="true">
+      {/* Không còn kim chỉ số điểm: Level đạt được tô đậm ngay trên thanh. */}
+      <div className={`bc-meter-thanh${bc.level ? " co-level" : ""}`} aria-hidden="true">
         {thang.map((m, i) => {
           const den = Math.min(thang[i + 1]?.tu ?? bc.tongToiDa, bc.tongToiDa);
           return (
@@ -221,7 +219,7 @@ export default function SkillHero({ bc }: { bc: BaoCao }) {
           {bc.level?.moTa ||
             (duDiem ? "" : "Chưa đủ điểm cả 4 kỹ năng nên chưa xếp Level. Trung tâm sẽ cập nhật khi giáo viên chấm xong.")}
         </p>
-        <ThangLevel bc={bc} tongDangDem={tongDangDem} />
+        <ThangLevel bc={bc} />
       </div>
 
       <div className="bc-radar-col">

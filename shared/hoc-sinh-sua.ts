@@ -23,7 +23,7 @@ export type HocSinhSua = { ma_hoc_sinh: string } & Partial<Record<CotSua, string
 
 const DO_DAI_TOI_DA: Partial<Record<CotSua, number>> = {
   ho_ten: 80,
-  lop: 60,
+  lop: 200, // cột "lop" hiển thị là "Thông tin": lớp, trường…
   giao_vien: 80,
   mo_ta_rieng_speaking: 1500,
   nhan_xet_lo_trinh: 1500,
@@ -100,7 +100,7 @@ export function kiemTraHocSinh(dauVao: unknown): { loi: Record<string, string>; 
 /** Tên dễ đọc của từng cột, để báo xung đột cho giáo viên. */
 export const NHAN_COT: Record<CotSua, string> = {
   ho_ten: "Họ và tên",
-  lop: "Lớp",
+  lop: "Thông tin",
   giao_vien: "Giáo viên",
   ngay_cham: "Ngày chấm",
   diem_listening: "Điểm Listening",

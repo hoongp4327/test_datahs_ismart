@@ -19,7 +19,10 @@
   position: relative;
   isolation: isolate;
   min-height: 100vh;
+  /* clip, không dùng hidden: hidden biến .kq thành vùng cuộn riêng → hiện thêm thanh cuộn
+     bên trong, header bị hụt 15px bên phải. Trình duyệt cũ không hiểu clip thì dùng hidden. */
   overflow-x: hidden;
+  overflow-x: clip;
   /* main giãn hết chiều cao còn lại → sóng trang trí luôn nằm ở đáy trang */
   display: flex;
   flex-direction: column;
@@ -219,16 +222,24 @@
   transform: rotate(-4deg);
   filter: drop-shadow(0 1px 3px #ff9f5188);
 }
+/* Linh vật Isaac (ảnh nền trong suốt) bay lơ lửng nhẹ cạnh tiêu đề */
 .bc-title-art {
   position: absolute;
-  right: -25px;
-  top: -19px;
-  width: 180px;
-  max-width: 18%;
+  right: 6px;
+  top: -6px;
+  width: 150px;
+  max-width: 16%;
   pointer-events: none;
-  filter: drop-shadow(1px 6px 17px #00175233);
-  -webkit-mask-image: radial-gradient(ellipse 68% 68% at 51% 49%, #000 52%, transparent 100%);
-  mask-image: radial-gradient(ellipse 68% 68% at 51% 49%, #000 52%, transparent 100%);
+  filter: drop-shadow(0 12px 16px #00175240);
+  transform-origin: 50% 85%;
+  animation: bc-isaac-bay 4.2s ease-in-out infinite;
+}
+@keyframes bc-isaac-bay {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-9px) rotate(3deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bc-title-art { animation: none; }
 }
 .bc-dot-matrix {
   position: absolute;
@@ -278,7 +289,8 @@
   border-radius: 50%;
   pointer-events: none;
 }
-.bc-student-person { position: relative; z-index: 1; display: flex; align-items: center; gap: 14px; min-width: 0; }
+/* Khung tên không bị co lại khi phần Thông tin dài */
+.bc-student-person { position: relative; z-index: 1; display: flex; align-items: center; gap: 14px; flex: 0 0 auto; max-width: 38%; min-width: 220px; }
 .bc-avatar {
   flex: none;
   width: 78px;
@@ -292,8 +304,12 @@
 .bc-avatar-chu { display: grid; place-items: center; font: 900 26px var(--display); color: #0b52a6; }
 .bc-student-person h2 { font-size: 20px; font-weight: 900; letter-spacing: -0.038em; line-height: 1.3; color: #0a245c; }
 .bc-student-person p { margin-top: 3px; font-size: 12px; font-weight: 550; color: #657695; }
-.bc-fact-list { position: relative; z-index: 1; display: flex; flex: 1; justify-content: flex-end; margin: 0; }
-.bc-fact { display: flex; align-items: center; gap: 9px; min-width: 0; padding: 0 21px; border-left: 1px solid rgba(80, 130, 193, 0.46); }
+.bc-fact-list { position: relative; z-index: 1; display: flex; flex: 1; min-width: 0; justify-content: flex-end; margin: 0; }
+.bc-fact { display: flex; align-items: center; gap: 9px; flex: none; min-width: 0; padding: 0 21px; border-left: 1px solid rgba(80, 130, 193, 0.46); }
+.bc-fact > div { min-width: 0; }
+/* "Thông tin" dài: chiếm phần còn lại và xuống dòng, không đè lên tên học sinh */
+.bc-fact.is-dai { flex: 0 1 auto; }
+.bc-fact.is-dai dd { white-space: normal; overflow-wrap: anywhere; line-height: 1.4; }
 .bc-fact:last-child { padding-right: 0; }
 .bc-fact-icon { color: #2873c9; }
 .bc-fact dt { margin-bottom: 3px; font-size: 10px; font-weight: 800; color: #536ea2; text-transform: uppercase; letter-spacing: 0.08em; }
@@ -426,7 +442,7 @@
   font-size: 13px; font-weight: 650; color: #e8f2ff;
 }
 .bc-lop-xep b { color: #ffc47b; font-weight: 800; }
-.bc-description { max-width: 340px; margin: 6px 0 60px; /* chừa chỗ cho nhãn số trên kim */ font-size: 13px; line-height: 1.7; font-weight: 550; color: #f4f8ff; }
+.bc-description { max-width: 340px; margin: 6px 0 22px; font-size: 13px; line-height: 1.7; font-weight: 550; color: #f4f8ff; }
 
 /* Thang Level */
 .bc-meter { position: relative; width: min(100%, 344px); }
@@ -453,7 +469,14 @@
   border-right: 1px solid #ffffff3c;
 }
 .bc-meter-doan:last-child { border-right: 0; }
-.bc-meter-doan.is-hien-tai { color: #fff; background: linear-gradient(120deg, #f96b3f, #ff9e51); box-shadow: 0 0 17px #ff853c77; }
+.bc-meter-doan.is-hien-tai {
+  color: #fff; font-size: 12px; font-weight: 900;
+  background: linear-gradient(120deg, #f96b3f, #ff9e51);
+  box-shadow: inset 0 0 0 2px #ffffffcc, 0 0 17px #ff853c99;
+  border-radius: 14px;
+}
+/* Đã xếp Level thì làm mờ các ô còn lại để ô đạt được nổi bật */
+.bc-meter-thanh.co-level .bc-meter-doan:not(.is-hien-tai) { color: #b9cbe8; }
 .bc-meter-kim {
   position: absolute;
   z-index: 2;
@@ -740,6 +763,8 @@
 /* ------------------------------- Lộ trình + gợi ý ------------------------------- */
 
 .bc-hai-cot { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 28px; align-items: start; }
+/* Chỉ có một ô (vd. chưa có gợi ý luyện tập) → trải hết chiều ngang, thẳng hàng với các thẻ phía trên */
+.bc-hai-cot.is-mot { grid-template-columns: 1fr; }
 .bc-glass {
   display: grid;
   gap: 14px;
@@ -786,7 +811,6 @@
   font-size: 11px;
   color: #e8f1ffcc;
 }
-.bc-ky-ten strong { color: #fff; font-weight: 800; }
 
 .bc-waves { position: absolute; z-index: -1; left: 0; right: 0; bottom: -12px; height: 115px; overflow: hidden; pointer-events: none; }
 .bc-waves::before {
@@ -812,15 +836,6 @@
   border-radius: 50%;
   background: linear-gradient(110deg, #d3b7ed, #9ae0ff 75%, #78ceff);
   box-shadow: 0 -8px 32px #76d1ff7b;
-}
-.bc-books {
-  position: absolute;
-  right: -5px;
-  bottom: -22px;
-  width: 130px;
-  pointer-events: none;
-  -webkit-mask-image: radial-gradient(ellipse 69% 70% at 50% 54%, #000 53%, transparent 100%);
-  mask-image: radial-gradient(ellipse 69% 70% at 50% 54%, #000 53%, transparent 100%);
 }
 
 /* ------------------------------------ Hiện dần ------------------------------------ */
@@ -868,15 +883,19 @@
   .bc-overline { font-size: 10px; letter-spacing: 0.25em; gap: 8px; }
   .bc-overline::before,
   .bc-overline::after { width: 25px; }
-  .bc-title-art { width: 96px; right: -18px; top: -14px; opacity: 0.8; max-width: none; }
+  .bc-title-art { width: 58px; right: -2px; top: -36px; max-width: none; }
   .bc-dot-matrix { left: 0; top: 24px; opacity: 0.3; }
   .bc-student { display: block; padding: 14px; border-radius: 20px; }
-  .bc-student-person { gap: 12px; }
+  .bc-student-person { gap: 12px; max-width: none; min-width: 0; }
   .bc-avatar { width: 62px; height: 62px; }
   .bc-student-person h2 { font-size: 18px; }
   .bc-fact-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #bad4ed91; }
   .bc-fact { display: block; padding: 0 6px; border-left: 1px solid #bed0e5; }
   .bc-fact:first-child { border-left: 0; padding-left: 0; }
+  /* "Thông tin" dài chiếm trọn một hàng; Giáo viên + Ngày chấm xếp chung hàng dưới */
+  .bc-fact-list:has(.is-dai) { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 10px; }
+  .bc-fact.is-dai { grid-column: 1 / -1; border-left: 0; padding-left: 0; }
+  .bc-fact.is-dai + .bc-fact { border-left: 0; padding-left: 0; }
   .bc-fact-icon { display: none; }
   .bc-fact dt { font-size: 9px; }
   .bc-fact dd { font-size: 12px; white-space: normal; }
@@ -888,7 +907,7 @@
   .bc-big-level { font-size: 108px; }
   .bc-big-level.is-dai { font-size: 72px; }
   .bc-points strong { font-size: 43px; }
-  .bc-description { max-width: none; margin: 7px 0 60px; font-size: 13px; }
+  .bc-description { max-width: none; margin: 7px 0 22px; font-size: 13px; }
   .bc-meter { width: 100%; }
   .bc-radar-col { padding: 8px 6px 14px; border-top: 1px solid #badfff3d; }
   .bc-radar-col::before { display: none; }
@@ -908,7 +927,6 @@
   .bc-glass { padding: 18px; }
   .bc-footer { display: block; margin: 18px 2px 5px; line-height: 1.8; }
   .bc-footer > span { display: block; }
-  .bc-books { display: none; }
 }
 
 @media (max-width: 400px) {
@@ -942,7 +960,6 @@
   .bc-topbar,
   .bc-back,
   .bc-waves,
-  .bc-books { display: none !important; }
   .bc-wrap { width: 100% !important; max-width: none; }
   .bc-hien-dan { opacity: 1; transform: none; }
   .bc-progress > span { transform: scaleX(var(--ti-le)); }

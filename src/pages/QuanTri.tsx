@@ -546,7 +546,7 @@ export default function QuanTri() {
                   <O nhan="Họ và tên" loi={loi.ho_ten} batBuoc>
                     <input value={form.ho_ten} onChange={(e) => sua("ho_ten", e.target.value)} autoFocus={laMoi} />
                   </O>
-                  <O nhan="Lớp" loi={loi.lop}>
+                  <O nhan="Thông tin" loi={loi.lop} goiY="Lớp, trường… hiện dưới tên học sinh">
                     <input list="qt-ds-lop" value={form.lop} onChange={(e) => sua("lop", e.target.value)} />
                   </O>
                   <O nhan="Giáo viên" loi={loi.giao_vien}>
@@ -608,22 +608,7 @@ export default function QuanTri() {
 
               <section className="qt-the">
                 <h2>Lộ trình học tập</h2>
-                <div className="qt-luoi-2">
-                  <O nhan="Kiến thức cơ bản" loi={loi.pct_co_ban} goiY="Để trống = 100%">
-                    <input
-                      value={form.pct_co_ban}
-                      placeholder="100%"
-                      onChange={(e) => sua("pct_co_ban", e.target.value)}
-                    />
-                  </O>
-                  <O nhan="Kiến thức nâng cao" loi={loi.pct_nang_cao} goiY="Để trống = 10%">
-                    <input
-                      value={form.pct_nang_cao}
-                      placeholder="10%"
-                      onChange={(e) => sua("pct_nang_cao", e.target.value)}
-                    />
-                  </O>
-                </div>
+                {/* Ô % cơ bản / nâng cao đang ẩn trên báo cáo (HIEN_PHAN_TRAM_LO_TRINH) nên không cho nhập. */}
                 <O nhan="Nhận xét lộ trình" loi={loi.nhan_xet_lo_trinh}>
                   <textarea
                     rows={3}

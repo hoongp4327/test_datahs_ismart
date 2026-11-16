@@ -92,7 +92,6 @@ export default function Result() {
         </div>
 
         <div className="bc-waves" aria-hidden="true" />
-        <img src="/images/bao-cao/chong-sach.webp" className="bc-books" alt="" aria-hidden="true" />
       </main>
     </div>
   );

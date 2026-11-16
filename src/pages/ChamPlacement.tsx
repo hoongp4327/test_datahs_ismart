@@ -324,7 +324,7 @@ export default function ChamPlacement({
                   {loi.ho_ten ? <span className="qt-o-loi">{loi.ho_ten}</span> : null}
                 </label>
                 <label className="qt-o">
-                  <span className="qt-o-nhan">Lớp</span>
+                  <span className="qt-o-nhan">Thông tin (lớp, trường…)</span>
                   <input list="qt-cc-lop" value={form.lop} onChange={(e) => sua("lop", e.target.value)} />
                 </label>
                 <label className="qt-o">
