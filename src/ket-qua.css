@@ -446,19 +446,17 @@
   font-variant-numeric: tabular-nums;
 }
 .bc-points span { font-size: 15px; font-weight: 700; color: #e8f2ff; }
-.bc-lop-xep {
-  display: inline-flex; align-items: center; gap: 6px; margin-top: 8px;
-  padding: 4px 12px; border-radius: 999px;
-  background: #ffffff1a; border: 1px solid #ffb46a66;
-  font-size: 13px; font-weight: 650; color: #e8f2ff;
+/* Ô chung: mục tiêu đầu ra (đậm) + mô tả (thường). Rộng bằng thanh iLEAD bên dưới. */
+.bc-muc-tieu {
+  width: min(100%, 344px); margin: 12px 0 20px; padding: 12px 16px 13px;
+  border-radius: var(--r-md);
+  background: #ffffff14; border: 1px solid #ffb46a59;
 }
-.bc-lop-xep b { color: #ffc47b; font-weight: 800; }
+.bc-muc-tieu p { margin: 0; }
+.bc-muc-tieu-dau { font-size: 14px; line-height: 1.4; font-weight: 800; color: #f4f8ff; }
+.bc-muc-tieu-dau span { color: #ffc47b; }
+.bc-muc-tieu-mo-ta { margin-top: 5px !important; font-size: 13px; line-height: 1.6; font-weight: 400; color: #dce8fb; }
 .bc-description { max-width: 340px; margin: 6px 0 22px; font-size: 13px; line-height: 1.7; font-weight: 550; color: #f4f8ff; }
-.bc-description p { margin: 0; }
-.bc-description-nhan {
-  display: block; margin: 4px 0 2px;
-  font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 800; color: #9fc4f0;
-}
 /* Chữ lớn là lớp xếp: "iLEAD" nhỏ, số lớp to */
 .bc-level-visual.is-lop { height: 108px; margin-bottom: 32px; }
 .bc-big-level.is-lop { font-size: 92px; letter-spacing: -0.04em; }

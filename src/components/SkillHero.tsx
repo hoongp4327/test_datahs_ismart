@@ -210,15 +210,15 @@ export default function SkillHero({ bc }: { bc: BaoCao }) {
           <strong>{tongDangDem}</strong>
           <span>/ {bc.tongToiDa} điểm</span>
         </div>
-        {bc.level?.lop && bc.level.ten ? (
-          <div className="bc-lop-xep">
-            Mục tiêu đầu ra <b>{bc.level.ten}</b>
-          </div>
-        ) : null}
-        {bc.level?.moTa ? (
-          <div className="bc-description">
-            <span className="bc-description-nhan">Năng lực hiện tại</span>
-            <p>{bc.level.moTa}</p>
+        {/* Một ô chung: dòng đậm là mục tiêu đầu ra, bên dưới là mô tả chữ thường. */}
+        {bc.level && ((bc.level.lop && bc.level.ten) || bc.level.moTa) ? (
+          <div className="bc-muc-tieu">
+            {bc.level.lop && bc.level.ten ? (
+              <p className="bc-muc-tieu-dau">
+                Mục tiêu đầu ra: <span>{bc.level.ten}</span>
+              </p>
+            ) : null}
+            {bc.level.moTa ? <p className="bc-muc-tieu-mo-ta">{bc.level.moTa}</p> : null}
           </div>
         ) : duDiem ? null : (
           <p className="bc-description">
