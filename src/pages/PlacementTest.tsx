@@ -394,12 +394,17 @@ function PhanThi({
         <p>{phan.huongDan}</p>
       </div>
 
-      {phan.youtube && (
+      {phan.amThanh ? (
+        <div className="plc-card">
+          <p className="plc-muted">Bấm phát audio, rồi kéo xuống trả lời câu hỏi.</p>
+          <AmThanh key={phan.id} src={phan.amThanh} />
+        </div>
+      ) : phan.youtube ? (
         <div className="plc-card">
           <p className="plc-muted">Bấm phát audio, rồi kéo xuống trả lời câu hỏi.</p>
           <Audio id={phan.youtube} />
         </div>
-      )}
+      ) : null}
 
       {phan.doanVan && (
         <article className="plc-card plc-passage">
@@ -611,6 +616,18 @@ function XemLai({
         {dangNop ? "Đang nộp bài…" : loi ? "Nộp lại" : "Nộp bài"}
       </button>
     </section>
+  );
+}
+
+/**
+ * File ghi âm của phần nghe, phát bằng trình phát sẵn của trình duyệt.
+ * `key` theo phần thi để chuyển phần thì trình phát dừng và tải file mới.
+ */
+function AmThanh({ src }: { src: string }) {
+  return (
+    <audio className="plc-am-thanh" controls preload="metadata" controlsList="nodownload" src={src}>
+      Trình duyệt không phát được audio. Hãy mở bằng Chrome hoặc Edge.
+    </audio>
   );
 }
 

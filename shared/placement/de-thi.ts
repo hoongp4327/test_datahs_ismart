@@ -24,7 +24,9 @@ export type Phan = {
   kyNang: KyNangTest;
   tieuDe: string;
   huongDan: string;
-  /** Video YouTube chứa audio của phần nghe. */
+  /** File ghi âm của phần nghe (trong public/). */
+  amThanh?: string;
+  /** Video YouTube chứa audio — chỉ dùng khi chưa có file ghi âm. */
   youtube?: string;
   /** Bảng hình A–F dùng chung cho các câu chọn chữ cái. */
   luoiAnh?: { chu: string; anh: string }[];
@@ -54,7 +56,7 @@ export const DE_THI = {
       kyNang: "listening",
       tieuDe: "Listening – Part 1",
       huongDan: "Look at the pictures. Listen and choose the correct letter (A–F). You will hear the audio twice.",
-      youtube: "sIg5eAUGlvk",
+      amThanh: "/audio/placement/L1.mp3",
       luoiAnh: ["a", "b", "c", "d", "e", "f"].map((c) => ({ chu: c.toUpperCase(), anh: A(`l1-${c}`) })),
       cauHoi: [1, 2, 3].map((n) => ({ id: `L1-${n}`, kieu: "chon" as const, de: `Question ${n}`, luaChon: CHU_AF, hang: true })),
     },
@@ -63,7 +65,7 @@ export const DE_THI = {
       kyNang: "listening",
       tieuDe: "Listening – Part 2",
       huongDan: "Look at the pictures. Listen and choose the correct answer. You will hear the audio twice.",
-      youtube: "lSpETdnVL_c",
+      amThanh: "/audio/placement/L2.mp3",
       cauHoi: [
         ["What can he/she do?", ["dance", "ride a bike", "swim"]],
         ["What is her favourite food?", ["eggs", "chicken", "rice"]],
@@ -85,7 +87,7 @@ export const DE_THI = {
       kyNang: "listening",
       tieuDe: "Listening – Part 3",
       huongDan: "Listen and write ONE WORD or A NUMBER to complete the notes. You will hear the audio twice.",
-      youtube: "qIe0UG93E8Y",
+      amThanh: "/audio/placement/L3.mp3",
       cauHoi: [
         { id: "L3-1", kieu: "dien", de: "Question 1", truoc: "Picnic place: National" },
         { id: "L3-2", kieu: "dien", de: "Question 2", truoc: "Clothes:" },
