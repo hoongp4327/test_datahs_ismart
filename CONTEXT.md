@@ -19,8 +19,8 @@ Tham chiếu thiết kế: `https://student.edupiatutor.vn/demo-result?dealId=11
 Trang kết quả gồm 2 phần:
 
 1. **Kết quả học tập** — điểm 4 kỹ năng theo **khung iLEAD**: Listening 20, Reading 20,
-   **Writing 15**, Speaking 20 (tổng **75**), **Level tương ứng** (Pre-A1 / A1 / A2 / Pre-B1) kèm
-   **lớp xếp** (iLEAD 1–4), biểu đồ radar, mô tả chung từng kỹ năng, và nhận xét riêng của
+   **Writing 15**, Speaking 20 (tổng **75**), **lớp xếp** (iLEAD 1–4) làm kết quả chính kèm
+   **mục tiêu đầu ra** của lớp (Pre-A1 / A1 / A2 / Pre-B1) và mô tả năng lực hiện tại, biểu đồ radar, mô tả chung từng kỹ năng, và nhận xét riêng của
    giáo viên cho Speaking
 2. **Lộ trình học tập** — % cơ bản/nâng cao + **gợi ý luyện tập** cho từng kỹ năng
 
@@ -157,6 +157,11 @@ khi cả 4 kỹ năng đều trống, và chỉ hiện kỹ năng nào có gợi
 `shared/bao-cao.ts`, `DIEM_TOI_DA` trong `apps-script/Code.gs` và `scripts/kiem-tra-ket-noi.mjs`.
 
 ### Tab `ThangLevel` — tổng điểm từ bao nhiêu thì đạt Level nào
+
+> **Cột `level` là trình độ ĐẦU RA của lớp, không phải trình độ hiện tại của học sinh.**
+> Báo cáo hiển thị `lop_xep` làm kết quả chính, `level` ở chip "Mục tiêu đầu ra", còn `mo_ta`
+> là "Năng lực hiện tại" (mô tả đầu vào). Đừng đưa `level` lên làm chữ lớn: phụ huynh sẽ tưởng
+> con đã đạt trình độ đó.
 
 | `level` | `diem_tu` | `lop_xep` | `mo_ta` |
 |---|---|---|---|

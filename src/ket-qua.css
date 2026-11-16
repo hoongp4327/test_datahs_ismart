@@ -443,6 +443,17 @@
 }
 .bc-lop-xep b { color: #ffc47b; font-weight: 800; }
 .bc-description { max-width: 340px; margin: 6px 0 22px; font-size: 13px; line-height: 1.7; font-weight: 550; color: #f4f8ff; }
+.bc-description p { margin: 0; }
+.bc-description-nhan {
+  display: block; margin: 4px 0 2px;
+  font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 800; color: #9fc4f0;
+}
+/* Chữ lớn là lớp xếp: "iLEAD" nhỏ, số lớp to */
+.bc-level-visual.is-lop { height: 108px; margin-bottom: 32px; }
+.bc-big-level.is-lop { font-size: 92px; letter-spacing: -0.04em; }
+.bc-big-ten { font-size: 0.62em; letter-spacing: -0.03em; margin-right: 0.12em; }
+.bc-level-visual.is-lop .bc-orbit { top: 48px; }
+.bc-level-visual.is-lop .bc-orbit-sao { left: 222px; top: 2px; }
 
 /* Thang Level */
 .bc-meter { position: relative; width: min(100%, 344px); }
@@ -518,10 +529,6 @@
   box-shadow: 0 2px 8px #001f5c63;
   font-variant-numeric: tabular-nums;
 }
-.bc-meter-moc { position: relative; height: 18px; margin-top: 4px; font-family: var(--display); font-size: 11px; color: #c5dafa; }
-.bc-meter-moc span { position: absolute; top: 0; transform: translateX(-50%); }
-.bc-meter-moc span.is-dau { transform: none; }
-.bc-meter-moc span.is-cuoi { transform: translateX(-100%); }
 @keyframes bc-kim-truot { from { left: 0; opacity: 0; } to { left: var(--vi-tri); opacity: 1; } }
 
 /* Cột radar */

@@ -191,11 +191,13 @@ export function buildReport(row: Row, data: SheetData) {
     kyNang,
     tongDiem,
     tongToiDa: TONG_TOI_DA,
+    // Cột `level` trên sheet là trình độ ĐẦU RA của lớp (mục tiêu sau khoá học), không phải
+    // trình độ hiện tại. Kết quả của bài placement là `lop` (lớp xếp); `moTa` là năng lực đầu vào.
     level: level ? { ten: level.level, lop: level.lop_xep ?? "", moTa: level.mo_ta ?? "" } : null,
-    // Toàn bộ thang Level để vẽ thanh 0–75 trên báo cáo; sửa mốc trên sheet là thanh đổi theo.
+    // Toàn bộ thang xếp lớp để vẽ thanh 0–75 trên báo cáo; sửa mốc trên sheet là thanh đổi theo.
     thangLevel: data.thangLevel
-      .map((r) => ({ ten: r.level, tu: docDiem(r.diem_tu, Number.POSITIVE_INFINITY) }))
-      .filter((r): r is { ten: string; tu: number } => Boolean(r.ten) && r.tu !== null)
+      .map((r) => ({ ten: r.level, lop: r.lop_xep ?? "", tu: docDiem(r.diem_tu, Number.POSITIVE_INFINITY) }))
+      .filter((r): r is { ten: string; lop: string; tu: number } => Boolean(r.ten) && r.tu !== null)
       .sort((a, b) => a.tu - b.tu),
     loTrinh: {
       phanTramCoBan: row.pct_co_ban || "100%",

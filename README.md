@@ -1,6 +1,6 @@
 # Website tra cứu kết quả học sinh
 
-Học sinh / phụ huynh nhập **mã học sinh** → website trả về báo cáo điểm 4 kỹ năng Listening, Reading, Writing, Speaking và Level tương ứng.
+Học sinh / phụ huynh nhập **mã học sinh** → website trả về báo cáo điểm 4 kỹ năng Listening, Reading, Writing, Speaking, lớp xếp phù hợp và trình độ mục tiêu (CEFR đầu ra) của lớp đó.
 Dữ liệu lấy trực tiếp từ **Google Sheet**.
 
 ---
@@ -138,6 +138,10 @@ Mặc định mỗi kỹ năng 4 option: Option 1 từ 0, Option 2 từ 6, Optio
 option chứ không lưu nguyên văn. Thêm option thứ 5 cũng chỉ cần thêm một dòng.
 
 ### Tab `ThangLevel` — tổng điểm từ bao nhiêu thì đạt Level nào
+
+> **Cột `level` là trình độ ĐẦU RA của lớp, không phải trình độ hiện tại của học sinh.**
+> Báo cáo hiển thị `lop_xep` làm kết quả chính, `level` ở chip "Mục tiêu đầu ra", còn `mo_ta`
+> là "Năng lực hiện tại" (mô tả đầu vào).
 
 | `level` | `diem_tu` | `mo_ta` |
 |---|---|---|

@@ -4,7 +4,7 @@ import { giaoDienKyNang } from "./kyNangGiaoDien";
 import { hienSoDem, useDemSo } from "./motion";
 
 /**
- * Khối kết quả chính trên nền xanh đậm: bên trái Level chữ lớn + tổng điểm + thang
+ * Khối kết quả chính trên nền xanh đậm: bên trái lớp xếp chữ lớn + tổng điểm + thang
  * Level, bên phải radar 4 kỹ năng.
  *
  * Kịch bản chuyển động khi mở trang:
@@ -137,8 +137,6 @@ function Radar({ kyNang }: { kyNang: KyNangKetQua[] }) {
 function ThangLevel({ bc }: { bc: BaoCao }) {
   const thang = bc.thangLevel;
   if (!thang.length) return null;
-  const pt = (d: number) => Math.min(100, Math.max(0, (d / bc.tongToiDa) * 100));
-  const moc = [...thang.map((m) => m.tu), bc.tongToiDa].filter((v, i, a) => a.indexOf(v) === i);
 
   return (
     <div
@@ -146,11 +144,12 @@ function ThangLevel({ bc }: { bc: BaoCao }) {
       role="img"
       aria-label={
         bc.tongDiem === null
-          ? "Thang Level — chưa đủ điểm để xếp"
-          : `Điểm ${so(bc.tongDiem)} trên tổng ${bc.tongToiDa}, cấp độ ${bc.level?.ten ?? "chưa xếp"}`
+          ? "Thang xếp lớp — chưa đủ điểm để xếp"
+          : `Điểm ${so(bc.tongDiem)} trên tổng ${bc.tongToiDa}, xếp lớp ${bc.level?.lop || bc.level?.ten || "chưa xếp"}`
       }
     >
-      {/* Không còn kim chỉ số điểm: Level đạt được tô đậm ngay trên thanh. */}
+      {/* Thang ghi theo LỚP (iLEAD 1–4), không ghi CEFR: CEFR trên sheet là đầu ra của lớp,
+          ghi lên thanh dễ khiến phụ huynh tưởng là trình độ hiện tại của con. */}
       <div className={`bc-meter-thanh${bc.level ? " co-level" : ""}`} aria-hidden="true">
         {thang.map((m, i) => {
           const den = Math.min(thang[i + 1]?.tu ?? bc.tongToiDa, bc.tongToiDa);
@@ -160,21 +159,10 @@ function ThangLevel({ bc }: { bc: BaoCao }) {
               className={`bc-meter-doan${m.ten === bc.level?.ten ? " is-hien-tai" : ""}`}
               style={{ flexGrow: Math.max(den - m.tu, 0.0001) }}
             >
-              {m.ten}
+              {m.lop || m.ten}
             </span>
           );
         })}
-      </div>
-      <div className="bc-meter-moc" aria-hidden="true">
-        {moc.map((m, i) => (
-          <span
-            key={m}
-            style={{ left: `${pt(m)}%` }}
-            className={i === 0 ? "is-dau" : i === moc.length - 1 ? "is-cuoi" : ""}
-          >
-            {m}
-          </span>
-        ))}
       </div>
     </div>
   );
@@ -185,7 +173,12 @@ function ThangLevel({ bc }: { bc: BaoCao }) {
 export default function SkillHero({ bc }: { bc: BaoCao }) {
   const tongDangDem = hienSoDem(useDemSo(bc.tongDiem, 300, 900), bc.tongDiem);
   const duDiem = bc.tongDiem !== null;
-  const level = bc.level?.ten ?? "—";
+  // Chữ lớn là LỚP XẾP (kết quả của bài placement). CEFR trên sheet là đầu ra của lớp đó,
+  // nên chỉ hiện ở chip "Mục tiêu đầu ra". Sheet chưa có lop_xep thì mới lấy CEFR làm chữ lớn.
+  const chuLon = bc.level?.lop || bc.level?.ten || "—";
+  // "iLEAD 4" → chữ "iLEAD" nhỏ, số "4" to để vẫn vừa cột.
+  const khop = /^(.*\S)\s+(\d+)$/.exec(chuLon);
+  const lopTach = khop ? { ten: khop[1], so: khop[2] } : null;
   const moTaRadar = bc.kyNang.map((k) => `${k.ten} ${k.diem ?? "chưa có"}/${k.toiDa}`).join(", ");
 
   return (
@@ -198,9 +191,16 @@ export default function SkillHero({ bc }: { bc: BaoCao }) {
       <span className="bc-hero-vong is-3" aria-hidden="true" />
 
       <div className="bc-level-col">
-        <div className="bc-eyebrow">Level tương ứng</div>
-        <div className="bc-level-visual">
-          <span className={`bc-big-level${level.length > 3 ? " is-dai" : ""}`}>{level}</span>
+        <div className="bc-eyebrow">Lớp phù hợp</div>
+        <div className={`bc-level-visual${lopTach ? " is-lop" : ""}`}>
+          {lopTach ? (
+            <span className="bc-big-level is-lop">
+              <span className="bc-big-ten">{lopTach.ten}</span>
+              {lopTach.so}
+            </span>
+          ) : (
+            <span className={`bc-big-level${chuLon.length > 3 ? " is-dai" : ""}`}>{chuLon}</span>
+          )}
           <span className="bc-orbit" aria-hidden="true" />
           <span className="bc-orbit-sao" aria-hidden="true">
             ✦
@@ -210,15 +210,21 @@ export default function SkillHero({ bc }: { bc: BaoCao }) {
           <strong>{tongDangDem}</strong>
           <span>/ {bc.tongToiDa} điểm</span>
         </div>
-        {bc.level?.lop ? (
+        {bc.level?.lop && bc.level.ten ? (
           <div className="bc-lop-xep">
-            Xếp lớp <b>{bc.level.lop}</b>
+            Mục tiêu đầu ra <b>{bc.level.ten}</b>
           </div>
         ) : null}
-        <p className="bc-description">
-          {bc.level?.moTa ||
-            (duDiem ? "" : "Chưa đủ điểm cả 4 kỹ năng nên chưa xếp Level. Trung tâm sẽ cập nhật khi giáo viên chấm xong.")}
-        </p>
+        {bc.level?.moTa ? (
+          <div className="bc-description">
+            <span className="bc-description-nhan">Năng lực hiện tại</span>
+            <p>{bc.level.moTa}</p>
+          </div>
+        ) : duDiem ? null : (
+          <p className="bc-description">
+            Chưa đủ điểm cả 4 kỹ năng nên chưa xếp lớp. Trung tâm sẽ cập nhật khi giáo viên chấm xong.
+          </p>
+        )}
         <ThangLevel bc={bc} />
       </div>
 

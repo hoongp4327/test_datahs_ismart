@@ -65,7 +65,7 @@ export default function Lookup() {
               </h1>
 
               <p className="lookup-card-desc">
-                Nhập mã học sinh để xem điểm 4 kỹ năng Tiếng Anh, Level tương ứng và lộ trình phát triển cá nhân hóa.
+                Nhập mã học sinh để xem điểm 4 kỹ năng Tiếng Anh, lớp phù hợp và lộ trình phát triển cá nhân hóa.
               </p>
 
               <form onSubmit={tim} noValidate className="lookup-card-form">
@@ -128,7 +128,7 @@ export default function Lookup() {
                 </div>
                 <div className="pill-item">
                   <span className="pill-icon">📊</span>
-                  <span>Level tương ứng</span>
+                  <span>Lớp phù hợp</span>
                 </div>
                 <div className="pill-item">
                   <span className="pill-icon">🎯</span>
@@ -163,8 +163,8 @@ export default function Lookup() {
           <div className="features-showcase-grid">
             <div className="feature-showcase-card card-trophy">
               <div className="feature-icon-box">🎓</div>
-              <h3>Level Tương Ứng</h3>
-              <p>Tổng điểm 4 kỹ năng được quy đổi sang Level (Pre-A1, A1, A2, Pre-B1) kèm mô tả năng lực hiện tại của con.</p>
+              <h3>Lớp Phù Hợp &amp; Mục Tiêu</h3>
+              <p>Tổng điểm 4 kỹ năng xếp con vào lớp iLEAD phù hợp, kèm mô tả năng lực hiện tại và trình độ mục tiêu sau khoá học.</p>
             </div>
 
             <div className="feature-showcase-card card-radar">
