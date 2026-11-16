@@ -1,0 +1,168 @@
+/* ==========================================================================
+   Bản in A4 của báo cáo (components/BanIn.tsx)
+
+   - Trắng đen: chữ đen, nền trắng, phân cấp bằng cỡ chữ, độ đậm, đường kẻ.
+     Không có màu nào mang nghĩa, in máy laser đen trắng vẫn đọc đủ.
+   - Một trang A4: lề 12 mm, nội dung dài thì BanIn.tsx thu nhỏ qua --bi-zoom.
+   - Trên màn hình bản in nằm ngoài khung nhìn (vẫn được dựng để đo chiều cao).
+   ========================================================================== */
+
+.bi {
+  --bi-den: #111;
+  --bi-xam: #555;
+  --bi-ke: #999;
+  --bi-ke-nhat: #cfcfcf;
+
+  position: absolute;
+  left: -10000px;
+  top: 0;
+  width: 186mm; /* 210 mm − 2 × 12 mm lề */
+  box-sizing: border-box;
+  background: #fff;
+  color: var(--bi-den);
+  font-family: "Be Vietnam Pro", Arial, sans-serif;
+  font-size: 9.5pt;
+  line-height: 1.45;
+}
+.bi *,
+.bi *::before,
+.bi *::after { box-sizing: border-box; }
+.bi p,
+.bi h1,
+.bi h2,
+.bi ul { margin: 0; }
+
+/* Đầu trang */
+.bi-dau {
+  display: flex;
+  align-items: center;
+  gap: 5mm;
+  padding-bottom: 3mm;
+  border-bottom: 1.5pt solid var(--bi-den);
+}
+.bi-logo { height: 13mm; width: auto; filter: grayscale(1); }
+.bi-tieu-de { flex: 1; text-align: right; }
+.bi-tieu-de h1 { font-size: 15pt; font-weight: 800; line-height: 1.2; text-transform: uppercase; letter-spacing: 0.02em; }
+.bi-tieu-de p { margin-top: 1mm; font-size: 9pt; color: var(--bi-xam); }
+
+/* Bảng thông tin */
+.bi-thong-tin { width: 100%; margin-top: 3.5mm; border-collapse: collapse; }
+.bi-thong-tin th,
+.bi-thong-tin td { padding: 1.2mm 2mm; text-align: left; vertical-align: top; border-bottom: 0.5pt solid var(--bi-ke-nhat); }
+.bi-thong-tin th { width: 18%; font-weight: 600; color: var(--bi-xam); white-space: nowrap; }
+.bi-thong-tin td { width: 32%; font-weight: 600; }
+.bi-thong-tin .bi-ten { font-size: 11pt; font-weight: 800; }
+
+/* Kết quả chính: 3 ô liền nhau, một khung */
+.bi-ket-qua {
+  display: flex;
+  margin-top: 4mm;
+  border: 1pt solid var(--bi-den);
+  border-radius: 2mm;
+}
+.bi-o { padding: 3mm 4mm; display: flex; flex-direction: column; justify-content: center; gap: 0.5mm; }
+.bi-o + .bi-o { border-left: 0.75pt solid var(--bi-ke); }
+.bi-o-rong { flex: 1; }
+.bi-nhan { font-size: 7.5pt; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--bi-xam); }
+.bi-lop { font-size: 22pt; font-weight: 800; line-height: 1.1; white-space: nowrap; }
+.bi-tong { font-size: 22pt; font-weight: 800; line-height: 1.1; white-space: nowrap; }
+.bi-tong small { font-size: 11pt; font-weight: 600; color: var(--bi-xam); }
+.bi-muc-tieu { font-size: 10.5pt; font-weight: 800; }
+.bi-mo-ta { margin-top: 1mm !important; font-size: 9pt; color: #222; }
+
+/* Thang xếp lớp: lớp đạt được đóng khung đậm, các lớp còn lại kẻ mảnh */
+.bi-thang { display: flex; gap: 1.5mm; margin-top: 2mm; }
+.bi-thang span {
+  flex: 1;
+  padding: 1.2mm 0;
+  text-align: center;
+  font-size: 8.5pt;
+  font-weight: 600;
+  color: var(--bi-xam);
+  border: 0.5pt solid var(--bi-ke-nhat);
+  border-radius: 1.5mm;
+}
+.bi-thang small { display: block; font-size: 7pt; font-weight: 400; }
+.bi-thang span.is-dat { color: var(--bi-den); font-weight: 800; border: 1.5pt solid var(--bi-den); }
+
+/* Tiêu đề mục */
+.bi-muc {
+  margin-top: 5mm !important;
+  margin-bottom: 1.5mm !important;
+  font-size: 10pt;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Bảng 4 kỹ năng */
+.bi-ky-nang { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.bi-ky-nang th {
+  padding: 1.2mm 2mm;
+  font-size: 7.5pt;
+  font-weight: 700;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--bi-xam);
+  border-bottom: 1pt solid var(--bi-den);
+}
+.bi-ky-nang td { padding: 2mm; vertical-align: top; border-bottom: 0.5pt solid var(--bi-ke); font-size: 9pt; }
+.bi-ky-nang td b { font-weight: 800; }
+.bi-phu { display: block; font-size: 8pt; color: var(--bi-xam); }
+.bi-diem { display: block; font-size: 9pt; color: var(--bi-xam); }
+.bi-diem b { font-size: 13pt; color: var(--bi-den); }
+/* Thanh điểm: khung rỗng, phần đạt tô đen — in trắng đen vẫn so được */
+.bi-vach { display: block; height: 2.2mm; margin-top: 1mm; border: 0.75pt solid var(--bi-den); border-radius: 1.1mm; overflow: hidden; }
+.bi-vach span {
+  display: block;
+  height: 100%;
+  background: var(--bi-den);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.bi-rieng { display: block; margin-top: 1.2mm; padding-left: 2mm; border-left: 1.5pt solid var(--bi-den); font-style: italic; }
+.bi-rieng b { font-style: normal; }
+.bi-noi-bat { margin-top: 2mm !important; font-size: 9pt; }
+.bi-cham { margin: 0 2mm; color: var(--bi-xam); }
+
+/* Lộ trình + gợi ý */
+.bi-hai-cot { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; }
+.bi-hai-cot.is-mot { grid-template-columns: 1fr; }
+.bi-doan { font-size: 9pt; }
+.bi-doan + .bi-doan { margin-top: 1.5mm !important; }
+.bi-goi-y { padding-left: 4mm; font-size: 9pt; }
+.bi-goi-y li + li { margin-top: 1mm; }
+
+/* Ký tên */
+.bi-ky { display: flex; justify-content: space-between; gap: 10mm; margin-top: 6mm; text-align: center; }
+.bi-ky > div { width: 45%; }
+.bi-ky-ngay { font-size: 8.5pt; font-style: italic; color: var(--bi-xam); }
+.bi-ky-vai { font-size: 9pt; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
+.bi-ky-ten { margin-top: 16mm !important; font-weight: 700; }
+.bi-ky > div:last-child .bi-ky-vai { margin-top: 0.5mm; }
+
+.bi-chan {
+  margin-top: 5mm;
+  padding-top: 1.5mm;
+  border-top: 0.5pt solid var(--bi-ke);
+  font-size: 7.5pt;
+  text-align: center;
+  color: var(--bi-xam);
+}
+
+@media print {
+  @page { size: A4; margin: 12mm; }
+  html,
+  body { background: #fff !important; }
+  /* Ẩn toàn bộ trang web, chỉ còn bản in */
+  .kq > :not(.bi) { display: none !important; }
+  .kq { background: #fff !important; min-height: 0 !important; }
+  .kq::before,
+  .kq::after { display: none !important; }
+  .bi {
+    position: static;
+    left: auto;
+    zoom: var(--bi-zoom, 1);
+  }
+}

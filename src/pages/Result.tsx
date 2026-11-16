@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { KqTopbar } from "../components/KetQuaLayout";
 import Icon from "../components/Icon";
+import BanIn from "../components/BanIn";
 import Report from "../components/Report";
 import type { BaoCao } from "../types";
 import "../ket-qua.css";
+import "../ban-in.css";
 
 type TrangThai =
   | { loai: "dang-tai" }
@@ -93,6 +95,9 @@ export default function Result() {
 
         <div className="bc-waves" aria-hidden="true" />
       </main>
+
+      {/* Bản in A4 trắng đen: chỉ hiện khi in, trang web ở trên bị ẩn đi. */}
+      {tt.loai === "xong" ? <BanIn bc={tt.baoCao} /> : null}
     </div>
   );
 }

@@ -967,25 +967,4 @@
   .bc-progress > span { transform: scaleX(var(--ti-le)); }
 }
 
-@media print {
-  @page { size: A4; margin: 9mm; }
-  .kq,
-  .kq::before { background: #2770c4 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .kq *,
-  .kq *::before,
-  .kq *::after { animation: none !important; transition: none !important; }
-  .bc-topbar,
-  .bc-back,
-  .bc-waves,
-  .bc-wrap { width: 100% !important; max-width: none; }
-  .bc-hien-dan { opacity: 1; transform: none; }
-  .bc-progress > span { transform: scaleX(var(--ti-le)); }
-  .bc-heading { min-height: 120px; }
-  .bc-heading h1 { font-size: 34px; }
-  .bc-student,
-  .bc-hero,
-  .bc-skill,
-  .bc-glass { break-inside: avoid; }
-  .bc-hero { min-height: 360px; border-radius: var(--r-lg); }
-  .bc-skill:hover { transform: none; }
-}
+/* In ấn: trang web không in. Bản in A4 trắng đen riêng nằm ở ban-in.css (components/BanIn.tsx). */
