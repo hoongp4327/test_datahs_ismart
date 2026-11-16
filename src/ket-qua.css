@@ -463,7 +463,8 @@
 .bc-level-visual.is-lop { height: 108px; margin-bottom: 32px; }
 .bc-big-level.is-lop { font-size: 92px; letter-spacing: -0.04em; }
 .bc-big-ten { font-size: 0.62em; letter-spacing: -0.03em; margin-right: 0.12em; }
-.bc-level-visual.is-lop .bc-orbit { top: 48px; }
+/* Vòng quỹ đạo nằm SAU chữ và thấp hơn chân chữ, nghiêng ít: không cắt ngang số lớp */
+.bc-level-visual.is-lop .bc-orbit { z-index: 0; left: -22px; top: 78px; width: 282px; height: 40px; transform: rotate(-3deg); }
 .bc-level-visual.is-lop .bc-orbit-sao { left: 222px; top: 2px; }
 
 /* Thang Level */
