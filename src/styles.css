@@ -26,6 +26,7 @@
   --radius:      14px;
   --radius-sm:   8px;
   --radius-lg:   18px;
+  --radius-xl:   22px;  /* khối lớn nhất (thẻ tra cứu). Thang theo Apple: 8 / 14 / 18 / 22 */
   --shadow:      0 1px 3px rgba(15, 23, 42, 0.06), 0 6px 16px -4px rgba(15, 23, 42, 0.08);
   --shadow-sm:   0 1px 2px rgba(15, 23, 42, 0.04);
   --maxw:        1240px;
@@ -160,7 +161,7 @@ a:hover { text-decoration: underline; }
 .lookup-card-solid {
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   padding: 38px 40px;
   box-shadow: 0 16px 40px -12px rgba(15, 41, 66, 0.15), 0 2px 6px rgba(0, 0, 0, 0.04);
   position: relative;
@@ -176,7 +177,7 @@ a:hover { text-decoration: underline; }
   background: var(--ismart-orange-soft);
   border: 1px solid #fed7aa;
   padding: 5px 12px;
-  border-radius: 20px;
+  border-radius: 999px;
   letter-spacing: .06em;
   margin-bottom: 14px;
 }
@@ -230,7 +231,7 @@ a:hover { text-decoration: underline; }
   width: 100%;
   padding: 13px 40px 13px 44px;
   border: 1.5px solid var(--line);
-  border-radius: 10px;
+  border-radius: 12px;
   font: inherit;
   font-size: 16px;
   font-weight: 700;
@@ -362,7 +363,7 @@ a:hover { text-decoration: underline; }
   border: 2px solid #fed7aa;
   color: var(--ismart-navy);
   padding: 12px 18px;
-  border-radius: 16px;
+  border-radius: var(--radius);
   box-shadow: 0 10px 25px -5px rgba(242, 92, 5, 0.12);
   font-size: 13px;
   font-weight: 700;
@@ -425,7 +426,7 @@ a:hover { text-decoration: underline; }
 .feature-showcase-card {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 26px 22px;
   transition: transform .15s, border-color .15s, box-shadow .15s;
 }
@@ -437,7 +438,7 @@ a:hover { text-decoration: underline; }
 .feature-icon-box {
   width: 48px;
   height: 48px;
-  border-radius: 12px;
+  border-radius: 11px;
   display: grid;
   place-items: center;
   font-size: 22px;
