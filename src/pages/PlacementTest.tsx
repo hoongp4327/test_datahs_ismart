@@ -18,6 +18,8 @@ const KHO = "ilead-placement-v1";
 const THOI_GIAN_MS = DE_THI.thoiGianPhut * 60_000;
 /** Có hiện điểm cho học sinh sau khi nộp không. Placement test thường để giáo viên báo. */
 const HIEN_DIEM = false;
+/** Bài hết giờ mà quá chừng này vẫn chưa nộp được thì coi là bỏ dở, không khôi phục nữa. */
+const BO_BAI_CU_MS = 24 * 60 * 60_000;
 
 type Buoc = "gioi-thieu" | number | "xem-lai" | "xong";
 type TrangThai = {
@@ -48,6 +50,10 @@ function docKho(): TrangThai {
   try {
     const s = JSON.parse(localStorage.getItem(KHO) || "null");
     if (s && typeof s === "object" && s.maBai) {
+      // Bài lưu từ bản cũ (trước khi có mã học sinh) không nộp được nữa → bỏ, bắt đầu bài mới.
+      if (!("maDaXacNhan" in s)) return macDinh;
+      // Bài bỏ dở đã hết giờ quá lâu (máy dùng chung, người khác mở hôm sau) → bắt đầu bài mới.
+      if (typeof s.batDau === "number" && Date.now() > s.batDau + THOI_GIAN_MS + BO_BAI_CU_MS) return macDinh;
       // Máy dùng chung: bài dở trên máy là của mã KHÁC với link vừa mở → bắt đầu bài mới,
       // không cho bạn sau làm tiếp bài của bạn trước.
       if (tuLink && s.maDaXacNhan && s.maDaXacNhan !== normalizeCode(tuLink)) return macDinh;
@@ -155,8 +161,10 @@ export default function PlacementTest() {
         setDangKiemTraMa(false);
       }
     }
+    const hetGioRoi = tt.batDau !== null && Date.now() >= tt.batDau + THOI_GIAN_MS;
     setTt((t) => ({ ...t, maDaXacNhan: ma, batDau: t.batDau ?? Date.now() }));
-    chuyen(0);
+    // Đã hết giờ (vừa sửa mã sau lần nộp bị từ chối): vào thẳng trang nộp, không mở lại đề.
+    chuyen(hetGioRoi ? "xem-lai" : 0);
   };
 
   /** Máy dùng chung: bỏ bài đang dở của bạn trước để bạn sau nhập mã của mình. */
@@ -195,9 +203,11 @@ export default function PlacementTest() {
         if (!res.ok || !j.ok) {
           // Mã bị từ chối lúc nộp (vừa bị xoá, hoặc người khác đã dùng): mở khoá ô mã ở trang đầu
           // để nhập mã thầy cô cấp lại — bài làm vẫn còn nguyên trên máy.
-          if (j.error === "MA_KHONG_CO" || j.error === "MA_DA_DUNG") {
-            setTt((t) => ({ ...t, maDaXacNhan: "" }));
-            throw new Error(`${j.message} Bài làm vẫn được giữ trên máy này.`);
+          // Thiếu/sai mã, họ tên, ngày sinh: đưa về trang đầu để sửa — ở trang xem lại không có ô nào để nhập.
+          if (j.error === "MA_KHONG_CO" || j.error === "MA_DA_DUNG" || j.error === "INVALID") {
+            setTt((t) => ({ ...t, maDaXacNhan: j.error === "INVALID" ? t.maDaXacNhan : "", buoc: "gioi-thieu" }));
+            setLoiMa(`${j.message} Bài làm vẫn được giữ trên máy này.`);
+            return;
           }
           throw new Error(j.message || "Chưa lưu được bài, vui lòng bấm Nộp lại.");
         }
