@@ -9,10 +9,13 @@
     "build": "vite build",
     "preview": "vite preview",
     "kiem-tra": "node --env-file=.env scripts/kiem-tra-ket-noi.mjs",
+    "thu-cham-writing": "node --env-file=.env scripts/thu-cham-writing.mjs",
+    "thu-cham-writing-gemini": "node --env-file=.env scripts/thu-cham-writing-gemini.mjs",
     "tao-template": "node scripts/tao-template.mjs",
     "dev:mau": "vite --mode mau"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0",
     "google-auth-library": "^9.15.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
