@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/images/ismart-logo.png">
+</head>
+<body>
+<title>Hướng dẫn làm bài iLEAD</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Bố cục: một cột đọc ~70 ký tự, mỗi bước là một khối có số thứ tự + ảnh chụp màn hình thật */
+:root{
+  --bg:#f6f7fa; --surface:#ffffff; --ink:#14233d; --muted:#5b6679; --line:#e1e5ec;
+  --navy:#173a6b; --accent:#ee6a1f; --accent-soft:#fdeee4; --note:#eef4fd; --note-line:#3d74c4;
+  --warn:#fff6e0; --warn-line:#d99a14; --shot:#dfe3ea;
+  --f-head:"Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1520; --surface:#172030; --ink:#e7ecf4; --muted:#9aa6b8; --line:#29354a;
+  --navy:#9cc0f5; --accent:#ff8a45; --accent-soft:#3a2516; --note:#16253b; --note-line:#5d94e6;
+  --warn:#322812; --warn-line:#e0aa36; --shot:#2b374b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1520; --surface:#172030; --ink:#e7ecf4; --muted:#9aa6b8; --line:#29354a;
+  --navy:#9cc0f5; --accent:#ff8a45; --accent-soft:#3a2516; --note:#16253b; --note-line:#5d94e6;
+  --warn:#322812; --warn-line:#e0aa36; --shot:#2b374b; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 16.5px/1.7 var(--f-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:860px;margin:0 auto;padding-block:40px 80px}
+h1,h2,h3{font-family:var(--f-head);text-wrap:balance;line-height:1.25;margin:0}
+p{margin:0}
+b,strong{font-weight:700}
+.kbd{display:inline-block;font-weight:700;color:var(--accent);background:var(--accent-soft);
+  border-radius:6px;padding:0 7px;white-space:nowrap}
+.ma{font-family:var(--f-mono);font-weight:700;letter-spacing:.04em}
+
+/* Đầu trang */
+.dau{display:grid;gap:14px;padding-bottom:28px;border-bottom:1px solid var(--line)}
+.nhan{font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.dau h1{font-size:clamp(28px,5vw,40px);font-weight:800;color:var(--navy)}
+.dau .mo{font-size:18px;color:var(--muted);max-width:62ch}
+.nhanh{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+.nhanh span{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:14.5px;font-weight:600}
+
+/* Mục lục */
+.muc-luc{margin:28px 0 8px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px 24px}
+.muc-luc h2{font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.muc-luc ol{margin:0;padding-left:22px;columns:2;column-gap:32px}
+.muc-luc li{break-inside:avoid;padding:2px 0}
+.muc-luc a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--line)}
+.muc-luc a:hover,.muc-luc a:focus-visible{color:var(--accent);border-color:var(--accent)}
+@media (max-width:620px){.muc-luc ol{columns:1}}
+
+/* Phần lớn */
+.phan{margin-top:56px;display:grid;gap:22px}
+.phan>h2{font-size:clamp(22px,3.6vw,28px);font-weight:800;color:var(--navy);display:flex;gap:14px;align-items:baseline}
+.phan>h2 .so{font-size:15px;font-weight:800;color:#fff;background:var(--accent);border-radius:8px;padding:2px 10px;flex:none;transform:translateY(-3px)}
+.phan>p{max-width:68ch}
+
+/* Bước con */
+.buoc{display:grid;gap:12px}
+.buoc h3{font-size:19px;font-weight:700}
+.buoc ul,.buoc ol{margin:0;padding-left:22px;display:block;max-width:68ch}
+.buoc li+li{margin-top:6px}
+
+/* Ảnh chụp */
+figure{margin:4px 0 0;display:grid;gap:8px}
+figure img{display:block;width:100%;height:auto;border:1px solid var(--shot);border-radius:12px;background:var(--surface);
+  box-shadow:0 1px 2px rgba(20,35,61,.06),0 8px 24px -12px rgba(20,35,61,.18)}
+figure.hep img{max-width:440px}
+figure.dt img{max-width:300px}
+figcaption{font-size:14px;color:var(--muted)}
+.hai{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;align-items:start}
+.hai figure img{max-width:100%}
+
+/* Hộp ghi chú */
+.ghi-chu{background:var(--note);border-left:4px solid var(--note-line);border-radius:0 10px 10px 0;padding:14px 18px;max-width:72ch}
+.ghi-chu.chu-y{background:var(--warn);border-color:var(--warn-line)}
+.ghi-chu b:first-child{display:block;margin-bottom:2px}
+
+/* Bảng chuẩn bị */
+.chuan-bi{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.chuan-bi div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:grid;gap:4px}
+.chuan-bi strong{font-size:16px}
+.chuan-bi span{font-size:15px;color:var(--muted)}
+
+/* Bảng cấu trúc bài */
+.bang{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:15px}
+th,td{text-align:left;padding:11px 16px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:700;white-space:nowrap}
+
+/* Hỏi đáp */
+details{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 18px}
+details+details{margin-top:10px}
+summary{cursor:pointer;font-weight:700;list-style-position:outside}
+summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:4px}
+details p{margin-top:8px;color:var(--ink);max-width:68ch}
+.cuoi{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:14px}
+a{color:var(--navy)}
+</style>
+
+<div class="wrap">
+  <a class="ve-trang-chon" href="/huong-dan">← Tất cả hướng dẫn</a>
+  <header class="dau">
+    <p class="nhan">iSMART Education · Dành cho học sinh và phụ huynh</p>
+    <h1>Hướng dẫn làm bài kiểm tra xếp lớp iLEAD online</h1>
+    <p class="mo">Bài kiểm tra giúp thầy cô xếp con vào lớp iLEAD phù hợp. Làm theo từng bước dưới đây, từ lúc mở link đến lúc nộp bài và xem kết quả.</p>
+    <div class="nhanh"><span>35 phút làm bài</span><span>Listening · Reading · Writing làm trên web</span><span>Speaking thi trực tiếp với thầy cô</span></div>
+  </header>
+
+  <nav class="muc-luc" aria-label="Mục lục">
+    <h2>Nội dung</h2>
+    <ol>
+      <li><a href="#chuan-bi">Chuẩn bị trước khi làm</a></li>
+      <li><a href="#mo-link">Mở trang làm bài</a></li>
+      <li><a href="#thong-tin">Điền thông tin học sinh</a></li>
+      <li><a href="#bat-dau">Kiểm tra loa và bắt đầu</a></li>
+      <li><a href="#lam-bai">Làm từng phần thi</a></li>
+      <li><a href="#nop-bai">Kiểm tra lại và nộp bài</a></li>
+      <li><a href="#ket-qua">Xem kết quả (phụ huynh)</a></li>
+      <li><a href="#hoi-dap">Gặp sự cố thì làm gì?</a></li>
+    </ol>
+  </nav>
+
+  <section class="phan" id="chuan-bi">
+    <h2><span class="so">1</span>Chuẩn bị trước khi làm</h2>
+    <div class="chuan-bi">
+      <div><strong>Mã học sinh</strong><span>Thầy cô gửi qua tin nhắn, dạng <span class="ma">HS-7K3M9Q</span>. Mỗi mã chỉ làm bài được <b>một lần</b>.</span></div>
+      <div><strong>Máy tính hoặc máy tính bảng</strong><span>Màn hình lớn dễ nhìn tranh hơn. Dùng điện thoại vẫn được. Nên mở bằng Chrome, Edge hoặc Safari.</span></div>
+      <div><strong>Loa hoặc tai nghe</strong><span>Phần Listening cần nghe audio. Nên dùng tai nghe ở nơi yên tĩnh.</span></div>
+      <div><strong>Mạng ổn định và 35 phút rảnh</strong><span>Đồng hồ chạy liên tục từ lúc bấm Bắt đầu, không dừng lại được.</span></div>
+    </div>
+    <div class="bang">
+      <table>
+        <thead><tr><th>Phần thi</th><th>Làm ở đâu</th><th>Số câu</th><th>Điểm</th></tr></thead>
+        <tbody>
+          <tr><td>Listening</td><td>Trên web</td><td>10</td><td>20</td></tr>
+          <tr><td>Reading</td><td>Trên web</td><td>9</td><td>20</td></tr>
+          <tr><td>Writing</td><td>Trên web</td><td>7</td><td>15</td></tr>
+          <tr><td>Speaking</td><td>Trực tiếp với thầy cô, <b>không làm trên web</b></td><td>–</td><td>20</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="phan" id="mo-link">
+    <h2><span class="so">2</span>Mở trang làm bài</h2>
+    <p>Bấm vào <b>link làm bài</b> thầy cô gửi. Nếu thầy cô gửi link có kèm mã, ô <b>Student code</b> đã được điền sẵn, con chỉ cần nhập họ tên và ngày sinh.</p>
+    <div class="hai">
+      <figure><img src="/huong-dan/hinh/hs-01-trang-bat-dau.webp" alt="Trang bắt đầu bài kiểm tra trên máy tính" loading="lazy"><figcaption>Trang bắt đầu trên máy tính: bên trái điền thông tin, bên phải kiểm tra loa.</figcaption></figure>
+      <figure class="dt"><img src="/huong-dan/hinh/hs-11-dien-thoai-link-co-ma.webp" alt="Trang bắt đầu trên điện thoại, mã đã điền sẵn" loading="lazy"><figcaption>Trên điện thoại, mở link có mã thì mã đã nằm sẵn trong ô.</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="phan" id="thong-tin">
+    <h2><span class="so">3</span>Điền thông tin học sinh</h2>
+    <div class="buoc">
+      <ol>
+        <li><b>Student code (Mã học sinh):</b> gõ đúng mã thầy cô gửi. Viết hoa hay viết thường, có dấu gạch hay không đều được.</li>
+        <li><b>Name (Họ và tên):</b> gõ họ tên đầy đủ, có dấu.</li>
+        <li><b>Date of birth (Ngày sinh):</b> gõ liền các số, ví dụ <b>05062016</b>, trang tự thêm dấu gạch chéo thành <b>05/06/2016</b>.</li>
+      </ol>
+      <figure class="hep"><img src="/huong-dan/hinh/hs-04-nhap-dung.webp" alt="Ô thông tin đã điền đủ mã, họ tên, ngày sinh" loading="lazy"><figcaption>Điền đủ 3 ô như thế này là được.</figcaption></figure>
+    </div>
+    <div class="buoc">
+      <h3>Nếu trang báo chữ đỏ</h3>
+      <p>Chữ đỏ hiện dưới ô nào là ô đó cần sửa. Hai trường hợp hay gặp:</p>
+      <div class="hai">
+        <figure><img src="/huong-dan/hinh/hs-02-bao-loi-chua-nhap.webp" alt="Báo lỗi khi chưa điền thông tin" loading="lazy"><figcaption>Bấm Bắt đầu khi còn ô trống: điền nốt ô có chữ đỏ.</figcaption></figure>
+        <figure><img src="/huong-dan/hinh/hs-03-ma-sai.webp" alt="Báo mã học sinh không đúng" loading="lazy"><figcaption>“Mã học sinh không đúng”: gõ lại mã cho khớp với tin nhắn của thầy cô.</figcaption></figure>
+      </div>
+      <div class="ghi-chu chu-y"><b>Trang báo “Mã học sinh này đã được dùng để làm bài rồi”?</b>Mã đó đã nộp bài trước đây. Con báo thầy cô để được cấp mã mới, không tự thử mã khác.</div>
+    </div>
+  </section>
+
+  <section class="phan" id="bat-dau">
+    <h2><span class="so">4</span>Kiểm tra loa và bắt đầu</h2>
+    <div class="buoc">
+      <ol>
+        <li>Ở khung <b>Kiểm tra loa / tai nghe</b>, bấm nút phát để nghe thử.</li>
+        <li>Nghe rõ thì bấm nút cam <span class="kbd">Bắt đầu làm bài →</span>. Không nghe được thì kiểm tra lại âm lượng hoặc cắm lại tai nghe.</li>
+      </ol>
+      <figure class="hep"><img src="/huong-dan/hinh/hs-05-kiem-tra-loa.webp" alt="Khung kiểm tra loa và nút Bắt đầu làm bài" loading="lazy"><figcaption>Bấm nút phát ở giữa video để nghe thử, rồi bấm Bắt đầu làm bài.</figcaption></figure>
+      <div class="ghi-chu"><b>Đồng hồ bắt đầu chạy ngay khi bấm.</b>Con có 35 phút. Hết giờ, bài tự động nộp với những câu đã làm.</div>
+    </div>
+  </section>
+
+  <section class="phan" id="lam-bai">
+    <h2><span class="so">5</span>Làm từng phần thi</h2>
+    <div class="buoc">
+      <p>Bài thi gồm 8 phần nối tiếp nhau. Mỗi phần có hướng dẫn bằng tiếng Anh ở đầu trang, con đọc kỹ rồi làm theo.</p>
+      <ul>
+        <li><b>Thanh phần thi</b> ở trên cùng: các ô L1 L2 L3 (Listening), R1 R2 R3 (Reading), W1 W2 (Writing). Bấm vào ô bất kỳ để chuyển sang phần đó.</li>
+        <li><b>Đồng hồ</b> ở góc phải trên cùng cho biết thời gian còn lại, chuyển màu đỏ khi còn dưới 5 phút.</li>
+        <li><b>Phần nghe:</b> bấm nút ▶ trên thanh audio để nghe. Mỗi audio được nghe 2 lần.</li>
+        <li><b>Câu chọn đáp án:</b> bấm vào đáp án con chọn, ô đó sẽ đổi màu. Chọn nhầm thì bấm đáp án khác để đổi.</li>
+        <li><b>Câu cần viết:</b> bấm vào ô trống rồi gõ câu trả lời bằng tiếng Anh.</li>
+        <li><b>Chuyển phần:</b> cuối mỗi phần có nút <span class="kbd">← Back</span> để quay lại và <span class="kbd">Next →</span> để sang phần sau. Ở phần cuối, nút đổi thành <span class="kbd">Review &amp; Submit →</span>.</li>
+      </ul>
+      <div class="ghi-chu"><b>Bài làm được lưu liên tục trên máy.</b>Lỡ tải lại trang hoặc mất mạng, con mở lại đúng link đó <b>trên cùng máy, cùng trình duyệt</b>, nút sẽ đổi thành “Làm tiếp bài đang dở”. Đồng hồ vẫn tính tiếp từ lúc bắt đầu.</div>
+    </div>
+  </section>
+
+  <section class="phan" id="nop-bai">
+    <h2><span class="so">6</span>Kiểm tra lại và nộp bài</h2>
+    <div class="buoc">
+      <p>Trang <b>Kiểm tra lại trước khi nộp</b> cho biết con đã trả lời bao nhiêu câu ở mỗi phần. Phần nào chưa làm đủ, bấm vào phần đó để làm tiếp. Khi đã xong, bấm <span class="kbd">Nộp bài</span>.</p>
+      <figure><img src="/huong-dan/hinh/hs-09-xem-lai.webp" alt="Trang kiểm tra lại trước khi nộp" loading="lazy"><figcaption>Số màu xanh (ví dụ 3/3) là phần đã làm đủ câu.</figcaption></figure>
+    </div>
+    <div class="buoc">
+      <p>Hiện chữ <b>Nộp bài thành công!</b> là xong phần làm trên web. Con có thể đóng trang. Trang không hiện điểm, thầy cô sẽ chấm và báo kết quả.</p>
+      <figure><img src="/huong-dan/hinh/hs-10-nop-xong.webp" alt="Thông báo nộp bài thành công" loading="lazy"><figcaption>Màn hình nộp bài thành công.</figcaption></figure>
+      <div class="ghi-chu"><b>Còn phần Speaking.</b>Con thi nói trực tiếp với thầy cô theo lịch trung tâm hẹn. Có đủ điểm Speaking thì mới có kết quả xếp lớp.</div>
+    </div>
+  </section>
+
+  <section class="phan" id="ket-qua">
+    <h2><span class="so">7</span>Xem kết quả (dành cho phụ huynh)</h2>
+    <div class="buoc">
+      <ol>
+        <li>Mở trang <b>Tra cứu Kết quả học tập</b> của iSMART (link trung tâm gửi).</li>
+        <li>Gõ <b>mã học sinh</b> của con vào ô, bấm <span class="kbd">Xem Báo Cáo Kết Quả →</span>.</li>
+      </ol>
+      <figure><img src="/huong-dan/hinh/ph-02-nhap-ma.webp" alt="Trang tra cứu kết quả với ô nhập mã" loading="lazy"><figcaption>Trang tra cứu: chỉ cần nhập mã học sinh.</figcaption></figure>
+      <p>Báo cáo hiện lớp iLEAD phù hợp, tổng điểm, điểm từng kỹ năng, nhận xét của giáo viên và lộ trình học. Nút <b>In báo cáo</b> ở góc trên để in hoặc lưu thành PDF.</p>
+      <figure><img src="/huong-dan/hinh/ph-03-bao-cao.webp" alt="Báo cáo đánh giá năng lực học viên" loading="lazy"><figcaption>Phần đầu báo cáo kết quả. Kéo xuống để xem chi tiết từng kỹ năng.</figcaption></figure>
+    </div>
+    <div class="buoc">
+      <h3>Chưa có kết quả?</h3>
+      <p>Nếu trang báo “chưa làm bài” hoặc “chưa làm xong bài Speaking”, nghĩa là thầy cô chưa chấm xong. Phụ huynh quay lại tra cứu sau, không cần làm gì thêm.</p>
+      <figure><img src="/huong-dan/hinh/ph-04-chua-co-ket-qua.webp" alt="Thông báo chưa có kết quả" loading="lazy"><figcaption>Thông báo khi bài chưa được chấm đủ.</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="phan" id="hoi-dap">
+    <h2><span class="so">8</span>Gặp sự cố thì làm gì?</h2>
+    <div>
+      <details><summary>Không nghe được audio</summary><p>Kiểm tra âm lượng máy, rút ra cắm lại tai nghe, rồi bấm phát lại. Nếu vẫn không được, đổi sang trình duyệt Chrome hoặc Edge.</p></details>
+      <details><summary>Lỡ tắt trang hoặc mất mạng giữa chừng</summary><p>Mở lại đúng link làm bài trên cùng máy và cùng trình duyệt. Bấm “Làm tiếp bài đang dở”, các câu đã làm vẫn còn. Lưu ý đồng hồ không dừng trong lúc trang tắt.</p></details>
+      <details><summary>Bấm Nộp bài mà trang báo chưa lưu được</summary><p>Thường do mạng chập chờn. Bài làm vẫn được giữ, con kiểm tra lại mạng rồi bấm <b>Nộp lại</b>.</p></details>
+      <details><summary>Hết giờ khi chưa làm xong</summary><p>Bài tự nộp với những câu đã trả lời. Con không cần làm gì thêm.</p></details>
+      <details><summary>Nhập sai họ tên hoặc ngày sinh</summary><p>Cứ nộp bài bình thường rồi báo thầy cô. Thầy cô sửa được thông tin khi chấm bài.</p></details>
+      <details><summary>Muốn làm lại bài</summary><p>Mỗi mã chỉ làm được một lần. Muốn làm lại, liên hệ thầy cô để được cấp mã mới.</p></details>
+      <details><summary>Trên máy đang có bài dở của bạn khác</summary><p>Ở trang bắt đầu, bấm dòng “Không phải bài của con? Làm bài mới với mã khác” rồi nhập mã của con.</p></details>
+    </div>
+  </section>
+
+  <p class="cuoi">iSMART Education · Hướng dẫn dùng cho bài kiểm tra xếp lớp iLEAD online. Ảnh minh hoạ dùng thông tin mẫu.</p>
+</div>
+<style>.ve-trang-chon{display:inline-block;margin-bottom:20px;font:600 15px/1.4 "Be Vietnam Pro","Segoe UI",system-ui,sans-serif;color:var(--navy);text-decoration:none}.ve-trang-chon:hover,.ve-trang-chon:focus-visible{text-decoration:underline}</style>
+</body>
+</html>

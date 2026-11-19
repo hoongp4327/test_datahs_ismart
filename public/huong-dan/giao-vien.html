@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/images/ismart-logo.png">
+</head>
+<body>
+<title>Hướng dẫn chấm bài iLEAD</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Bố cục: một cột đọc ~70 ký tự, quy trình 6 bước có số thứ tự + ảnh chụp màn hình thật */
+:root{
+  --bg:#f6f7fa; --surface:#ffffff; --ink:#14233d; --muted:#5b6679; --line:#e1e5ec;
+  --navy:#173a6b; --accent:#ee6a1f; --accent-soft:#fdeee4; --note:#eef4fd; --note-line:#3d74c4;
+  --warn:#fff6e0; --warn-line:#d99a14; --shot:#dfe3ea;
+  --chip-cho:#fff1d6; --chip-cho-ink:#8a5a00; --chip-xong:#e4eefc; --chip-xong-ink:#173a6b;
+  --f-head:"Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1520; --surface:#172030; --ink:#e7ecf4; --muted:#9aa6b8; --line:#29354a;
+  --navy:#9cc0f5; --accent:#ff8a45; --accent-soft:#3a2516; --note:#16253b; --note-line:#5d94e6;
+  --warn:#322812; --warn-line:#e0aa36; --shot:#2b374b;
+  --chip-cho:#3a2c10; --chip-cho-ink:#f2c46a; --chip-xong:#1b2c46; --chip-xong-ink:#9cc0f5; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1520; --surface:#172030; --ink:#e7ecf4; --muted:#9aa6b8; --line:#29354a;
+  --navy:#9cc0f5; --accent:#ff8a45; --accent-soft:#3a2516; --note:#16253b; --note-line:#5d94e6;
+  --warn:#322812; --warn-line:#e0aa36; --shot:#2b374b;
+  --chip-cho:#3a2c10; --chip-cho-ink:#f2c46a; --chip-xong:#1b2c46; --chip-xong-ink:#9cc0f5; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 16.5px/1.7 var(--f-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:860px;margin:0 auto;padding-block:40px 80px}
+h1,h2,h3{font-family:var(--f-head);text-wrap:balance;line-height:1.25;margin:0}
+p{margin:0}
+b,strong{font-weight:700}
+.kbd{display:inline-block;font-weight:700;color:var(--accent);background:var(--accent-soft);border-radius:6px;padding:0 7px;white-space:nowrap}
+.ma{font-family:var(--f-mono);font-weight:700;letter-spacing:.04em}
+.chip{display:inline-block;font-size:14px;font-weight:700;border-radius:999px;padding:1px 10px;white-space:nowrap;background:var(--chip-cho);color:var(--chip-cho-ink)}
+.chip.xong{background:var(--chip-xong);color:var(--chip-xong-ink)}
+
+.dau{display:grid;gap:14px;padding-bottom:28px;border-bottom:1px solid var(--line)}
+.nhan{font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.dau h1{font-size:clamp(28px,5vw,40px);font-weight:800;color:var(--navy)}
+.dau .mo{font-size:18px;color:var(--muted);max-width:62ch}
+
+/* Sơ đồ quy trình */
+.quy-trinh{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:8px;padding:0;list-style:none;counter-reset:qt}
+.quy-trinh li{counter-increment:qt;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:2px;font-size:14.5px;line-height:1.45}
+.quy-trinh li::before{content:counter(qt);font-weight:800;color:var(--accent);font-size:13px}
+.quy-trinh li b{font-size:15px}
+.quy-trinh li span{color:var(--muted)}
+.quy-trinh li.may{border-style:dashed}
+@media (max-width:620px){.quy-trinh{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.muc-luc{margin:28px 0 8px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px 24px}
+.muc-luc h2{font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.muc-luc ol{margin:0;padding-left:22px;columns:2;column-gap:32px}
+.muc-luc li{break-inside:avoid;padding:2px 0}
+.muc-luc a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--line)}
+.muc-luc a:hover,.muc-luc a:focus-visible{color:var(--accent);border-color:var(--accent)}
+@media (max-width:620px){.muc-luc ol{columns:1}}
+
+.phan{margin-top:56px;display:grid;gap:22px}
+.phan>h2{font-size:clamp(22px,3.6vw,28px);font-weight:800;color:var(--navy);display:flex;gap:14px;align-items:baseline}
+.phan>h2 .so{font-size:15px;font-weight:800;color:#fff;background:var(--accent);border-radius:8px;padding:2px 10px;flex:none;transform:translateY(-3px)}
+.phan>p{max-width:68ch}
+.buoc{display:grid;gap:12px}
+.buoc h3{font-size:19px;font-weight:700}
+.buoc ul,.buoc ol{margin:0;padding-left:22px;display:block;max-width:68ch}
+.buoc li+li{margin-top:6px}
+
+figure{margin:4px 0 0;display:grid;gap:8px}
+figure img{display:block;width:100%;height:auto;border:1px solid var(--shot);border-radius:12px;background:var(--surface);
+  box-shadow:0 1px 2px rgba(20,35,61,.06),0 8px 24px -12px rgba(20,35,61,.18)}
+figure.hep img{max-width:560px}
+figcaption{font-size:14px;color:var(--muted)}
+
+.ghi-chu{background:var(--note);border-left:4px solid var(--note-line);border-radius:0 10px 10px 0;padding:14px 18px;max-width:72ch}
+.ghi-chu.chu-y{background:var(--warn);border-color:var(--warn-line)}
+.ghi-chu b:first-child{display:block;margin-bottom:2px}
+
+.bang{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:15px}
+th,td{text-align:left;padding:11px 16px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
+tr:last-child td{border-bottom:0}
+td:first-child{white-space:nowrap}
+
+details{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 18px}
+details+details{margin-top:10px}
+summary{cursor:pointer;font-weight:700}
+summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:4px}
+details p{margin-top:8px;max-width:68ch}
+.cuoi{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:14px}
+</style>
+
+<div class="wrap">
+  <a class="ve-trang-chon" href="/huong-dan">← Tất cả hướng dẫn</a>
+  <header class="dau">
+    <p class="nhan">iSMART Education · Dành cho giáo viên</p>
+    <h1>Hướng dẫn cấp mã và chấm bài kiểm tra xếp lớp iLEAD</h1>
+    <p class="mo">Toàn bộ việc của giáo viên làm trên trang <b>Chấm điểm học viên</b>: cấp mã cho học sinh, chấm Writing Part 2 và Speaking, hoàn thiện báo cáo gửi phụ huynh.</p>
+    <ol class="quy-trinh" aria-label="Quy trình">
+      <li><b>Tạo mã</b><span>Mỗi học sinh một mã</span></li>
+      <li><b>Gửi mã / link</b><span>Qua Zalo, tin nhắn</span></li>
+      <li class="may"><b>Học sinh làm bài</b><span>Máy tự chấm Listening, Reading, Writing 1</span></li>
+      <li><b>Chấm Writing 2</b><span>4 câu, mỗi câu 0–3 điểm</span></li>
+      <li><b>Chấm Speaking</b><span>0–20 điểm, có thể chấm sau</span></li>
+      <li><b>Hoàn thiện báo cáo</b><span>Phụ huynh tra cứu bằng mã</span></li>
+    </ol>
+  </header>
+
+  <nav class="muc-luc" aria-label="Mục lục">
+    <h2>Nội dung</h2>
+    <ol>
+      <li><a href="#mo-trang">Mở trang chấm điểm</a></li>
+      <li><a href="#tao-ma">Tạo mã làm bài</a></li>
+      <li><a href="#gui-ma">Gửi mã và theo dõi</a></li>
+      <li><a href="#cham-bai">Chấm Writing Part 2</a></li>
+      <li><a href="#speaking">Chấm Speaking và xác nhận</a></li>
+      <li><a href="#hoan-thien">Hoàn thiện báo cáo</a></li>
+      <li><a href="#sua">Sửa điểm, thêm học sinh</a></li>
+      <li><a href="#phu-huynh">Phụ huynh xem kết quả</a></li>
+      <li><a href="#hoi-dap">Câu hỏi thường gặp</a></li>
+    </ol>
+  </nav>
+
+  <section class="phan" id="mo-trang">
+    <h2><span class="so">1</span>Mở trang chấm điểm</h2>
+    <p>Mở <b>link trang chấm điểm</b> do trung tâm gửi (nên dùng máy tính, trình duyệt Chrome hoặc Edge). Nếu link dài và có đoạn ký tự phía sau dấu <b>#</b>, luôn giữ nguyên cả đoạn đó khi mở hoặc lưu dấu trang, thiếu là trang báo không mở được.</p>
+    <figure><img src="/huong-dan/hinh/gv-01-trang-quan-tri.webp" alt="Trang Chấm điểm học viên" loading="lazy"><figcaption>Trang Chấm điểm học viên: danh sách học sinh bên trái, khu nhập điểm bên phải.</figcaption></figure>
+    <div class="bang">
+      <table>
+        <thead><tr><th>Khu vực</th><th>Dùng để</th></tr></thead>
+        <tbody>
+          <tr><td><b>Tab Học sinh</b></td><td>Xem tất cả học sinh, tạo mã, sửa điểm, chọn mô tả, viết lộ trình.</td></tr>
+          <tr><td><b>Tab Chờ chấm placement</b></td><td>Những bài học sinh đã nộp nhưng còn thiếu điểm Writing Part 2 hoặc Speaking. Số màu cam cạnh tên tab là số bài đang chờ.</td></tr>
+          <tr><td><b>Nút Tải lại</b></td><td>Lấy danh sách mới nhất, ví dụ khi học sinh vừa nộp bài.</td></tr>
+          <tr><td><b>Ô tìm kiếm</b></td><td>Gõ tên, mã hoặc lớp để lọc nhanh danh sách.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="phan" id="tao-ma">
+    <h2><span class="so">2</span>Tạo mã làm bài</h2>
+    <div class="buoc">
+      <p>Học sinh <b>bắt buộc có mã</b> mới vào làm bài được. Mỗi mã dùng một lần, kết quả lưu vào đúng mã đó.</p>
+      <ol>
+        <li>Ở tab <b>Học sinh</b>, bấm <span class="kbd">+ Tạo mã làm bài cho học sinh</span>.</li>
+        <li>Nhập <b>Số lượng mã</b> (1 đến 60), bằng số học sinh sắp làm bài.</li>
+        <li>Điền <b>Thông tin</b> (lớp, trường, cơ sở…) và <b>Giáo viên</b> nếu muốn. Hai ô này không bắt buộc, sẽ hiện trên báo cáo.</li>
+        <li>Bấm <span class="kbd">Tạo mã</span>.</li>
+      </ol>
+      <figure><img src="/huong-dan/hinh/gv-02-hop-tao-ma.webp" alt="Hộp Tạo mã làm bài" loading="lazy"><figcaption>Hộp Tạo mã làm bài.</figcaption></figure>
+    </div>
+    <div class="buoc">
+      <h3>Lấy mã để gửi</h3>
+      <p>Hộp hiện danh sách mã vừa tạo, mỗi mã một dòng.</p>
+      <ul>
+        <li><b>Chép link</b> (cạnh từng mã): chép link làm bài đã điền sẵn mã đó. Gửi riêng cho từng học sinh là tiện nhất.</li>
+        <li><b>Chép tất cả mã</b>: chép danh sách mã để dán vào bảng tính hoặc tin nhắn.</li>
+        <li><b>Chép mã kèm link</b>: chép cả mã lẫn link của mọi học sinh cùng lúc.</li>
+      </ul>
+      <figure><img src="/huong-dan/hinh/gv-03-da-tao-ma.webp" alt="Danh sách mã vừa tạo và các nút chép" loading="lazy"><figcaption>Bấm Chép rồi dán vào Zalo hoặc tin nhắn. Xong thì bấm Xong.</figcaption></figure>
+      <div class="ghi-chu"><b>Ghi lại mã nào của học sinh nào.</b>Lúc này mã chưa gắn tên. Học sinh tự nhập họ tên khi vào làm bài, nhưng giáo viên nên ghi chú để tiện đối chiếu.</div>
+    </div>
+  </section>
+
+  <section class="phan" id="gui-ma">
+    <h2><span class="so">3</span>Gửi mã và theo dõi</h2>
+    <div class="buoc">
+      <p>Mã mới tạo nằm ngay trong danh sách học sinh với tên <b>(chưa có tên)</b> và nhãn <span class="chip">Chưa làm bài</span>. Bấm vào mã đó, bên phải có nút <span class="kbd">Chép link làm bài</span> để gửi lại khi học sinh làm mất tin nhắn.</p>
+      <figure><img src="/huong-dan/hinh/gv-05-mo-ma-chua-lam.webp" alt="Mã chưa làm bài và nút Chép link làm bài" loading="lazy"><figcaption>Tìm mã trong ô tìm kiếm, mở ra để chép lại link làm bài.</figcaption></figure>
+    </div>
+    <div class="buoc">
+      <h3>Ý nghĩa nhãn trong danh sách</h3>
+      <div class="bang">
+        <table>
+          <thead><tr><th>Nhãn</th><th>Nghĩa là</th><th>Việc cần làm</th></tr></thead>
+          <tbody>
+            <tr><td><span class="chip">Chưa làm bài</span></td><td>Đã cấp mã, học sinh chưa nộp.</td><td>Nhắc học sinh làm bài.</td></tr>
+            <tr><td><span class="chip">Chờ Writing + Speaking</span></td><td>Đã nộp bài, chưa chấm gì.</td><td>Chấm ở tab Chờ chấm.</td></tr>
+            <tr><td><span class="chip">Chờ Speaking</span></td><td>Đã chấm Writing Part 2, còn thiếu Speaking.</td><td>Chấm Speaking sau khi thi nói.</td></tr>
+            <tr><td><span class="chip">Thiếu 2 điểm</span></td><td>Học sinh nhập tay còn thiếu điểm kỹ năng.</td><td>Mở học sinh, nhập nốt điểm.</td></tr>
+            <tr><td><span class="chip xong">60.5 · Pre-B1</span></td><td>Đã đủ điểm: tổng điểm và trình độ.</td><td>Phụ huynh xem được báo cáo.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="phan" id="cham-bai">
+    <h2><span class="so">4</span>Chấm Writing Part 2</h2>
+    <div class="buoc">
+      <ol>
+        <li>Bấm <span class="kbd">Tải lại</span> để cập nhật bài mới nộp.</li>
+        <li>Chuyển sang tab <b>Chờ chấm placement</b>, bấm vào tên học sinh.</li>
+      </ol>
+      <figure><img src="/huong-dan/hinh/gv-06-tab-cho-cham.webp" alt="Tab Chờ chấm placement" loading="lazy"><figcaption>Tab Chờ chấm placement: các bài đang chờ chấm ở cột trái.</figcaption></figure>
+    </div>
+    <div class="buoc">
+      <h3>Xem phần máy đã chấm</h3>
+      <p>Khung <b>Máy đã chấm</b> hiện sẵn điểm Listening, Reading và Writing Part 1. Bấm <span class="kbd">Xem bài làm từng câu</span> để xem học sinh chọn gì: chữ xanh có ✓ là đúng, chữ đỏ có ✗ là sai.</p>
+      <figure><img src="/huong-dan/hinh/gv-08-may-da-cham.webp" alt="Khung Máy đã chấm và bài làm từng câu" loading="lazy"><figcaption>Điểm máy đã chấm sẵn.</figcaption></figure>
+    </div>
+    <div class="buoc">
+      <h3>Cho điểm từng câu</h3>
+      <p>Mỗi câu hiện câu hỏi, câu trả lời của học sinh (khung xanh) và đáp án gợi ý. Bấm ô <b>0, 1, 2 hoặc 3</b> để cho điểm. Tổng Writing Part 2 (tối đa 12) cập nhật ở góc phải.</p>
+      <div class="bang">
+        <table>
+          <thead><tr><th>Điểm</th><th>Khi nào cho</th></tr></thead>
+          <tbody>
+            <tr><td><b>3</b></td><td>Đúng nội dung, là câu hoàn chỉnh, ngữ pháp đúng. Cho phép một lỗi nhỏ (chính tả một chữ, quên viết hoa, thiếu dấu chấm).</td></tr>
+            <tr><td><b>2</b></td><td>Đúng nội dung, là câu hoàn chỉnh nhưng có lỗi ngữ pháp, hoặc từ hai lỗi nhỏ trở lên.</td></tr>
+            <tr><td><b>1</b></td><td>Đúng nội dung nhưng chỉ là một từ hoặc một cụm từ, chưa thành câu.</td></tr>
+            <tr><td><b>0</b></td><td>Sai nội dung, bỏ trống, viết tiếng Việt hoặc chép lại câu hỏi.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figure><img src="/huong-dan/hinh/gv-09-cham-writing-p2.webp" alt="Chấm Writing Part 2 bằng các ô điểm 0 đến 3" loading="lazy"><figcaption>Ô điểm được chọn chuyển màu cam. Trong ảnh minh hoạ, tranh, câu hỏi và câu trả lời đã được làm mờ để giữ bí mật đề thi.</figcaption></figure>
+    </div>
+    <div class="buoc">
+      <h3>Lưu điểm Writing trước, chấm Speaking sau</h3>
+      <p>Học sinh chưa thi nói thì để trống ô Speaking và bấm <span class="kbd">Lưu điểm</span> ở thanh dưới cùng. Bài vẫn nằm ở tab Chờ chấm với nhãn <span class="chip">Chờ Speaking</span>, quay lại chấm sau.</p>
+      <figure><img src="/huong-dan/hinh/gv-11-da-luu-writing.webp" alt="Thông báo đã lưu điểm Writing Part 2" loading="lazy"><figcaption>Dòng chữ xanh ở thanh dưới báo đã lưu thành công.</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="phan" id="speaking">
+    <h2><span class="so">5</span>Chấm Speaking và xác nhận kết quả</h2>
+    <div class="buoc">
+      <ol>
+        <li>Mở bài ở tab <b>Chờ chấm placement</b> (nhãn Chờ Speaking), kéo xuống khung <b>Speaking &amp; thông tin học sinh</b>.</li>
+        <li>Nhập <b>Điểm Speaking</b> từ 0 đến 20 (cho phép nửa điểm, ví dụ 15,5).</li>
+        <li>Kiểm tra lại <b>Họ và tên</b>, <b>Thông tin</b>, <b>Giáo viên chấm</b>. Sửa nếu học sinh gõ sai.</li>
+        <li>Viết <b>Nhận xét riêng Speaking</b>: phát âm, phản xạ, sự tự tin. Đoạn này hiện nguyên văn trên báo cáo cho phụ huynh.</li>
+      </ol>
+      <figure><img src="/huong-dan/hinh/gv-13-cham-speaking.webp" alt="Khung chấm Speaking và thông tin học sinh" loading="lazy"><figcaption>Khung Speaking &amp; thông tin học sinh.</figcaption></figure>
+    </div>
+    <div class="buoc">
+      <p>Khi đủ điểm, thanh dưới cùng hiện <b>tổng điểm / 75</b>, trình độ và lớp iLEAD. Bấm <span class="kbd">Xác nhận kết quả</span>, rồi bấm <b>OK</b> ở hộp hỏi lại.</p>
+      <figure><img src="/huong-dan/hinh/gv-14-xac-nhan-ket-qua.webp" alt="Tổng điểm và nút Xác nhận kết quả" loading="lazy"><figcaption>Kiểm tra tổng điểm và lớp trước khi bấm Xác nhận kết quả.</figcaption></figure>
+      <div class="ghi-chu chu-y"><b>Sau khi xác nhận, phụ huynh xem được báo cáo ngay.</b>Phần đã chấm sẽ khoá ở tab Chờ chấm. Muốn sửa thì làm ở tab Học sinh (mục 7).</div>
+    </div>
+  </section>
+
+  <section class="phan" id="hoan-thien">
+    <h2><span class="so">6</span>Hoàn thiện báo cáo</h2>
+    <div class="buoc">
+      <p>Xác nhận xong, trang tự chuyển sang tab <b>Học sinh</b> và mở đúng học sinh đó. Kiểm tra thông tin và <b>Ngày chấm</b> (bấm <span class="kbd">Hôm nay</span> để điền nhanh).</p>
+      <figure><img src="/huong-dan/hinh/gv-15-mo-hoc-sinh-sau-cham.webp" alt="Học sinh vừa chấm xong mở ở tab Học sinh" loading="lazy"><figcaption>Học sinh vừa chấm xong, sẵn sàng hoàn thiện báo cáo.</figcaption></figure>
+    </div>
+    <div class="buoc">
+      <h3>Chọn mô tả cho từng kỹ năng</h3>
+      <p>Mỗi kỹ năng có ô <b>Mô tả chung</b>. Khoảng điểm do điểm số quyết định, giáo viên chỉ chọn một trong các cách diễn đạt (Option) cho phù hợp với học sinh. Câu mô tả phụ huynh sẽ thấy hiện ngay bên dưới. Để <b>Mặc định</b> cũng được, báo cáo vẫn đầy đủ.</p>
+      <figure><img src="/huong-dan/hinh/gv-16-form-1.webp" alt="Điểm 4 kỹ năng và ô chọn mô tả" loading="lazy"><figcaption>Điểm 4 kỹ năng, ô chọn mô tả và nhận xét Speaking.</figcaption></figure>
+    </div>
+    <div class="buoc">
+      <h3>Viết lộ trình và lưu</h3>
+      <ol>
+        <li>Kéo xuống khung <b>Lộ trình học tập</b>, viết nhận xét lộ trình cho học sinh (không bắt buộc).</li>
+        <li>Bấm <span class="kbd">Lưu vào sheet</span> ở góc dưới bên phải. Nút chỉ sáng lên khi có thay đổi chưa lưu.</li>
+        <li>Bấm <span class="kbd">Xem báo cáo</span> ở góc trên để xem đúng trang phụ huynh sẽ thấy.</li>
+      </ol>
+      <figure class="hep"><img src="/huong-dan/hinh/gv-16-form-2.webp" alt="Khung Lộ trình học tập" loading="lazy"><figcaption>Khung Lộ trình học tập.</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="phan" id="sua">
+    <h2><span class="so">7</span>Sửa điểm, thêm học sinh</h2>
+    <div class="buoc">
+      <h3>Sửa điểm hoặc thông tin</h3>
+      <p>Ở tab <b>Học sinh</b>, tìm và bấm vào học sinh, sửa ô cần sửa, rồi bấm <span class="kbd">Lưu vào sheet</span>. Thanh dưới cùng ghi “Có thay đổi chưa lưu” khi còn việc phải lưu. Rời sang học sinh khác khi chưa lưu, trang sẽ hỏi lại trước khi bỏ thay đổi.</p>
+    </div>
+    <div class="buoc">
+      <h3>Thêm học sinh không làm bài online</h3>
+      <p>Bấm nút cam <span class="kbd">+ Thêm</span>, điền họ tên, điểm 4 kỹ năng, rồi bấm <span class="kbd">Lưu vào sheet</span>. Hệ thống tự tạo mã học sinh để gửi phụ huynh tra cứu. Bấm biểu tượng chép cạnh mã để chép.</p>
+    </div>
+    <div class="ghi-chu chu-y"><b>Hai người cùng sửa một học sinh?</b>Nếu người khác vừa lưu cùng ô, trang không ghi đè mà hiện bảng so sánh. Chọn <b>Dùng bản trên sheet</b> để giữ bản của người kia, hoặc <b>Vẫn lưu bản của tôi</b> để ghi bản mình nhập.</div>
+  </section>
+
+  <section class="phan" id="phu-huynh">
+    <h2><span class="so">8</span>Phụ huynh xem kết quả</h2>
+    <p>Gửi phụ huynh <b>mã học sinh</b> và link trang <b>Tra cứu Kết quả học tập</b>. Phụ huynh nhập mã, bấm Xem Báo Cáo Kết Quả là thấy báo cáo, có thể in hoặc lưu PDF.</p>
+    <figure><img src="/huong-dan/hinh/ph-03-bao-cao.webp" alt="Báo cáo phụ huynh nhìn thấy" loading="lazy"><figcaption>Báo cáo phụ huynh nhìn thấy sau khi giáo viên xác nhận kết quả.</figcaption></figure>
+    <div class="ghi-chu"><b>Chưa chấm xong thì phụ huynh thấy gì?</b>Trang báo học sinh chưa làm bài, hoặc chưa làm xong bài Speaking. Không có báo cáo dở dang nào lộ ra cho phụ huynh.</div>
+  </section>
+
+  <section class="phan" id="hoi-dap">
+    <h2><span class="so">9</span>Câu hỏi thường gặp</h2>
+    <div>
+      <details><summary>Học sinh đã nộp bài nhưng không thấy trong tab Chờ chấm</summary><p>Bấm <b>Tải lại</b> ở góc trên. Vẫn không thấy thì tìm mã của học sinh ở tab Học sinh: nếu nhãn vẫn là “Chưa làm bài”, học sinh chưa nộp thành công, nhờ học sinh mở lại link và bấm Nộp lại.</p></details>
+      <details><summary>Học sinh báo “Mã học sinh không đúng”</summary><p>Kiểm tra học sinh gõ đúng mã chưa (hay nhầm số 0 với chữ O). Cách chắc nhất là gửi lại bằng nút <b>Chép link làm bài</b>, mã sẽ được điền sẵn.</p></details>
+      <details><summary>Học sinh báo “Mã này đã được dùng”</summary><p>Mã đó đã nộp bài. Mỗi mã chỉ làm một lần. Nếu cần cho học sinh làm lại, tạo mã mới và gửi lại.</p></details>
+      <details><summary>Muốn sửa điểm Writing Part 2 sau khi đã lưu</summary><p>Phần đã chấm bị khoá ở tab Chờ chấm. Mở học sinh ở tab <b>Học sinh</b>, sửa ô điểm Writing (tổng của Part 1 và Part 2, tối đa 15), rồi Lưu vào sheet.</p></details>
+      <details><summary>Ô Mô tả chung ghi “Nhập điểm trước”</summary><p>Kỹ năng đó chưa có điểm. Nhập điểm xong, danh sách mô tả sẽ hiện ra.</p></details>
+      <details><summary>Tổng điểm và trình độ không hiện</summary><p>Phải đủ điểm cả 4 kỹ năng thì mới tính tổng và xếp lớp. Kiểm tra kỹ năng nào còn trống.</p></details>
+      <details><summary>Trang báo “Không mở được trang quản trị”</summary><p>Link mở thiếu phần sau dấu #. Mở lại đúng link đầy đủ trung tâm đã gửi.</p></details>
+    </div>
+  </section>
+
+  <p class="cuoi">iSMART Education · Hướng dẫn dành cho giáo viên chấm bài kiểm tra xếp lớp iLEAD online. Ảnh minh hoạ dùng dữ liệu mẫu.</p>
+</div>
+<style>.ve-trang-chon{display:inline-block;margin-bottom:20px;font:600 15px/1.4 "Be Vietnam Pro","Segoe UI",system-ui,sans-serif;color:var(--navy);text-decoration:none}.ve-trang-chon:hover,.ve-trang-chon:focus-visible{text-decoration:underline}</style>
+</body>
+</html>

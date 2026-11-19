@@ -8,3 +8,6 @@ dist
 
 # Ban sao luu cau hinh
 .env.bak-*
+
+# File PDF huong dan xuat ra de gui Zalo/in, khong dua len git
+huong-dan/*.pdf

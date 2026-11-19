@@ -12,6 +12,23 @@
   to = "/.netlify/functions/:splat"
   status = 200
 
+# Trang hướng dẫn sử dụng: file tĩnh trong public/huong-dan (tạo bằng scripts/xuat-huong-dan.mjs).
+# Phải đứng trước SPA fallback, nếu không /huong-dan sẽ rơi vào React và bị đưa về trang chủ.
+[[redirects]]
+  from = "/huong-dan"
+  to = "/huong-dan/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/huong-dan/hoc-sinh"
+  to = "/huong-dan/hoc-sinh.html"
+  status = 200
+
+[[redirects]]
+  from = "/huong-dan/giao-vien"
+  to = "/huong-dan/giao-vien.html"
+  status = 200
+
 # SPA fallback: mọi route khác trả về index.html
 [[redirects]]
   from = "/*"

@@ -144,13 +144,39 @@ function apiGiaLap(env: Record<string, string>): Plugin {
   };
 }
 
+/**
+ * Trang hướng dẫn là file tĩnh trong public/huong-dan. Production dùng luật chuyển hướng
+ * trong netlify.toml; ở máy, plugin này làm việc tương tự để /huong-dan không rơi vào React.
+ */
+function huongDanTinh(): Plugin {
+  const BANG: Record<string, string> = {
+    "/huong-dan": "/huong-dan/index.html",
+    "/huong-dan/": "/huong-dan/index.html",
+    "/huong-dan/hoc-sinh": "/huong-dan/hoc-sinh.html",
+    "/huong-dan/giao-vien": "/huong-dan/giao-vien.html",
+  };
+  const doi = (req: { url?: string }) => {
+    const [duong, truyVan] = (req.url ?? "").split("?");
+    if (BANG[duong]) req.url = BANG[duong] + (truyVan ? "?" + truyVan : "");
+  };
+  return {
+    name: "huong-dan-tinh",
+    configureServer(server) {
+      server.middlewares.use((req, _res, next) => (doi(req), next()));
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use((req, _res, next) => (doi(req), next()));
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => {
   // Chuỗi rỗng = nạp mọi biến trong .env, không chỉ biến có tiền tố VITE_.
   // `vite --mode mau` nạp thêm .env.mau (NGUON_DU_LIEU=mau) để xem bằng dữ liệu mẫu.
   const env = loadEnv(mode, process.cwd(), "");
 
   return {
-    plugins: [react(), apiGiaLap(env)],
+    plugins: [huongDanTinh(), react(), apiGiaLap(env)],
     build: {
       target: "es2020",
       cssCodeSplit: false,
