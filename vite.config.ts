@@ -146,12 +146,10 @@ function apiGiaLap(env: Record<string, string>): Plugin {
 
 /**
  * Trang hướng dẫn là file tĩnh trong public/huong-dan. Production dùng luật chuyển hướng
- * trong netlify.toml; ở máy, plugin này làm việc tương tự để /huong-dan không rơi vào React.
+ * trong netlify.toml; ở máy, plugin này làm việc tương tự để 2 link hướng dẫn không rơi vào React.
  */
 function huongDanTinh(): Plugin {
   const BANG: Record<string, string> = {
-    "/huong-dan": "/huong-dan/index.html",
-    "/huong-dan/": "/huong-dan/index.html",
     "/huong-dan/hoc-sinh": "/huong-dan/hoc-sinh.html",
     "/huong-dan/giao-vien": "/huong-dan/giao-vien.html",
   };
