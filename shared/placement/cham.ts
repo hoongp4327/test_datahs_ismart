@@ -78,21 +78,25 @@ const coGiaTri = (v: unknown) => String(v ?? "").trim() !== "";
 export const conChoCham = (r: Record<string, unknown>) => !coGiaTri(r.diem_writing_p2_gv) || !coGiaTri(r.diem_speaking);
 
 /** Mới nộp xếp trên. */
-export async function docBaiChoCham(ch: CauHinh, dungMau: boolean): Promise<{ bai: Row[]; loi?: string }> {
+export async function docBaiChoCham(ch: CauHinh, dungMau: boolean): Promise<{ bai: Row[]; loi?: string; coXepLop: boolean }> {
   let rows: Row[];
   let loi: string | undefined;
+  // Code.gs bản cũ nhận lop_xep nhưng lặng lẽ bỏ qua → phải khoá ô xếp lớp, kẻo giáo viên
+  // tưởng đã chốt lớp mà thật ra chưa lưu.
+  let coXepLop = true;
   if (dungMau) {
     rows = BAI_NOP_MAU.map((d) => Object.fromEntries(Object.entries(d).map(([k, v]) => [k, String(v)])));
   } else {
     const j = await goiAppsScript(ch, { action: "docPlacement" });
-    if (j.error === "UNKNOWN_ACTION") return { bai: [], loi: CAN_CAP_NHAT_SCRIPT };
-    if (j.error) return { bai: [], loi: String(j.message || j.error) };
+    if (j.error === "UNKNOWN_ACTION") return { bai: [], loi: CAN_CAP_NHAT_SCRIPT, coXepLop: false };
+    if (j.error) return { bai: [], loi: String(j.message || j.error), coXepLop: false };
     rows = toObjects(j.rows as string[][]);
     // Bản Code.gs mới trả kèm phienBan; thiếu = bản cũ → vẫn xem được bài nhưng chưa chấm được.
     if (Number(j.phienBan ?? 0) < 2) loi = CAN_CAP_NHAT_SCRIPT;
+    coXepLop = Number(j.phienBan ?? 0) >= 3;
   }
   const bai = rows.filter((r) => r.ma_bai && conChoCham(r)).reverse();
-  return { bai, loi };
+  return { bai, loi, coXepLop };
 }
 
 type DauVaoCham = {
@@ -157,6 +161,8 @@ export async function chamBaiPlacement(
     giao_vien: hocSinh.giao_vien ?? "",
     diem_speaking: hocSinh.diem_speaking,
     mo_ta_rieng_speaking: hocSinh.mo_ta_rieng_speaking ?? "",
+    /** Lớp giáo viên chốt — chỉ ghi khi bài đã đủ điểm. */
+    lop_xep: hocSinh.lop_xep ?? "",
   };
 
   if (dungMau) {
@@ -187,6 +193,7 @@ export async function chamBaiPlacement(
       if (chiGui.mo_ta_rieng_speaking) hs.mo_ta_rieng_speaking = chiGui.mo_ta_rieng_speaking;
     }
     if (xong) {
+      if (chiGui.lop_xep) hs.lop_xep = chiGui.lop_xep;
       const d = new Date(Date.now() + 7 * 3600_000);
       const p = (n: number) => String(n).padStart(2, "0");
       hs.ngay_cham = `${p(d.getUTCDate())}/${p(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`;

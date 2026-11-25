@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { KY_NANG, TONG_TOI_DA, docDiem, normalizeCode, timLevel, type Row } from "../../shared/bao-cao";
+import { KY_NANG, TONG_TOI_DA, docDiem, normalizeCode, xepLop, type Row } from "../../shared/bao-cao";
 import { KY_TU_MA } from "../../shared/hoc-sinh-sua";
 import { DE_THI } from "../../shared/placement/de-thi";
 import Icon from "../components/Icon";
+import XepLop from "../components/XepLop";
 
 /**
  * Tab "Chờ chấm" của trang quản trị: bài placement học sinh đã nộp nhưng CÒN THIẾU điểm
@@ -17,7 +18,14 @@ import Icon from "../components/Icon";
  */
 
 export type CauW2 = { id: string; de: string; goiY: string; toiDa: number };
-export type ChoCham = { bai: Row[]; loi?: string; cauW2: CauW2[]; toiDaW2: number };
+export type ChoCham = {
+  bai: Row[];
+  loi?: string;
+  cauW2: CauW2[];
+  toiDaW2: number;
+  /** Code.gs trên sheet đã lưu được lớp giáo viên chốt. */
+  coXepLop?: boolean;
+};
 /** Server trả sau mỗi lần lưu điểm — xem KetQuaCham trong shared/placement/cham.ts. */
 export type DaLuuCham = { hocSinh: Row; xong: boolean; bai: Record<string, string> };
 
@@ -29,6 +37,8 @@ type FormCham = {
   giao_vien: string;
   diem_speaking: string;
   mo_ta_rieng_speaking: string;
+  /** Lớp giáo viên bấm chọn; trống = đang theo gợi ý. */
+  lop_xep: string;
   w2: string[];
 };
 
@@ -106,6 +116,7 @@ export default function ChamPlacement({
       giao_vien: hs?.giao_vien ?? "",
       diem_speaking: coGiaTri(r.diem_speaking) ? "" : hs?.diem_speaking ?? "",
       mo_ta_rieng_speaking: hs?.mo_ta_rieng_speaking ?? "",
+      lop_xep: hs?.lop_xep ?? "",
       w2: choCham.cauW2.map(() => ""),
     });
     setLoi({});
@@ -145,9 +156,9 @@ export default function ChamPlacement({
     const chamNoi = !daCoNoi && form.diem_speaking.trim() !== "";
     const speaking = daCoNoi ? so(bai.diem_speaking) : docDiem(form.diem_speaking, TOI_DA.speaking);
     const tong = duW2 && speaking !== null ? so(bai.diem_listening) + so(bai.diem_reading) + writing + speaking : null;
-    const lv = tong !== null ? timLevel(thangLevel, tong) : undefined;
-    return { daCoW2, daCoNoi, chamW2, chamNoi, tongW2, duW2, writing, speaking, tong, level: lv?.level ?? null, lop: lv?.lop_xep ?? "" };
-  }, [bai, form, choCham.cauW2, thangLevel]);
+    const xep = tong !== null ? xepLop(thangLevel, tong, choCham.coXepLop ? form.lop_xep : "") : null;
+    return { daCoW2, daCoNoi, chamW2, chamNoi, tongW2, duW2, writing, speaking, tong, xep, lop: xep?.chot?.lop_xep ?? "" };
+  }, [bai, form, choCham.cauW2, choCham.coXepLop, thangLevel]);
 
   const xacNhan = async () => {
     if (!bai || !form || !tinh) return;
@@ -173,7 +184,9 @@ export default function ChamPlacement({
     if (
       tinh.tong !== null &&
       !window.confirm(
-        `Xác nhận kết quả của ${form.ho_ten}: ${hienSo(tinh.tong)}/${TONG_TOI_DA} · ${tinh.level ?? "—"}?\n` +
+        `Xác nhận kết quả của ${form.ho_ten}: ${hienSo(tinh.tong)}/${TONG_TOI_DA}, xếp lớp ${tinh.lop || "—"}` +
+          (tinh.xep?.khacGoiY ? ` (hệ thống gợi ý ${tinh.xep.goiY?.lop_xep})` : "") +
+          "?\n" +
           "Sau khi xác nhận, phụ huynh tra cứu bằng mã học sinh sẽ xem được báo cáo."
       )
     )
@@ -195,6 +208,8 @@ export default function ChamPlacement({
           ...(tinh.chamNoi
             ? { diem_speaking: form.diem_speaking, mo_ta_rieng_speaking: form.mo_ta_rieng_speaking }
             : {}),
+          // Chốt lớp cùng lúc chốt kết quả: giáo viên không đổi thì lưu đúng lớp gợi ý đang hiện.
+          ...(tinh.tong !== null && choCham.coXepLop ? { lop_xep: tinh.lop } : {}),
         },
       });
       if (!r.ok) {
@@ -415,6 +430,24 @@ export default function ChamPlacement({
               </datalist>
             </section>
 
+            <section className="qt-the">
+              <h2>Xếp lớp</h2>
+              {loi.lop_xep ? <span className="qt-o-loi">{loi.lop_xep}</span> : null}
+              <XepLop
+                thangLevel={thangLevel}
+                tong={tinh.tong}
+                diem={{
+                  listening: so(bai.diem_listening),
+                  reading: so(bai.diem_reading),
+                  writing: tinh.writing,
+                  speaking: tinh.speaking,
+                }}
+                chon={form.lop_xep}
+                onChon={(v) => sua("lop_xep", v)}
+                coTheGhi={Boolean(choCham.coXepLop)}
+              />
+            </section>
+
             <div className="qt-thanh-luu">
               <span className={`qt-thong-bao${thongBao ? ` is-${thongBao.loai}` : ""}`} role="status">
                 {thongBao ? (
@@ -424,8 +457,7 @@ export default function ChamPlacement({
                 ) : tinh.tong !== null ? (
                   <>
                     Tổng <b className="qt-cc-tong">{hienSo(tinh.tong)}</b>/{TONG_TOI_DA}
-                    <span className="qt-level">{tinh.level ?? "—"}</span>
-                    {tinh.lop ? <span className="qt-nho">· {tinh.lop}</span> : null}
+                    <span className="qt-level">{tinh.lop || "—"}</span>
                   </>
                 ) : tinh.duW2 && (tinh.daCoW2 || tinh.chamW2) ? (
                   "Chưa có điểm Speaking — lưu được, bài sẽ nằm ở Chờ chấm Speaking"

@@ -155,6 +155,24 @@ export function timLevel(thangLevel: Row[], tong: number): Row | undefined {
   return theoMocDiem(thangLevel, tong);
 }
 
+/**
+ * Xếp lớp: hệ thống chỉ GỢI Ý theo tổng điểm, giáo viên là người chốt (cột `lop_xep` của
+ * KetQua). Ô đó trống (bài chấm trước khi có tính năng này, hoặc nhập thẳng trên sheet) hay
+ * ghi một lớp không có trong ThangLevel → dùng gợi ý, để báo cáo đã gửi không đổi kết quả.
+ */
+export function xepLop(thangLevel: Row[], tong: number, lopGiaoVien: string | undefined) {
+  const goiY = timLevel(thangLevel, tong);
+  const gvChot = thangLevel.find((r) => cungKhoa(r.lop_xep, lopGiaoVien ?? ""));
+  return {
+    /** Dòng ThangLevel của lớp cuối cùng hiện trên báo cáo. */
+    chot: gvChot ?? goiY,
+    goiY,
+    daChot: Boolean(gvChot),
+    /** Giáo viên xếp khác gợi ý. */
+    khacGoiY: Boolean(gvChot && gvChot !== goiY),
+  };
+}
+
 /** Học sinh đã có điểm kỹ năng nào chưa — mã mới cấp, chưa làm bài thì chưa có điểm nào. */
 export function coDiemNao(row: Row): boolean {
   return KY_NANG.some((k) => docDiem(row[`diem_${k.key}`], k.toiDa) !== null);
@@ -212,7 +230,8 @@ export function buildReport(row: Row, data: SheetData) {
   // 3/4 kỹ năng sẽ sai mà phụ huynh không có cách nào nhận ra.
   const duDiem = kyNang.every((k) => k.diem !== null);
   const tongDiem = duDiem ? kyNang.reduce((s, k) => s + (k.diem ?? 0), 0) : null;
-  const level = tongDiem !== null ? timLevel(data.thangLevel, tongDiem) : undefined;
+  const xep = tongDiem !== null ? xepLop(data.thangLevel, tongDiem, row.lop_xep) : undefined;
+  const level = xep?.chot;
 
   return {
     maHocSinh: row.ma_hoc_sinh,
@@ -226,6 +245,8 @@ export function buildReport(row: Row, data: SheetData) {
     // Cột `level` trên sheet là trình độ ĐẦU RA của lớp (mục tiêu sau khoá học), không phải
     // trình độ hiện tại. Kết quả của bài placement là `lop` (lớp xếp); `moTa` là năng lực đầu vào.
     level: level ? { ten: level.level, lop: level.lop_xep ?? "", moTa: level.mo_ta ?? "" } : null,
+    /** Giáo viên xếp khác lớp theo tổng điểm → báo cáo không ghi khoảng điểm cạnh lớp. */
+    lopKhacGoiY: xep?.khacGoiY ?? false,
     // Toàn bộ thang xếp lớp để vẽ thanh 0–75 trên báo cáo; sửa mốc trên sheet là thanh đổi theo.
     thangLevel: data.thangLevel
       .map((r) => ({ ten: r.level, lop: r.lop_xep ?? "", tu: docDiem(r.diem_tu, Number.POSITIVE_INFINITY) }))

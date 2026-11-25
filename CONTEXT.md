@@ -100,6 +100,7 @@ Sheet có **3 tab**. **Không đổi tên tab và không đổi tên cột ở h
 | `diem_reading` | Điểm Reading, 0–20 | `12` |
 | `diem_writing` | Điểm Writing, **0–15** | `11` |
 | `diem_speaking` | Điểm Speaking, 0–20 | `15` |
+| `lop_xep` | **Lớp giáo viên chốt** (`lop_xep` của tab ThangLevel). Trống = dùng lớp gợi ý theo tổng điểm. Khác cột `lop` (Thông tin) | `iLEAD 2` |
 | `option_listening` | Cách diễn đạt mô tả Listening (Option 1–3) — khoảng điểm do điểm quyết định | `Option 2` |
 | `option_reading` | Mô tả chung Reading | `Option 3` |
 | `option_writing` | Mô tả chung Writing | `Option 3` |
@@ -109,8 +110,17 @@ Sheet có **3 tab**. **Không đổi tên tab và không đổi tên cột ở h
 | `pct_nang_cao` | % kiến thức nâng cao | `10%` |
 | `nhan_xet_lo_trinh` | Mô tả lộ trình cá nhân hoá | (đoạn văn) |
 
-**Tổng điểm và Level không có cột** — website tự cộng 4 điểm (tối đa 75) rồi tra tab
-`ThangLevel`. Nhờ vậy không bao giờ có chuyện tổng 70 mà ghi A1.
+**Tổng điểm không có cột** — website tự cộng 4 điểm (tối đa 75).
+
+**Lớp: hệ thống gợi ý, giáo viên chốt** (`xepLop()` trong `shared/bao-cao.ts`). Gợi ý = tra tổng
+điểm trong tab `ThangLevel`; giáo viên giữ hoặc đổi ở khung **Xếp lớp** (tab Chờ chấm và tab Học
+sinh), lưu vào `KetQua.lop_xep`. Báo cáo lấy lớp đã chốt, kèm `level` và `mo_ta` của đúng lớp đó.
+- `lop_xep` trống hoặc không có trong ThangLevel → dùng gợi ý (báo cáo cũ không đổi kết quả).
+- Sửa điểm KHÔNG tự đổi lớp đã chốt; trang quản trị nhắc khi lớp khác gợi ý mới.
+- Không có điểm chặn tự động: mốc theo khoảng mô tả kỹ năng hạ lớp khoảng 2/3 học sinh nên để giáo viên
+  tự quyết.
+- Cần Code.gs `phienBan` ≥ 3 (tự thêm cột `lop_xep` nếu sheet chưa có). Bản cũ hơn → ô xếp lớp bị khoá,
+  vì bản cũ lặng lẽ bỏ qua cột này.
 
 Quy tắc khi dữ liệu không đủ:
 

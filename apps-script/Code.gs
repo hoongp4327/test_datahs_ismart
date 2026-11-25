@@ -97,7 +97,7 @@ function traVeJson(obj) {
  */
 var COT_GHI = [
   'ho_ten', 'lop', 'giao_vien', 'ngay_cham',
-  'diem_listening', 'diem_reading', 'diem_writing', 'diem_speaking',
+  'diem_listening', 'diem_reading', 'diem_writing', 'diem_speaking', 'lop_xep',
   'option_listening', 'option_reading', 'option_writing', 'option_speaking',
   'mo_ta_rieng_speaking', 'pct_co_ban', 'pct_nang_cao', 'nhan_xet_lo_trinh'
 ];
@@ -116,8 +116,9 @@ function doPost(e) {
     return traVeJson(luuHocSinh(body.hocSinh || {}, body.truoc || null));
   }
   if (body.action === 'docPlacement') {
-    // phienBan: website dựa vào đây để biết Code.gs đã là bản có mã cấp trước + chấm Speaking sau.
-    return traVeJson({ ok: true, phienBan: 2, rows: docTab(SpreadsheetApp.getActiveSpreadsheet(), TAB_PLACEMENT) });
+    // phienBan: website dựa vào đây để biết Code.gs làm được gì.
+    //   2 = mã cấp trước + chấm Speaking sau;  3 = lưu lớp giáo viên chốt (cột lop_xep)
+    return traVeJson({ ok: true, phienBan: 3, rows: docTab(SpreadsheetApp.getActiveSpreadsheet(), TAB_PLACEMENT) });
   }
   if (body.action === 'chamPlacement2') {
     return traVeJson(chamPlacement(String(body.maBai || ''), body.hocSinh || {}, body.cham || {}));
@@ -344,6 +345,7 @@ function chamPlacement(maBai, hs, cham) {
       hocSinh.diem_speaking = hs.diem_speaking;
       if (hs.mo_ta_rieng_speaking) hocSinh.mo_ta_rieng_speaking = String(hs.mo_ta_rieng_speaking);
     }
+    if (xong && hs.lop_xep) hocSinh.lop_xep = String(hs.lop_xep);
     if (xong) hocSinh.ngay_cham = Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'dd/MM/yyyy');
 
     var loi = kiemTraTruocKhiGhi(ss, hocSinh);
@@ -555,6 +557,13 @@ function ghiHocSinh(ss, hs, truoc, ma) {
       var ten = COT_GHI[c];
       if (!(ten in hs)) continue;
       var cot = tieuDe.indexOf(ten);
+      if (cot < 0 && ten === 'lop_xep' && String(hs[ten] || '').trim() !== '') {
+        // Sheet tạo trước khi có tính năng xếp lớp → tự thêm cột ở cuối, không bắt ai làm tay.
+        cot = soCot;
+        tieuDe.push(ten);
+        if (sh.getMaxColumns() < cot + 1) sh.insertColumnAfter(sh.getMaxColumns());
+        sh.getRange(1, cot + 1).setValue(ten).setFontWeight('bold');
+      }
       if (cot < 0) continue;
       sh.getRange(dong, cot + 1).setValue(giaTriO(ten, hs[ten]));
     }
@@ -611,7 +620,21 @@ function kiemTraTruocKhiGhi(ss, hs) {
     }
     if (!co) loi[ten] = 'Option không có trong tab ' + TAB_MO_TA + '.';
   }
+
+  // Lớp giáo viên chốt phải là một lớp trong tab ThangLevel.
+  var lopXep = String(hs.lop_xep == null ? '' : hs.lop_xep).trim();
+  if (lopXep && cacLop(ss).map(chuanKhoa).indexOf(chuanKhoa(lopXep)) < 0) {
+    loi.lop_xep = 'Lớp không có trong tab ' + TAB_THANG_LEVEL + '.';
+  }
   return loi;
+}
+
+/** Tên các lớp (iLEAD 1…4) theo thứ tự trên tab ThangLevel. */
+function cacLop(ss) {
+  var bang = docTab(ss, TAB_THANG_LEVEL);
+  var cot = (bang[0] || []).map(function (h) { return String(h).trim(); }).indexOf('lop_xep');
+  if (cot < 0) return [];
+  return bang.slice(1).map(function (r) { return String(r[cot]).trim(); }).filter(String);
 }
 
 /* ============================== THIẾT LẬP ============================== */
@@ -664,6 +687,19 @@ function thietLapRangBuoc() {
         daLam.push('option_' + kn + ': ' + dsOption.join(', '));
       }
     }
+  }
+
+  var cotLopXep = tieuDe.indexOf('lop_xep');
+  var dsLop = cacLop(ss);
+  if (cotLopXep >= 0 && dsLop.length) {
+    sh.getRange(2, cotLopXep + 1, soDong, 1).setDataValidation(
+      SpreadsheetApp.newDataValidation()
+        .requireValueInList(dsLop, true)
+        .setAllowInvalid(false)
+        .setHelpText('Lớp giáo viên chốt. Để trống = báo cáo dùng lớp gợi ý theo tổng điểm.')
+        .build()
+    );
+    daLam.push('lop_xep: ' + dsLop.join(', '));
   }
 
   sh.setFrozenRows(1);

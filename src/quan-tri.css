@@ -198,6 +198,27 @@
   background: var(--orange); color: #fff; font-size: 13px; font-weight: 800;
 }
 
+/* Xếp lớp */
+.qt-xl { display: grid; gap: 12px; }
+.qt-xl-diem { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 14px; color: var(--ink-2); }
+.qt-xl-diem b { color: var(--navy); font-weight: 900; }
+.qt-xl-lop { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.qt-xl-lop button {
+  display: grid; align-content: center; justify-items: center; gap: 2px;
+  min-height: 60px; padding: 8px; border-radius: 10px; cursor: pointer;
+  border: 1px solid #d4dce8; background: #fff; font-weight: 800; color: var(--ink);
+  transition: border-color .15s, background-color .15s;
+}
+.qt-xl-lop button:hover:not(:disabled) { border-color: var(--orange); }
+.qt-xl-lop button.is-chon { background: var(--orange); border-color: var(--orange); color: #fff; }
+.qt-xl-lop button:disabled { cursor: not-allowed; opacity: .6; }
+.qt-xl-lop small { font-size: 12px; font-weight: 700; color: var(--ink-2); }
+.qt-xl-lop .is-chon small { color: #fff; }
+.qt-xl-ghi-chu { font-size: 13.5px; color: var(--ink-2); }
+.qt-xl-ghi-chu.is-khac { padding: 10px 12px; border-radius: 10px; background: #fff4ec; color: var(--ink); }
+.qt-xl-ve { padding: 0; border: 0; background: none; cursor: pointer; font-weight: 800; color: #1769c2; text-decoration: underline; }
+@media (max-width: 640px) { .qt-xl-lop { grid-template-columns: 1fr 1fr; } }
+
 /* Một dòng kỹ năng */
 .qt-ky-nang-ds { display: grid; gap: 12px; }
 .qt-kn {

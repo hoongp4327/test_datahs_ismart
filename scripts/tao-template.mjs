@@ -146,6 +146,8 @@ const ketQuaRows = HOC_SINH.map((ten, i) => {
     diem_reading: r,
     diem_writing: w,
     diem_speaking: s,
+    // Lớp giáo viên chốt: để trống = theo gợi ý; một em được xếp khác gợi ý để thử giao diện.
+    lop_xep: i === 4 ? "iLEAD 2" : "",
     option_listening: opt(),
     option_reading: opt(),
     option_writing: opt(),

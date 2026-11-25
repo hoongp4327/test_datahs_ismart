@@ -11,6 +11,7 @@ export const COT_SUA = [
   "giao_vien",
   "ngay_cham",
   ...KY_NANG.map((k) => `diem_${k.key}`),
+  "lop_xep", // lớp giáo viên CHỐT (iLEAD 1–4); khác cột "lop" = Thông tin
   ...KY_NANG.map((k) => `option_${k.key}`),
   "mo_ta_rieng_speaking",
   "pct_co_ban",
@@ -107,6 +108,7 @@ export const NHAN_COT: Record<CotSua, string> = {
   diem_reading: "Điểm Reading",
   diem_writing: "Điểm Writing",
   diem_speaking: "Điểm Speaking",
+  lop_xep: "Lớp xếp",
   option_listening: "Mô tả Listening",
   option_reading: "Mô tả Reading",
   option_writing: "Mô tả Writing",

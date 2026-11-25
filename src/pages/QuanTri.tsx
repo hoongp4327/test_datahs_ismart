@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { KY_NANG, OPTION_MAC_DINH, TONG_TOI_DA, docDiem, normalizeCode, timLevel, timMoTa, type Row } from "../../shared/bao-cao";
+import { KY_NANG, OPTION_MAC_DINH, TONG_TOI_DA, docDiem, normalizeCode, timMoTa, xepLop, type Row } from "../../shared/bao-cao";
 import { COT_SUA, KY_TU_MA, NHAN_COT, kiemTraHocSinh, type CotSua } from "../../shared/hoc-sinh-sua";
 import Icon from "../components/Icon";
+import XepLop from "../components/XepLop";
 import { giaoDienKyNang } from "../components/kyNangGiaoDien";
 import "../quan-tri.css";
 import ChamPlacement, { type ChoCham, type DaLuuCham } from "./ChamPlacement";
@@ -59,12 +60,14 @@ function nhanThieu(r: Row, thieu: number) {
   return thieuNoi && thieu === 1 ? "Chờ Speaking" : `Thiếu ${thieu} điểm`;
 }
 
-function tongVaLevel(f: Form, d: DuLieu | null) {
+/** Tổng điểm + lớp cuối cùng (giáo viên chốt, chưa chốt thì lớp gợi ý). */
+function tongVaLop(f: Form, d: DuLieu | null) {
   const diem = KY_NANG.map((k) => docDiem(f[`diem_${k.key}` as CotSua], k.toiDa));
   const thieu = diem.filter((x) => x === null).length;
-  if (thieu || !d) return { tong: null, level: null, thieu };
+  if (thieu || !d) return { tong: null, lop: "", daChot: false, thieu };
   const tong = diem.reduce<number>((s, x) => s + (x ?? 0), 0);
-  return { tong, level: timLevel(d.thangLevel, tong)?.level ?? null, thieu };
+  const xep = xepLop(d.thangLevel as unknown as Row[], tong, f.lop_xep);
+  return { tong, lop: xep.chot?.lop_xep ?? "", daChot: xep.daChot, thieu };
 }
 
 /* ---------------------------------- API ---------------------------------- */
@@ -269,15 +272,20 @@ export default function QuanTri() {
   };
 
   const luu = async (gocDung: Form | null = goc) => {
-    if (!form) return;
+    if (!form || !duLieu) return;
     // Mới thì gửi đủ cột; đang sửa thì chỉ gửi cột đã đổi, để không ghi đè
     // những gì người khác vừa sửa ở cột khác trên sheet.
     const gui: Record<string, string> = { ma_hoc_sinh: form.ma_hoc_sinh };
     // Giá trị LÚC MỞ của các ô đã đổi — server so với sheet để phát hiện người khác vừa sửa.
     const truoc: Record<string, string> = {};
+    // Đủ điểm mà giáo viên chưa bấm lớp → chốt luôn lớp gợi ý đang hiện trên màn hình.
+    const coXepLop = Boolean(duLieu.choCham?.coXepLop);
+    const t = tongVaLop(form, duLieu);
+    const banLuu: Form = coXepLop && t.tong !== null && !t.daChot ? { ...form, lop_xep: t.lop } : form;
     for (const c of COT_SUA) {
-      if (laMoi || form[c] !== gocDung?.[c]) {
-        gui[c] = form[c];
+      if (c === "lop_xep" && !coXepLop) continue;
+      if (laMoi || banLuu[c] !== gocDung?.[c]) {
+        gui[c] = banLuu[c];
         if (!laMoi && gocDung) truoc[c] = gocDung[c];
       }
     }
@@ -320,7 +328,7 @@ export default function QuanTri() {
         setThongBao({ loai: "loi", chu: r.json.message ?? "Chưa lưu được." });
         return;
       }
-      const daLuu = { ...form } as Form;
+      const daLuu = { ...banLuu } as Form;
       for (const [k, v] of Object.entries(sach)) if (v !== undefined) daLuu[k as keyof Form] = v;
       vaDanhSach(daLuu.ma_hoc_sinh, daLuu);
       setForm(daLuu);
@@ -416,7 +424,7 @@ export default function QuanTri() {
 
   /* ---------------------------------- Giao diện ---------------------------------- */
 
-  const tl = form ? tongVaLevel(form, duLieu) : null;
+  const tl = form ? tongVaLop(form, duLieu) : null;
 
   return (
     <div className={`qt qt-trang${(tab === "hoc-sinh" ? form : chamDangChon) ? " dang-sua" : ""}`}>
@@ -506,7 +514,7 @@ export default function QuanTri() {
               </li>
             ) : null}
             {locDanhSach.map(({ ma, r }) => {
-              const t = tongVaLevel(tuRow(r), duLieu);
+              const t = tongVaLop(tuRow(r), duLieu);
               return (
                 <li key={ma}>
                   <button
@@ -521,7 +529,7 @@ export default function QuanTri() {
                     </span>
                     {t.tong !== null ? (
                       <span className="qt-chip is-du">
-                        {t.tong} · {t.level ?? "—"}
+                        {t.tong} · {t.lop || "—"}
                       </span>
                     ) : (
                       <span className="qt-chip is-thieu">{nhanThieu(r, t.thieu)}</span>
@@ -625,10 +633,10 @@ export default function QuanTri() {
                     {tl && tl.tong !== null ? (
                       <>
                         <b>{tl.tong}</b>/{TONG_TOI_DA}
-                        <span className="qt-level">{tl.level ?? "—"}</span>
+                        <span className="qt-level">{tl.lop || "—"}</span>
                       </>
                     ) : (
-                      <span className="qt-nho">Tổng và Level hiện khi đủ 4 điểm</span>
+                      <span className="qt-nho">Tổng và lớp hiện khi đủ 4 điểm</span>
                     )}
                   </div>
                 </div>
@@ -644,6 +652,21 @@ export default function QuanTri() {
                     />
                   ))}
                 </div>
+              </section>
+
+              <section className="qt-the">
+                <h2>Xếp lớp</h2>
+                {loi.lop_xep ? <span className="qt-o-loi">{loi.lop_xep}</span> : null}
+                <XepLop
+                  thangLevel={duLieu.thangLevel as unknown as Row[]}
+                  tong={tl?.tong ?? null}
+                  diem={Object.fromEntries(
+                    KY_NANG.map((k) => [k.key, docDiem(form[`diem_${k.key}` as CotSua], k.toiDa)])
+                  )}
+                  chon={form.lop_xep}
+                  onChon={(v) => sua("lop_xep", v)}
+                  coTheGhi={Boolean(duLieu.choCham?.coXepLop)}
+                />
               </section>
 
               <section className="qt-the">

@@ -217,7 +217,7 @@ export async function xuLyQuanTri(req: Request, ch: CauHinh, adminKey: string): 
       // Đọc bài placement chờ chấm song song; lỗi phần này không làm hỏng cả trang.
       const [{ data, nguon }, choCham] = await Promise.all([
         docDuLieu(ch),
-        docBaiChoCham(ch, dungMau).catch((e) => ({ bai: [], loi: (e as Error).message })),
+        docBaiChoCham(ch, dungMau).catch((e) => ({ bai: [], loi: (e as Error).message, coXepLop: false })),
       ]);
       return traJson({
         nguon,

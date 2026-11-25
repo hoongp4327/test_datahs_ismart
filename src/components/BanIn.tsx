@@ -127,9 +127,12 @@ export default function BanIn({ bc }: { bc: BaoCao }) {
             return (
               <span key={m.ten} className={dat ? "is-dat" : ""}>
                 {m.lop || m.ten}
-                <small>
-                  {m.tu}–{Math.min(den, bc.tongToiDa)} điểm
-                </small>
+                {/* Giáo viên xếp khác tổng điểm: ghi khoảng điểm cạnh lớp sẽ mâu thuẫn với tổng. */}
+                {bc.lopKhacGoiY ? null : (
+                  <small>
+                    {m.tu}–{Math.min(den, bc.tongToiDa)} điểm
+                  </small>
+                )}
               </span>
             );
           })}
