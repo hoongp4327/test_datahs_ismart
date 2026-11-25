@@ -172,7 +172,7 @@
 .qt-luoi-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; }
 
 /* Ô nhập */
-.qt-o { display: grid; gap: 5px; min-width: 0; }
+.qt-o { display: grid; align-content: start; gap: 5px; min-width: 0; }
 .qt-o-nhan { font-size: 13px; font-weight: 700; color: var(--ink-2); }
 .qt-o-nhan i { color: var(--err); font-style: normal; margin-left: 2px; }
 .qt-o-goi-y { font-size: 12px; color: var(--muted); }
@@ -252,6 +252,9 @@
 .qt-diem input:focus { outline: 0; border-color: var(--mau); box-shadow: 0 0 0 3px color-mix(in srgb, var(--mau) 20%, transparent); }
 .qt-diem.co-loi input { border-color: var(--err); }
 
+/* Bỏ nút tăng giảm: nó chiếm chỗ làm điểm lẻ như 12,5 bị cắt chữ số cuối. */
+.qt-diem input { appearance: textfield; -moz-appearance: textfield; }
+.qt-diem input::-webkit-inner-spin-button { display: none; }
 .qt-kn-thanh { grid-area: thanh; height: 6px; border-radius: 99px; background: #e9eef5; overflow: hidden; align-self: start; margin-top: 6px; }
 .qt-kn-thanh span { display: block; height: 100%; border-radius: inherit; background: var(--mau); transition: width .3s cubic-bezier(.2, 0, 0, 1); }
 
@@ -402,7 +405,7 @@
 /* --------------------------- Tạo mã làm bài --------------------------- */
 
 .qt-cc-chon[hidden] { display: none; }
-.qt-tao-ma { margin: 0 16px 8px; }
+.qt-tao-ma { flex: none; margin: 0 16px 8px; } /* flex: none — danh sách dài không được bóp dẹt nút */
 .qt-ma-link { margin-left: 6px; font-family: inherit; font-weight: 700; }
 
 .qt-hop-nen {
