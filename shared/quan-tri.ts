@@ -215,9 +215,9 @@ export async function xuLyQuanTri(req: Request, ch: CauHinh, adminKey: string): 
     if (req.method === "GET") {
       // Không cache: giáo viên vừa sửa trên sheet thì mở trang là phải thấy ngay.
       // Đọc bài placement chờ chấm song song; lỗi phần này không làm hỏng cả trang.
-      const [{ data, nguon }, choCham] = await Promise.all([
+      const [{ data, nguon }, { giaoVien, ...choCham }] = await Promise.all([
         docDuLieu(ch),
-        docBaiChoCham(ch, dungMau).catch((e) => ({ bai: [], loi: (e as Error).message, coXepLop: false })),
+        docBaiChoCham(ch, dungMau).catch((e) => ({ bai: [], loi: (e as Error).message, coXepLop: false, giaoVien: [] })),
       ]);
       return traJson({
         nguon,
@@ -231,6 +231,7 @@ export async function xuLyQuanTri(req: Request, ch: CauHinh, adminKey: string): 
           mo_ta: r.mo_ta,
         })),
         thangLevel: data.thangLevel.map((r) => ({ level: r.level, diem_tu: r.diem_tu, lop_xep: r.lop_xep ?? "" })),
+        giaoVien,
         choCham: { ...choCham, cauW2: CAU_GV_CHAM, toiDaW2: TOI_DA_W2 },
       });
     }

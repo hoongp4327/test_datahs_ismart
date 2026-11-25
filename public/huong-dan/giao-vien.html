@@ -127,6 +127,7 @@ details p{margin-top:8px;max-width:68ch}
       <li><a href="#hoan-thien">Hoàn thiện báo cáo</a></li>
       <li><a href="#sua">Sửa điểm, thêm học sinh</a></li>
       <li><a href="#phu-huynh">Phụ huynh xem kết quả</a></li>
+      <li><a href="#danh-sach-gv">Thêm, bớt giáo viên chấm điểm</a></li>
       <li><a href="#hoi-dap">Câu hỏi thường gặp</a></li>
     </ol>
   </nav>
@@ -155,7 +156,7 @@ details p{margin-top:8px;max-width:68ch}
       <ol>
         <li>Ở tab <b>Học sinh</b>, bấm <span class="kbd">+ Tạo mã làm bài cho học sinh</span>.</li>
         <li>Nhập <b>Số lượng mã</b> (1 đến 60), bằng số học sinh sắp làm bài.</li>
-        <li>Điền <b>Thông tin</b> (lớp, trường, cơ sở…) và <b>Giáo viên</b> nếu muốn. Hai ô này không bắt buộc, sẽ hiện trên báo cáo.</li>
+        <li>Điền <b>Thông tin</b> (lớp, trường, cơ sở…) và chọn <b>Giáo viên</b> trong danh sách nếu muốn. Hai ô này không bắt buộc, sẽ hiện trên báo cáo.</li>
         <li>Bấm <span class="kbd">Tạo mã</span>.</li>
       </ol>
       <figure><img src="/huong-dan/hinh/gv-02-hop-tao-ma.webp" alt="Hộp Tạo mã làm bài" loading="lazy"><figcaption>Hộp Tạo mã làm bài.</figcaption></figure>
@@ -299,13 +300,33 @@ details p{margin-top:8px;max-width:68ch}
     <div class="ghi-chu"><b>Chưa chấm xong thì phụ huynh thấy gì?</b>Trang báo học sinh chưa làm bài, hoặc chưa làm xong bài Speaking. Không có báo cáo dở dang nào lộ ra cho phụ huynh.</div>
   </section>
 
+  <section class="phan" id="danh-sach-gv">
+    <h2><span class="so">9</span>Thêm, bớt giáo viên chấm điểm</h2>
+    <div class="buoc">
+      <p>Phần này dành cho người quản lý danh sách, có quyền sửa Google Sheet kết quả. Giáo viên chấm chỉ cần chọn tên mình ở ô <b>Giáo viên</b> hoặc <b>Giáo viên chấm</b>.</p>
+      <h3>Thêm giáo viên</h3>
+      <ol>
+        <li>Mở Google Sheet kết quả, chọn tab <b>GiaoVien</b> ở dưới cùng.</li>
+        <li>Mỗi giáo viên một dòng: cột <b>ho_ten</b> ghi họ tên (tên này hiện trên báo cáo phụ huynh), cột <b>co_so</b> ghi cơ sở (không bắt buộc, dùng để nhóm tên cho dễ tìm), cột <b>trang_thai</b> để trống hoặc chọn <b>Đang dạy</b>. Có thể dán cả danh sách từ Excel.</li>
+        <li>Trên trang chấm điểm, bấm <span class="kbd">Tải lại</span>. Tên mới có ngay trong ô chọn.</li>
+      </ol>
+    </div>
+    <div class="buoc">
+      <h3>Bớt giáo viên</h3>
+      <p>Đổi cột <b>trang_thai</b> của người đó thành <b>Nghỉ</b>, không cần xoá dòng. Tên không còn trong ô chọn, còn các bài đã chấm vẫn giữ nguyên tên.</p>
+    </div>
+    <div class="ghi-chu chu-y"><b>Không đổi tên tab GiaoVien và tên cột ở hàng 1.</b>Trang chấm điểm tìm theo đúng các tên này. Tab trống hoặc chưa có thì ô giáo viên quay về gõ tự do.</div>
+  </section>
+
   <section class="phan" id="hoi-dap">
-    <h2><span class="so">9</span>Câu hỏi thường gặp</h2>
+    <h2><span class="so">10</span>Câu hỏi thường gặp</h2>
     <div>
       <details><summary>Học sinh đã nộp bài nhưng không thấy trong tab Chờ chấm</summary><p>Bấm <b>Tải lại</b> ở góc trên. Vẫn không thấy thì tìm mã của học sinh ở tab Học sinh: nếu nhãn vẫn là “Chưa làm bài”, học sinh chưa nộp thành công, nhờ học sinh mở lại link và bấm Nộp lại.</p></details>
       <details><summary>Học sinh báo “Mã học sinh không đúng”</summary><p>Kiểm tra học sinh gõ đúng mã chưa (hay nhầm số 0 với chữ O). Cách chắc nhất là gửi lại bằng nút <b>Chép link làm bài</b>, mã sẽ được điền sẵn.</p></details>
       <details><summary>Học sinh báo “Mã này đã được dùng”</summary><p>Mã đó đã nộp bài. Mỗi mã chỉ làm một lần. Nếu cần cho học sinh làm lại, tạo mã mới và gửi lại.</p></details>
       <details><summary>Muốn sửa điểm Writing Part 2 sau khi đã lưu</summary><p>Phần đã chấm bị khoá ở tab Chờ chấm. Mở học sinh ở tab <b>Học sinh</b>, sửa ô điểm Writing (tổng của Part 1 và Part 2, tối đa 15), rồi Lưu vào sheet.</p></details>
+      <details><summary>Không thấy tên mình trong ô Giáo viên</summary><p>Bấm <b>Tải lại</b>. Vẫn không thấy thì báo người quản lý thêm tên vào tab GiaoVien (mục 9), hoặc kiểm tra cột trang_thai có đang để Nghỉ không.</p></details>
+      <details><summary>Tên giáo viên ghi “(ngoài danh sách)”</summary><p>Tên đó đã lưu từ trước nhưng không có trong danh sách hiện tại. Giữ nguyên cũng được, hoặc chọn lại tên đúng rồi Lưu vào sheet.</p></details>
       <details><summary>Ô Mô tả chung ghi “Nhập điểm trước”</summary><p>Kỹ năng đó chưa có điểm. Nhập điểm xong, danh sách mô tả sẽ hiện ra.</p></details>
       <details><summary>Sửa điểm rồi thì lớp có tự đổi theo không?</summary><p>Không. Lớp giáo viên đã chốt được giữ nguyên, chỉ phần gợi ý đổi theo điểm mới. Nếu hai lớp khác nhau, khung Xếp lớp sẽ nhắc; bấm <b>Dùng lớp gợi ý</b> nếu muốn đổi, rồi Lưu vào sheet.</p></details>
       <details><summary>Tổng điểm và lớp không hiện</summary><p>Phải đủ điểm cả 4 kỹ năng thì mới tính tổng và xếp lớp. Kiểm tra kỹ năng nào còn trống.</p></details>

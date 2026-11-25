@@ -7,6 +7,7 @@
  *                        đã cấp và chưa làm bài, điểm máy chấm ghi luôn vào dòng của mã đó;
  *                        trang quản trị đọc bài chờ chấm, chấm Writing Part 2 / Speaking
  *                        (chấm riêng từng phần được — Speaking thường chấm gom sau)
+ *   - taoTabGiaoVien:    chạy tay MỘT lần để tạo tab GiaoVien (danh sách giáo viên chấm điểm)
  *   - thietLapRangBuoc:  chạy tay MỘT lần để sheet tự chặn điểm sai và tạo dropdown option
  *   - kiemTra:           chạy tay để xem sheet có đúng cấu trúc không
  *
@@ -37,6 +38,8 @@ var TOKEN = 'DOI-CHUOI-NAY-THANH-CHUOI-NGAU-NHIEN-CUA-BAN';
 var TAB_KET_QUA = 'KetQua';
 var TAB_MO_TA = 'MoTaKyNang';
 var TAB_THANG_LEVEL = 'ThangLevel';
+/** Danh sách giáo viên chấm điểm — chỉ trang quản trị đọc, không trả ra trang tra cứu. */
+var TAB_GIAO_VIEN = 'GiaoVien';
 var CAC_TAB = [TAB_KET_QUA, TAB_MO_TA, TAB_THANG_LEVEL];
 
 /** Điểm tối đa từng kỹ năng (khung iLEAD) — khớp KY_NANG trong shared/bao-cao.ts. */
@@ -118,7 +121,9 @@ function doPost(e) {
   if (body.action === 'docPlacement') {
     // phienBan: website dựa vào đây để biết Code.gs làm được gì.
     //   2 = mã cấp trước + chấm Speaking sau;  3 = lưu lớp giáo viên chốt (cột lop_xep)
-    return traVeJson({ ok: true, phienBan: 3, rows: docTab(SpreadsheetApp.getActiveSpreadsheet(), TAB_PLACEMENT) });
+    //   4 = kèm danh sách giáo viên (tab GiaoVien; chưa có tab thì mảng rỗng)
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    return traVeJson({ ok: true, phienBan: 4, rows: docTab(ss, TAB_PLACEMENT), giaoVien: docTab(ss, TAB_GIAO_VIEN) });
   }
   if (body.action === 'chamPlacement2') {
     return traVeJson(chamPlacement(String(body.maBai || ''), body.hocSinh || {}, body.cham || {}));
@@ -638,6 +643,33 @@ function cacLop(ss) {
 }
 
 /* ============================== THIẾT LẬP ============================== */
+
+/**
+ * CHẠY TAY MỘT LẦN: tạo tab GiaoVien (chọn hàm này trên thanh công cụ → Chạy).
+ * Đã có tab thì chỉ thêm cột còn thiếu và dropdown, KHÔNG xoá hay sửa tên đã nhập.
+ * Xong thì mỗi giáo viên gõ một dòng; trang chấm điểm bấm Tải lại là thấy.
+ */
+function taoTabGiaoVien() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(TAB_GIAO_VIEN) || ss.insertSheet(TAB_GIAO_VIEN);
+  var soCot = sh.getLastColumn();
+  var tieuDe = soCot ? sh.getRange(1, 1, 1, soCot).getValues()[0].map(function (h) { return String(h).trim(); }) : [];
+  var can = ['ho_ten', 'co_so', 'trang_thai'];
+  for (var i = 0; i < can.length; i++) {
+    if (tieuDe.indexOf(can[i]) >= 0) continue;
+    tieuDe.push(can[i]);
+    sh.getRange(1, tieuDe.length).setValue(can[i]).setFontWeight('bold');
+  }
+  sh.getRange(2, tieuDe.indexOf('trang_thai') + 1, Math.max(sh.getMaxRows() - 1, 1), 1).setDataValidation(
+    SpreadsheetApp.newDataValidation()
+      .requireValueInList(['Đang dạy', 'Nghỉ'], true)
+      .setAllowInvalid(false)
+      .setHelpText('Để trống = Đang dạy. Chọn Nghỉ thì tên không còn trong ô chọn giáo viên.')
+      .build()
+  );
+  sh.setFrozenRows(1);
+  Logger.log('Tab %s đã sẵn sàng: mỗi giáo viên một dòng, cột %s.', TAB_GIAO_VIEN, can.join(', '));
+}
 
 function thietLapRangBuoc() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();

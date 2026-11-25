@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { KY_NANG, OPTION_MAC_DINH, TONG_TOI_DA, docDiem, normalizeCode, timMoTa, xepLop, type Row } from "../../shared/bao-cao";
 import { COT_SUA, KY_TU_MA, NHAN_COT, kiemTraHocSinh, type CotSua } from "../../shared/hoc-sinh-sua";
+import type { GiaoVien } from "../../shared/giao-vien";
+import ChonGiaoVien from "../components/ChonGiaoVien";
 import Icon from "../components/Icon";
 import XepLop from "../components/XepLop";
 import { giaoDienKyNang } from "../components/kyNangGiaoDien";
@@ -26,6 +28,8 @@ type DuLieu = {
   hocSinh: Row[];
   moTa: MoTaOption[];
   thangLevel: { level: string; diem_tu: string; lop_xep?: string }[];
+  /** Danh sách giáo viên đang dạy (tab GiaoVien). Rỗng = chưa có tab, ô giáo viên gõ tự do. */
+  giaoVien?: GiaoVien[];
   /** Bài placement đã nộp, chưa chấm xong (chưa chuyển sang KetQua). */
   choCham?: ChoCham;
 };
@@ -176,8 +180,8 @@ export default function QuanTri() {
       if (r.lop) lop.add(r.lop);
       if (r.giao_vien) gv.add(r.giao_vien);
     }
-    return { lop: [...lop].sort(), gv: [...gv].sort() };
-  }, [danhSach]);
+    return { lop: [...lop].sort(), gv: [...gv].sort(), dsGv: duLieu?.giaoVien ?? [] };
+  }, [danhSach, duLieu?.giaoVien]);
 
   const doiChua = useMemo(
     () => Boolean(form && goc && COT_SUA.some((c) => (form[c] ?? "") !== (goc[c] ?? ""))),
@@ -598,7 +602,13 @@ export default function QuanTri() {
                     <input list="qt-ds-lop" value={form.lop} onChange={(e) => sua("lop", e.target.value)} />
                   </O>
                   <O nhan="Giáo viên" loi={loi.giao_vien}>
-                    <input list="qt-ds-gv" value={form.giao_vien} onChange={(e) => sua("giao_vien", e.target.value)} />
+                    <ChonGiaoVien
+                      id="qt-ds-gv"
+                      ds={goiY.dsGv}
+                      goiY={goiY.gv}
+                      value={form.giao_vien}
+                      onChange={(v) => sua("giao_vien", v)}
+                    />
                   </O>
                   <O nhan="Ngày chấm" loi={loi.ngay_cham} goiY="dd/mm/yyyy">
                     <div className="qt-o-ghep">
@@ -616,11 +626,6 @@ export default function QuanTri() {
                 </div>
                 <datalist id="qt-ds-lop">
                   {goiY.lop.map((v) => (
-                    <option key={v} value={v} />
-                  ))}
-                </datalist>
-                <datalist id="qt-ds-gv">
-                  {goiY.gv.map((v) => (
                     <option key={v} value={v} />
                   ))}
                 </datalist>
@@ -784,7 +789,7 @@ function TaoMa({
   onDong,
   onDaTao,
 }: {
-  goiY: { lop: string[]; gv: string[] };
+  goiY: { lop: string[]; gv: string[]; dsGv: GiaoVien[] };
   gui: (body: unknown) => Promise<{ ok: boolean; json: Record<string, unknown> & { message?: string; loi?: Record<string, string> } }>;
   onDong: () => void;
   onDaTao: (moi: Row[]) => void;
@@ -859,15 +864,10 @@ function TaoMa({
             </label>
             <label className="qt-o">
               <span className="qt-o-nhan">Giáo viên — không bắt buộc</span>
-              <input list="qt-tm-gv" value={gv} onChange={(e) => setGv(e.target.value)} maxLength={80} />
+              <ChonGiaoVien id="qt-tm-gv" ds={goiY.dsGv} goiY={goiY.gv} value={gv} onChange={setGv} />
             </label>
             <datalist id="qt-tm-lop">
               {goiY.lop.map((v) => (
-                <option key={v} value={v} />
-              ))}
-            </datalist>
-            <datalist id="qt-tm-gv">
-              {goiY.gv.map((v) => (
                 <option key={v} value={v} />
               ))}
             </datalist>

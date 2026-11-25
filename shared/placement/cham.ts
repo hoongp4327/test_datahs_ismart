@@ -17,6 +17,8 @@
  * dap-an.ts nên file này KHÔNG được import từ src/.
  */
 import { toObjects, type Row } from "../bao-cao";
+import duLieuMau from "../du-lieu-mau";
+import { docGiaoVien, type GiaoVien } from "../giao-vien";
 import { kiemTraHocSinh, type HocSinhSua } from "../hoc-sinh-sua";
 import type { CauHinh } from "../nguon-du-lieu";
 import { DAP_AN } from "./dap-an";
@@ -77,26 +79,33 @@ const coGiaTri = (v: unknown) => String(v ?? "").trim() !== "";
 /** Bài còn chờ chấm = đã nộp mà thiếu điểm Writing Part 2 hoặc Speaking. */
 export const conChoCham = (r: Record<string, unknown>) => !coGiaTri(r.diem_writing_p2_gv) || !coGiaTri(r.diem_speaking);
 
-/** Mới nộp xếp trên. */
-export async function docBaiChoCham(ch: CauHinh, dungMau: boolean): Promise<{ bai: Row[]; loi?: string; coXepLop: boolean }> {
+/** Mới nộp xếp trên. Kèm danh sách giáo viên (Code.gs trả chung một lượt gọi). */
+export async function docBaiChoCham(
+  ch: CauHinh,
+  dungMau: boolean
+): Promise<{ bai: Row[]; loi?: string; coXepLop: boolean; giaoVien: GiaoVien[] }> {
+  let giaoVien: GiaoVien[] = [];
   let rows: Row[];
   let loi: string | undefined;
   // Code.gs bản cũ nhận lop_xep nhưng lặng lẽ bỏ qua → phải khoá ô xếp lớp, kẻo giáo viên
   // tưởng đã chốt lớp mà thật ra chưa lưu.
   let coXepLop = true;
   if (dungMau) {
+    giaoVien = docGiaoVien(duLieuMau.giaoVien);
     rows = BAI_NOP_MAU.map((d) => Object.fromEntries(Object.entries(d).map(([k, v]) => [k, String(v)])));
   } else {
     const j = await goiAppsScript(ch, { action: "docPlacement" });
-    if (j.error === "UNKNOWN_ACTION") return { bai: [], loi: CAN_CAP_NHAT_SCRIPT, coXepLop: false };
-    if (j.error) return { bai: [], loi: String(j.message || j.error), coXepLop: false };
+    if (j.error === "UNKNOWN_ACTION") return { bai: [], loi: CAN_CAP_NHAT_SCRIPT, coXepLop: false, giaoVien };
+    if (j.error) return { bai: [], loi: String(j.message || j.error), coXepLop: false, giaoVien };
     rows = toObjects(j.rows as string[][]);
+    // Code.gs bản cũ hoặc sheet chưa có tab GiaoVien → danh sách rỗng, ô giáo viên gõ tự do.
+    giaoVien = docGiaoVien(toObjects(j.giaoVien as string[][] | undefined));
     // Bản Code.gs mới trả kèm phienBan; thiếu = bản cũ → vẫn xem được bài nhưng chưa chấm được.
     if (Number(j.phienBan ?? 0) < 2) loi = CAN_CAP_NHAT_SCRIPT;
     coXepLop = Number(j.phienBan ?? 0) >= 3;
   }
   const bai = rows.filter((r) => r.ma_bai && conChoCham(r)).reverse();
-  return { bai, loi, coXepLop };
+  return { bai, loi, coXepLop, giaoVien };
 }
 
 type DauVaoCham = {

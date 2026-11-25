@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { KY_NANG, TONG_TOI_DA, docDiem, normalizeCode, xepLop, type Row } from "../../shared/bao-cao";
 import { KY_TU_MA } from "../../shared/hoc-sinh-sua";
 import { DE_THI } from "../../shared/placement/de-thi";
+import type { GiaoVien } from "../../shared/giao-vien";
+import ChonGiaoVien from "../components/ChonGiaoVien";
 import Icon from "../components/Icon";
 import XepLop from "../components/XepLop";
 
@@ -78,7 +80,7 @@ export default function ChamPlacement({
   daCoMa: Set<string>;
   /** Dòng KetQua theo mã đã chuẩn hoá — lấy tên, lớp giáo viên đã nhập sẵn cho mã đó. */
   hocSinhTheoMa: Map<string, Row>;
-  goiY: { lop: string[]; gv: string[] };
+  goiY: { lop: string[]; gv: string[]; dsGv: GiaoVien[] };
   coTheGhi: boolean;
   gui: (body: unknown) => Promise<KetQuaGoi>;
   /** Đã lưu điểm → trang cha cập nhật danh sách; chấm đủ cả hai phần thì mở học sinh đó. */
@@ -406,7 +408,13 @@ export default function ChamPlacement({
                 </label>
                 <label className="qt-o">
                   <span className="qt-o-nhan">Giáo viên chấm</span>
-                  <input list="qt-cc-gv" value={form.giao_vien} onChange={(e) => sua("giao_vien", e.target.value)} />
+                  <ChonGiaoVien
+                    id="qt-cc-gv"
+                    ds={goiY.dsGv}
+                    goiY={goiY.gv}
+                    value={form.giao_vien}
+                    onChange={(v) => sua("giao_vien", v)}
+                  />
                 </label>
               </div>
               <label className="qt-o">
@@ -420,11 +428,6 @@ export default function ChamPlacement({
               </label>
               <datalist id="qt-cc-lop">
                 {goiY.lop.map((v) => (
-                  <option key={v} value={v} />
-                ))}
-              </datalist>
-              <datalist id="qt-cc-gv">
-                {goiY.gv.map((v) => (
                   <option key={v} value={v} />
                 ))}
               </datalist>

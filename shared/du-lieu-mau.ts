@@ -814,5 +814,37 @@ export default {
       "lop_xep": "iLEAD 4",
       "mo_ta": "Nối được ý, có thì quá khứ / tương lai, viết được vài câu liền mạch. Sẵn sàng A2 — đủ điều kiện lên iGLOBAL 1."
     }
+  ],
+  "giaoVien": [
+    {
+      "ho_ten": "Nguyễn Thu Trang",
+      "co_so": "Cơ sở 1",
+      "trang_thai": "Đang dạy"
+    },
+    {
+      "ho_ten": "Trần Hoàng Mai",
+      "co_so": "Cơ sở 2",
+      "trang_thai": "Đang dạy"
+    },
+    {
+      "ho_ten": "Lê Ngọc Ánh",
+      "co_so": "Cơ sở 1",
+      "trang_thai": "Đang dạy"
+    },
+    {
+      "ho_ten": "Phạm Hải Yến",
+      "co_so": "Cơ sở 2",
+      "trang_thai": "Đang dạy"
+    },
+    {
+      "ho_ten": "Đỗ Thanh Huyền",
+      "co_so": "Cơ sở 1",
+      "trang_thai": "Đang dạy"
+    },
+    {
+      "ho_ten": "Hoàng Minh Châu",
+      "co_so": "Cơ sở 2",
+      "trang_thai": "Nghỉ"
+    }
   ]
 };

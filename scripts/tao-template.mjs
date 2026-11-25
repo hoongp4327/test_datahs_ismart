@@ -159,6 +159,13 @@ const ketQuaRows = HOC_SINH.map((ten, i) => {
   };
 });
 
+// Tab GiaoVien — danh sách chọn ở trang quản trị; một người Nghỉ để thử việc ẩn tên.
+const giaoVienRows = GIAO_VIEN.map((ho_ten, i) => ({
+  ho_ten,
+  co_so: i % 2 ? "Cơ sở 2" : "Cơ sở 1",
+  trang_thai: i === GIAO_VIEN.length - 1 ? "Nghỉ" : "Đang dạy",
+}));
+
 const COT_KET_QUA = Object.keys(ketQuaRows[0]);
 const COT_MO_TA = ["ky_nang", "khoang", "diem_tu", "option", "mo_ta", "goi_y"];
 const COT_THANG_LEVEL = ["level", "diem_tu", "lop_xep", "mo_ta"];
@@ -182,6 +189,10 @@ XLSX.utils.book_append_sheet(wb, wsMoTa, "MoTaKyNang");
 const wsLevel = XLSX.utils.json_to_sheet(thangLevelRows, { header: COT_THANG_LEVEL });
 wsLevel["!cols"] = [{ wch: 10 }, { wch: 8 }, { wch: 10 }, { wch: 100 }];
 XLSX.utils.book_append_sheet(wb, wsLevel, "ThangLevel");
+
+const wsGiaoVien = XLSX.utils.json_to_sheet(giaoVienRows);
+wsGiaoVien["!cols"] = [{ wch: 28 }, { wch: 20 }, { wch: 12 }];
+XLSX.utils.book_append_sheet(wb, wsGiaoVien, "GiaoVien");
 
 const xlsxPath = join(OUT, "Template_KetQua_HocSinh.xlsx");
 try {
@@ -214,6 +225,7 @@ writeFileSync(
           ketQua: thanhChuoi(ketQuaRows),
           moTa: thanhChuoi(moTaRows),
           thangLevel: thanhChuoi(thangLevelRows),
+          giaoVien: thanhChuoi(giaoVienRows),
         },
         null,
         2

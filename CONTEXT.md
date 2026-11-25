@@ -184,6 +184,18 @@ Mỗi Level áp dụng **từ `diem_tu` trở lên cho tới mốc của Level k
 Template của file Excel: 17 → Pre-A1, 36 → A1, 52 → A2, 60 → Pre-B1. Muốn đổi thì sửa thẳng
 cột `diem_tu` trên sheet — không cần deploy lại. `lop_xep` hiện trên báo cáo dưới tổng điểm.
 
+### Tab `GiaoVien` — danh sách giáo viên chấm điểm (không bắt buộc)
+
+| `ho_ten` | `co_so` | `trang_thai` |
+|---|---|---|
+| Tên hiện trên báo cáo | Nhóm tên trong ô chọn | Trống / `Đang dạy` = hiện, `Nghỉ` = ẩn |
+
+Tạo bằng hàm `taoTabGiaoVien` (chạy tay một lần). Có tab và có tên → ba ô giáo viên ở trang quản trị là ô
+chọn; không có → gõ tự do như cũ. `KetQua.giao_vien` vẫn lưu **tên dạng chữ**: ẩn hay xoá người trong danh
+sách không đổi bài đã chấm, tên cũ hiện "(ngoài danh sách)". Trùng tên khác cơ sở → lưu "Tên (Cơ sở)".
+Đọc chung lượt `docPlacement` (Code.gs `phienBan` ≥ 4), **không** trả ra trang tra cứu. Logic:
+`shared/giao-vien.ts`. Đây chỉ là danh sách tên, không phải tài khoản đăng nhập.
+
 ### Ràng buộc nhập liệu ngay trên sheet
 
 Chạy hàm `thietLapRangBuoc` trong Apps Script **một lần** (chọn hàm trên thanh công cụ →
@@ -402,7 +414,7 @@ Local ở `.env`, production ở Netlify → Site settings → Environment varia
 
 ### Trang quản trị `/quan-tri` (đã làm)
 
-- **Hiện đang mở tự do** (theo yêu cầu, giai đoạn đầu): không đặt env `ADMIN_KEY` thì
+- **Bản chạy thật (testdatahs.netlify.app) đã đặt `ADMIN_KEY`** (kiểm tra 25/11/2026). Không đặt env `ADMIN_KEY` thì
   `/quan-tri` ai vào cũng sửa được điểm. Bật bảo vệ = đặt `ADMIN_KEY` (≥16 ký tự) rồi
   deploy lại, không cần sửa code; link khi đó là `https://<site>/quan-tri#<ADMIN_KEY>`
   (phần sau `#` gửi qua header `x-admin-key`, so bằng SHA-256 + timingSafeEqual).
