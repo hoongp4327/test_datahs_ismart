@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { KY_NANG, TONG_TOI_DA, docDiem, normalizeCode, xepLop, type Row } from "../../shared/bao-cao";
+import { KY_NANG, docDiem, normalizeCode, xepLop, type Row } from "../../shared/bao-cao";
 import { KY_TU_MA } from "../../shared/hoc-sinh-sua";
 import { DE_THI } from "../../shared/placement/de-thi";
 import type { GiaoVien } from "../../shared/giao-vien";
@@ -67,6 +67,7 @@ const hienSo = (n: number) => String(Math.round(n * 10) / 10).replace(".", ",");
 export default function ChamPlacement({
   choCham,
   thangLevel,
+  moTa,
   daCoMa,
   hocSinhTheoMa,
   goiY,
@@ -77,6 +78,7 @@ export default function ChamPlacement({
 }: {
   choCham: ChoCham;
   thangLevel: Row[];
+  moTa: Row[];
   daCoMa: Set<string>;
   /** Dòng KetQua theo mã đã chuẩn hoá — lấy tên, lớp giáo viên đã nhập sẵn cho mã đó. */
   hocSinhTheoMa: Map<string, Row>;
@@ -135,7 +137,7 @@ export default function ChamPlacement({
   const sua = (k: keyof FormCham, v: string) => {
     setForm((f) => (f ? { ...f, [k]: v } : f));
     if (loi[k]) setLoi(({ [k]: _, ...con }) => con);
-    setThongBao(null); // nhập tiếp thì ẩn báo lỗi cũ, hiện lại phần xem trước tổng điểm
+    setThongBao(null); // nhập tiếp thì ẩn báo lỗi cũ, hiện lại phần xem trước lớp
   };
   const suaW2 = (i: number, v: string) => {
     setForm((f) => (f ? { ...f, w2: f.w2.map((x, j) => (j === i ? v : x)) } : f));
@@ -143,7 +145,7 @@ export default function ChamPlacement({
     setThongBao(null);
   };
 
-  /* ---- Tính trước tổng điểm để giáo viên thấy Level trước khi xác nhận ---- */
+  /* ---- Tính trước lớp gợi ý để giáo viên thấy trước khi xác nhận ---- */
   const tinh = useMemo(() => {
     if (!bai || !form) return null;
     // Phần đã chấm lần trước (có điểm trên dòng bài làm) thì khoá, lấy điểm đã lưu.
@@ -157,10 +159,17 @@ export default function ChamPlacement({
     const writing = Math.min(TOI_DA.writing, so(bai.diem_writing_p1) + tongW2);
     const chamNoi = !daCoNoi && form.diem_speaking.trim() !== "";
     const speaking = daCoNoi ? so(bai.diem_speaking) : docDiem(form.diem_speaking, TOI_DA.speaking);
-    const tong = duW2 && speaking !== null ? so(bai.diem_listening) + so(bai.diem_reading) + writing + speaking : null;
-    const xep = tong !== null ? xepLop(thangLevel, tong, choCham.coXepLop ? form.lop_xep : "") : null;
-    return { daCoW2, daCoNoi, chamW2, chamNoi, tongW2, duW2, writing, speaking, tong, xep, lop: xep?.chot?.lop_xep ?? "" };
-  }, [bai, form, choCham.cauW2, choCham.coXepLop, thangLevel]);
+    const diem = {
+      listening: so(bai.diem_listening),
+      reading: so(bai.diem_reading),
+      writing: duW2 ? writing : null,
+      speaking,
+    };
+    /** Đã chấm đủ cả 4 kỹ năng: lần lưu này chốt kết quả cuối. */
+    const du = duW2 && speaking !== null;
+    const xep = du ? xepLop({ thangLevel, moTa }, diem, choCham.coXepLop ? form.lop_xep : "") : null;
+    return { daCoW2, daCoNoi, chamW2, chamNoi, tongW2, duW2, writing, speaking, diem, du, xep, lop: xep?.chot?.lop_xep ?? "" };
+  }, [bai, form, choCham.cauW2, choCham.coXepLop, thangLevel, moTa]);
 
   const xacNhan = async () => {
     if (!bai || !form || !tinh) return;
@@ -184,9 +193,9 @@ export default function ChamPlacement({
     }
     // Chỉ hỏi lại khi lần lưu này chốt kết quả cuối (đủ cả hai phần) — phụ huynh sẽ tra cứu được.
     if (
-      tinh.tong !== null &&
+      tinh.du &&
       !window.confirm(
-        `Xác nhận kết quả của ${form.ho_ten}: ${hienSo(tinh.tong)}/${TONG_TOI_DA}, xếp lớp ${tinh.lop || "—"}` +
+        `Xác nhận kết quả của ${form.ho_ten}: xếp lớp ${tinh.lop || "—"}` +
           (tinh.xep?.khacGoiY ? ` (hệ thống gợi ý ${tinh.xep.goiY?.lop_xep})` : "") +
           "?\n" +
           "Sau khi xác nhận, phụ huynh tra cứu bằng mã học sinh sẽ xem được báo cáo."
@@ -211,7 +220,7 @@ export default function ChamPlacement({
             ? { diem_speaking: form.diem_speaking, mo_ta_rieng_speaking: form.mo_ta_rieng_speaking }
             : {}),
           // Chốt lớp cùng lúc chốt kết quả: giáo viên không đổi thì lưu đúng lớp gợi ý đang hiện.
-          ...(tinh.tong !== null && choCham.coXepLop ? { lop_xep: tinh.lop } : {}),
+          ...(tinh.du && choCham.coXepLop ? { lop_xep: tinh.lop } : {}),
         },
       });
       if (!r.ok) {
@@ -438,13 +447,8 @@ export default function ChamPlacement({
               {loi.lop_xep ? <span className="qt-o-loi">{loi.lop_xep}</span> : null}
               <XepLop
                 thangLevel={thangLevel}
-                tong={tinh.tong}
-                diem={{
-                  listening: so(bai.diem_listening),
-                  reading: so(bai.diem_reading),
-                  writing: tinh.writing,
-                  speaking: tinh.speaking,
-                }}
+                moTa={moTa}
+                diem={tinh.diem}
                 chon={form.lop_xep}
                 onChon={(v) => sua("lop_xep", v)}
                 coTheGhi={Boolean(choCham.coXepLop)}
@@ -457,20 +461,20 @@ export default function ChamPlacement({
                   <>
                     <Icon ten={thongBao.loai === "ok" ? "check" : "alert"} size={16} /> {thongBao.chu}
                   </>
-                ) : tinh.tong !== null ? (
+                ) : tinh.du ? (
                   <>
-                    Tổng <b className="qt-cc-tong">{hienSo(tinh.tong)}</b>/{TONG_TOI_DA}
+                    Xếp lớp
                     <span className="qt-level">{tinh.lop || "—"}</span>
                   </>
                 ) : tinh.duW2 && (tinh.daCoW2 || tinh.chamW2) ? (
                   "Chưa có điểm Speaking — lưu được, bài sẽ nằm ở Chờ chấm Speaking"
                 ) : (
-                  "Chấm đủ Writing Part 2 và Speaking để xem tổng điểm"
+                  "Chấm đủ Writing Part 2 và Speaking để xem lớp gợi ý"
                 )}
               </span>
               <button type="submit" className="qt-nut qt-nut-chinh" disabled={dang || !coTheGhi}>
                 {dang ? <span className="qt-spinner qt-spinner-nho" aria-hidden="true" /> : <Icon ten="check" size={16} />}
-                {dang ? "Đang lưu…" : tinh.tong !== null ? "Xác nhận kết quả" : "Lưu điểm"}
+                {dang ? "Đang lưu…" : tinh.du ? "Xác nhận kết quả" : "Lưu điểm"}
               </button>
             </div>
           </form>

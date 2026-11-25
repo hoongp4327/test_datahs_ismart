@@ -182,7 +182,7 @@ details p{margin-top:8px;max-width:68ch}
             <tr><td><span class="chip">Chờ Writing + Speaking</span></td><td>Đã nộp bài, chưa chấm gì.</td><td>Chấm ở tab Chờ chấm.</td></tr>
             <tr><td><span class="chip">Chờ Speaking</span></td><td>Đã chấm Writing Part 2, còn thiếu Speaking.</td><td>Chấm Speaking sau khi thi nói.</td></tr>
             <tr><td><span class="chip">Thiếu 2 điểm</span></td><td>Học sinh nhập tay còn thiếu điểm kỹ năng.</td><td>Mở học sinh, nhập nốt điểm.</td></tr>
-            <tr><td><span class="chip xong">49.5 · iLEAD 2</span></td><td>Đã đủ điểm: tổng điểm và lớp xếp.</td><td>Phụ huynh xem được báo cáo.</td></tr>
+            <tr><td><span class="chip xong">iLEAD 2</span></td><td>Đã đủ điểm: lớp xếp.</td><td>Phụ huynh xem được báo cáo.</td></tr>
           </tbody>
         </table>
       </div>
@@ -239,14 +239,24 @@ details p{margin-top:8px;max-width:68ch}
     </div>
     <div class="buoc">
       <h3>Xếp lớp</h3>
-      <p>Khi đủ điểm, khung <b>Xếp lớp</b> hiện điểm 4 kỹ năng, tổng điểm / 75 và các lớp iLEAD. Lớp có ghi <b>Hệ thống gợi ý</b> là lớp tính theo tổng điểm. <b>Giáo viên là người quyết định lớp cuối cùng:</b></p>
+      <p>Khi đủ điểm, khung <b>Xếp lớp</b> hiện điểm 4 kỹ năng, mức lớp của từng kỹ năng và các lớp iLEAD. Lớp có ghi <b>Hệ thống gợi ý</b> lấy theo <b>kỹ năng thấp nhất</b>, điểm cao ở kỹ năng khác không bù được. Mức lớp của từng kỹ năng:</p>
+      <div class="bang"><table>
+        <thead><tr><th>Kỹ năng</th><th style="text-transform:none">iLEAD 1</th><th style="text-transform:none">iLEAD 2</th><th style="text-transform:none">iLEAD 3</th><th style="text-transform:none">iLEAD 4</th></tr></thead>
+        <tbody>
+          <tr><td>Listening</td><td>0–5</td><td>6–10</td><td>11–15</td><td>16–20</td></tr>
+          <tr><td>Reading</td><td>0–5</td><td>6–10</td><td>11–15</td><td>16–20</td></tr>
+          <tr><td>Writing</td><td>0–3</td><td>4–7</td><td>8–11</td><td>12–15</td></tr>
+          <tr><td>Speaking</td><td>0–8</td><td>9–14</td><td>15–17</td><td>18–20</td></tr>
+        </tbody>
+      </table></div>
+      <p><b>Giáo viên là người quyết định lớp cuối cùng:</b></p>
       <ol>
         <li>Đồng ý với gợi ý: giữ nguyên, không cần bấm gì.</li>
-        <li>Thấy lớp khác phù hợp hơn (ví dụ tổng điểm đạt iLEAD 3 nhưng Speaking còn yếu): bấm vào lớp đó, ví dụ iLEAD 2. Muốn quay lại thì bấm <b>Dùng lớp gợi ý</b>.</li>
-        <li>Bấm <span class="kbd">Xác nhận kết quả</span>, kiểm tra tổng điểm và lớp ở hộp hỏi lại, rồi bấm <b>OK</b>.</li>
+        <li>Thấy lớp khác phù hợp hơn (ví dụ chỉ một kỹ năng còn yếu, ba kỹ năng kia đã đạt iLEAD 3): bấm vào lớp đó, ví dụ iLEAD 3. Muốn quay lại thì bấm <b>Dùng lớp gợi ý</b>.</li>
+        <li>Bấm <span class="kbd">Xác nhận kết quả</span>, kiểm tra lớp ở hộp hỏi lại, rồi bấm <b>OK</b>.</li>
       </ol>
-      <figure><img src="hinh/gv-14-xac-nhan-ket-qua.webp" alt="Khung Xếp lớp với lớp hệ thống gợi ý và nút Xác nhận kết quả" loading="lazy"><figcaption>Đủ điểm thì khung Xếp lớp hiện gợi ý. Ở đây tổng 49,5 điểm, hệ thống gợi ý iLEAD 3.</figcaption></figure>
-      <figure><img src="hinh/gv-17-doi-lop.webp" alt="Giáo viên đổi sang iLEAD 2, khác lớp hệ thống gợi ý" loading="lazy"><figcaption>Speaking chỉ 11 điểm nên giáo viên đổi sang iLEAD 2. Khung màu cam nhạt nhắc lớp đã khác gợi ý.</figcaption></figure>
+      <figure><img src="hinh/gv-14-xac-nhan-ket-qua.webp" alt="Khung Xếp lớp với lớp hệ thống gợi ý và nút Xác nhận kết quả" loading="lazy"><figcaption>Đủ điểm thì khung Xếp lớp hiện gợi ý. Ở đây Speaking thấp nhất (11/20, mức iLEAD 2) nên hệ thống gợi ý iLEAD 2.</figcaption></figure>
+      <figure><img src="hinh/gv-17-doi-lop.webp" alt="Giáo viên đổi sang iLEAD 3, khác lớp hệ thống gợi ý" loading="lazy"><figcaption>Ba kỹ năng kia đã đạt iLEAD 3 trở lên nên giáo viên đổi sang iLEAD 3. Khung màu cam nhạt nhắc lớp đã khác gợi ý.</figcaption></figure>
       <div class="ghi-chu chu-y"><b>Sau khi xác nhận, phụ huynh xem được báo cáo ngay.</b>Phần đã chấm sẽ khoá ở tab Chờ chấm. Muốn sửa thì làm ở tab Học sinh (mục 7).</div>
     </div>
   </section>
@@ -289,7 +299,7 @@ details p{margin-top:8px;max-width:68ch}
   <section class="phan" id="phu-huynh">
     <h2><span class="so">8</span>Phụ huynh xem kết quả</h2>
     <p>Gửi phụ huynh <b>mã học sinh</b> và link trang <b>Tra cứu Kết quả học tập</b>. Phụ huynh nhập mã, bấm Xem Báo Cáo Kết Quả là thấy báo cáo, có thể in hoặc lưu PDF.</p>
-    <figure><img src="hinh/gv-18-bao-cao.webp" alt="Báo cáo phụ huynh nhìn thấy" loading="lazy"><figcaption>Báo cáo phụ huynh nhìn thấy sau khi giáo viên xác nhận kết quả. Lớp hiện trên báo cáo là lớp giáo viên đã chốt (iLEAD 2).</figcaption></figure>
+    <figure><img src="hinh/gv-18-bao-cao.webp" alt="Báo cáo phụ huynh nhìn thấy" loading="lazy"><figcaption>Báo cáo phụ huynh nhìn thấy sau khi giáo viên xác nhận kết quả. Lớp hiện trên báo cáo là lớp giáo viên đã chốt (iLEAD 3).</figcaption></figure>
     <div class="ghi-chu"><b>Chưa chấm xong thì phụ huynh thấy gì?</b>Trang báo học sinh chưa làm bài, hoặc chưa làm xong bài Speaking. Không có báo cáo dở dang nào lộ ra cho phụ huynh.</div>
   </section>
 
@@ -331,7 +341,7 @@ details p{margin-top:8px;max-width:68ch}
       <details><summary>Tên giáo viên ghi “(ngoài danh sách)”</summary><p>Tên đó đã lưu từ trước nhưng không có trong danh sách hiện tại. Giữ nguyên cũng được, hoặc chọn lại tên đúng rồi Lưu vào sheet.</p></details>
       <details><summary>Ô Mô tả chung ghi “Nhập điểm trước”</summary><p>Kỹ năng đó chưa có điểm. Nhập điểm xong, danh sách mô tả sẽ hiện ra.</p></details>
       <details><summary>Sửa điểm rồi thì lớp có tự đổi theo không?</summary><p>Không. Lớp giáo viên đã chốt được giữ nguyên, chỉ phần gợi ý đổi theo điểm mới. Nếu hai lớp khác nhau, khung Xếp lớp sẽ nhắc; bấm <b>Dùng lớp gợi ý</b> nếu muốn đổi, rồi Lưu vào sheet.</p></details>
-      <details><summary>Tổng điểm và lớp không hiện</summary><p>Phải đủ điểm cả 4 kỹ năng thì mới tính tổng và xếp lớp. Kiểm tra kỹ năng nào còn trống.</p></details>
+      <details><summary>Lớp không hiện</summary><p>Phải đủ điểm cả 4 kỹ năng thì mới xếp lớp. Kiểm tra kỹ năng nào còn trống.</p></details>
       <details><summary>Trang báo “Không mở được trang quản trị”</summary><p>Link mở thiếu phần sau dấu #. Mở lại đúng link đầy đủ trung tâm đã gửi.</p></details>
     </div>
   </section>

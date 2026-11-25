@@ -728,7 +728,7 @@ function thietLapRangBuoc() {
       SpreadsheetApp.newDataValidation()
         .requireValueInList(dsLop, true)
         .setAllowInvalid(false)
-        .setHelpText('Lớp giáo viên chốt. Để trống = báo cáo dùng lớp gợi ý theo tổng điểm.')
+        .setHelpText('Lớp giáo viên chốt. Để trống = báo cáo dùng lớp gợi ý theo kỹ năng thấp nhất.')
         .build()
     );
     daLam.push('lop_xep: ' + dsLop.join(', '));

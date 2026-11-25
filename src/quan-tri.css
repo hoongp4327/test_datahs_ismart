@@ -190,9 +190,8 @@
 .qt-o-ghep { display: flex; gap: 8px; }
 .qt-o-ghep input { flex: 1; }
 
-/* Tổng điểm + Level */
+/* Lớp xếp */
 .qt-tong { display: flex; align-items: baseline; gap: 4px; color: var(--ink-2); font-weight: 700; }
-.qt-tong b { font-size: 22px; color: var(--navy); font-weight: 900; }
 .qt-level {
   margin-left: 8px; padding: 3px 10px; border-radius: 999px;
   background: var(--orange); color: #fff; font-size: 13px; font-weight: 800;
@@ -202,6 +201,8 @@
 .qt-xl { display: grid; gap: 12px; }
 .qt-xl-diem { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 14px; color: var(--ink-2); }
 .qt-xl-diem b { color: var(--navy); font-weight: 900; }
+.qt-xl-diem small { margin-left: 6px; font-size: 12px; font-weight: 700; color: var(--ink-2); }
+.qt-xl-diem .is-thap, .qt-xl-diem .is-thap b, .qt-xl-diem .is-thap small { color: #b3400b; font-weight: 800; }
 .qt-xl-lop { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
 .qt-xl-lop button {
   display: grid; align-content: center; justify-items: center; gap: 2px;
@@ -394,7 +395,6 @@
 }
 .qt-cc-chon button:hover { border-color: var(--orange); }
 .qt-cc-chon button.is-chon { background: var(--orange); border-color: var(--orange); color: #fff; }
-.qt-cc-tong { font-size: 18px; color: var(--navy); margin: 0 2px; }
 
 @media (max-width: 640px) {
   .qt-tab { padding: 0 8px; }

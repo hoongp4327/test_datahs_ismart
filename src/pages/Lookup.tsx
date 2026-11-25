@@ -179,7 +179,7 @@ export default function Lookup() {
             <div className="feature-showcase-card card-trophy">
               <div className="feature-icon-box">🎓</div>
               <h3>Lớp Phù Hợp &amp; Mục Tiêu</h3>
-              <p>Tổng điểm 4 kỹ năng xếp con vào lớp iLEAD phù hợp, kèm mô tả năng lực hiện tại và trình độ mục tiêu sau khoá học.</p>
+              <p>Kết quả 4 kỹ năng giúp xếp con vào lớp iLEAD phù hợp, kèm mô tả năng lực hiện tại và trình độ mục tiêu sau khoá học.</p>
             </div>
 
             <div className="feature-showcase-card card-radar">

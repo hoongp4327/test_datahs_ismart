@@ -6,7 +6,8 @@
  *   KetQua      — mỗi dòng một học sinh: điểm 4 kỹ năng, option mô tả, lộ trình
  *   MoTaKyNang  — mỗi kỹ năng chia nhiều khoảng điểm (diem_tu), mỗi khoảng có vài option
  *                 = vài cách diễn đạt cùng một mức năng lực, kèm gợi ý luyện tập
- *   ThangLevel  — tổng điểm từ bao nhiêu thì đạt Level nào, xếp lớp nào
+ *   ThangLevel  — danh sách lớp từ thấp tới cao. Lớp gợi ý = mức của kỹ năng THẤP NHẤT
+ *                 (khoảng điểm thứ mấy trong MoTaKyNang thì ứng với lớp thứ mấy)
  *
  * Khung điểm theo chương trình iLEAD (data/khung-ilead.json):
  *   Listening 20 · Reading 20 · Writing 15 · Speaking 20 = 75
@@ -37,8 +38,6 @@ export type KeyKyNang = (typeof KY_NANG)[number]["key"];
 export function toiDaCua(key: string): number {
   return KY_NANG.find((k) => k.key === key)?.toiDa ?? 20;
 }
-
-export const TONG_TOI_DA = KY_NANG.reduce((s, k) => s + k.toiDa, 0);
 
 /** Option mặc định khi giáo viên để trống hoặc chọn option không có trong khoảng điểm. */
 export const OPTION_MAC_DINH = "Option 1";
@@ -151,19 +150,67 @@ export function cacOption(moTa: Row[], kyNang: string): string[] {
   return ds;
 }
 
-export function timLevel(thangLevel: Row[], tong: number): Row | undefined {
-  return theoMocDiem(thangLevel, tong);
+/** Các lớp từ thấp tới cao. Cột `diem_tu` của ThangLevel giờ chỉ còn dùng để sắp thứ tự này. */
+export function cacLevel(thangLevel: Row[]): Row[] {
+  return thangLevel
+    .filter((r) => r.level && docDiem(r.diem_tu, Number.POSITIVE_INFINITY) !== null)
+    .sort(
+      (a, b) =>
+        docDiem(a.diem_tu, Number.POSITIVE_INFINITY)! - docDiem(b.diem_tu, Number.POSITIVE_INFINITY)!
+    );
+}
+
+/** Điểm từng kỹ năng, theo key ("listening" → 14). */
+export type DiemKyNang = Partial<Record<string, number | null>>;
+
+/**
+ * Một kỹ năng đang ở mức lớp nào: khoảng điểm thứ mấy trong MoTaKyNang thì ứng với lớp thứ mấy
+ * trong ThangLevel (khoảng 1 → iLEAD 1 … khoảng 4 → iLEAD 4). Dùng đúng khoảng mô tả phụ huynh
+ * đọc trên báo cáo, nên lớp và lời nhận xét không bao giờ lệch nhau; sửa mốc trên sheet là đổi cả hai.
+ * Thứ tự trả về: 0 = lớp thấp nhất. Thiếu điểm hoặc sheet chưa có khoảng nào → null.
+ */
+export function mucKyNang(thangLevel: Row[], moTa: Row[], kyNang: string, diem: number | null): number | null {
+  if (diem === null) return null;
+  const soLop = cacLevel(thangLevel).length;
+  const moc = new Set<number>();
+  for (const r of moTa) {
+    const m = cungKhoa(r.ky_nang, kyNang) ? docDiem(r.diem_tu, Number.POSITIVE_INFINITY) : null;
+    if (m !== null) moc.add(m);
+  }
+  const qua = [...moc].filter((m) => m <= diem).length;
+  return qua && soLop ? Math.min(qua, soLop) - 1 : null;
 }
 
 /**
- * Xếp lớp: hệ thống chỉ GỢI Ý theo tổng điểm, giáo viên là người chốt (cột `lop_xep` của
- * KetQua). Ô đó trống (bài chấm trước khi có tính năng này, hoặc nhập thẳng trên sheet) hay
- * ghi một lớp không có trong ThangLevel → dùng gợi ý, để báo cáo đã gửi không đổi kết quả.
+ * Xếp lớp: hệ thống chỉ GỢI Ý, theo kỹ năng có mức THẤP NHẤT (không theo tổng điểm — điểm cao ở
+ * kỹ năng này không bù được kỹ năng kia). Giáo viên là người chốt (cột `lop_xep` của KetQua);
+ * ô đó trống hay ghi một lớp không có trong ThangLevel → dùng gợi ý.
+ * Thiếu mức của bất kỳ kỹ năng nào thì không gợi ý.
  */
-export function xepLop(thangLevel: Row[], tong: number, lopGiaoVien: string | undefined) {
-  const goiY = timLevel(thangLevel, tong);
-  const gvChot = thangLevel.find((r) => cungKhoa(r.lop_xep, lopGiaoVien ?? ""));
+export function xepLop(
+  data: { thangLevel: Row[]; moTa: Row[] },
+  diem: DiemKyNang,
+  lopGiaoVien: string | undefined
+) {
+  const thang = cacLevel(data.thangLevel);
+  const muc = KY_NANG.map((k) => ({
+    ten: k.ten as string,
+    key: k.key as string,
+    muc: mucKyNang(data.thangLevel, data.moTa, k.ten, diem[k.key] ?? null),
+  }));
+  const thapNhat = muc.every((m) => m.muc !== null) ? Math.min(...muc.map((m) => m.muc!)) : null;
+  const goiY = thapNhat === null ? undefined : thang[thapNhat];
+  const gvChot = thang.find((r) => cungKhoa(r.lop_xep, lopGiaoVien ?? ""));
   return {
+    /** Lớp ứng với từng kỹ năng, theo key. */
+    lopKyNang: Object.fromEntries(
+      muc.map((m) => [m.key, m.muc === null ? "" : thang[m.muc].lop_xep ?? ""])
+    ) as Record<string, string>,
+    /** Kỹ năng quyết định lớp gợi ý (có thể nhiều kỹ năng cùng mức). Rỗng nếu cả 4 cùng mức. */
+    kyNangThap:
+      thapNhat === null || muc.every((m) => m.muc === thapNhat)
+        ? []
+        : muc.filter((m) => m.muc === thapNhat).map((m) => m.ten),
     /** Dòng ThangLevel của lớp cuối cùng hiện trên báo cáo. */
     chot: gvChot ?? goiY,
     goiY,
@@ -226,12 +273,12 @@ export function buildReport(row: Row, data: SheetData) {
     };
   });
 
-  // Thiếu bất kỳ điểm nào thì không tính tổng và Level: một Level dựa trên
+  // Thiếu bất kỳ điểm nào thì không xếp Level: một Level dựa trên
   // 3/4 kỹ năng sẽ sai mà phụ huynh không có cách nào nhận ra.
   const duDiem = kyNang.every((k) => k.diem !== null);
-  const tongDiem = duDiem ? kyNang.reduce((s, k) => s + (k.diem ?? 0), 0) : null;
-  const xep = tongDiem !== null ? xepLop(data.thangLevel, tongDiem, row.lop_xep) : undefined;
-  const level = xep?.chot;
+  const level = duDiem
+    ? xepLop(data, Object.fromEntries(kyNang.map((k) => [k.key, k.diem])), row.lop_xep).chot
+    : undefined;
 
   return {
     maHocSinh: row.ma_hoc_sinh,
@@ -240,18 +287,13 @@ export function buildReport(row: Row, data: SheetData) {
     lop: row.lop,
     ngayCham: row.ngay_cham,
     kyNang,
-    tongDiem,
-    tongToiDa: TONG_TOI_DA,
+    // Không trả tổng điểm: lớp xếp theo kỹ năng thấp nhất nên con số tổng chỉ gây hiểu lầm.
+    duDiem,
     // Cột `level` trên sheet là trình độ ĐẦU RA của lớp (mục tiêu sau khoá học), không phải
     // trình độ hiện tại. Kết quả của bài placement là `lop` (lớp xếp); `moTa` là năng lực đầu vào.
     level: level ? { ten: level.level, lop: level.lop_xep ?? "", moTa: level.mo_ta ?? "" } : null,
-    /** Giáo viên xếp khác lớp theo tổng điểm → báo cáo không ghi khoảng điểm cạnh lớp. */
-    lopKhacGoiY: xep?.khacGoiY ?? false,
-    // Toàn bộ thang xếp lớp để vẽ thanh 0–75 trên báo cáo; sửa mốc trên sheet là thanh đổi theo.
-    thangLevel: data.thangLevel
-      .map((r) => ({ ten: r.level, lop: r.lop_xep ?? "", tu: docDiem(r.diem_tu, Number.POSITIVE_INFINITY) }))
-      .filter((r): r is { ten: string; lop: string; tu: number } => Boolean(r.ten) && r.tu !== null)
-      .sort((a, b) => a.tu - b.tu),
+    // Các lớp từ thấp tới cao, để vẽ thanh lớp trên báo cáo.
+    thangLevel: cacLevel(data.thangLevel).map((r) => ({ ten: r.level, lop: r.lop_xep ?? "" })),
     loTrinh: {
       phanTramCoBan: row.pct_co_ban || "100%",
       phanTramNangCao: row.pct_nang_cao || "10%",

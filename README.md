@@ -109,8 +109,8 @@ Sheet có **3 tab**. **Không đổi tên tab và không đổi tên cột ở h
 | `pct_nang_cao` | % kiến thức nâng cao | `10%` |
 | `nhan_xet_lo_trinh` | Mô tả lộ trình cá nhân hoá | (đoạn văn) |
 
-**Tổng điểm và Level không có cột** — website tự cộng 4 điểm (tối đa 80) rồi tra tab
-`ThangLevel`. Nhờ vậy không bao giờ có chuyện tổng 70 mà ghi A1.
+**Không dùng tổng điểm.** Lớp gợi ý lấy theo kỹ năng có mức thấp nhất (khoảng điểm ở tab `MoTaKyNang`),
+giáo viên chốt lớp cuối cùng ở cột `lop_xep`. Chi tiết: `CONTEXT.md`.
 
 Quy tắc khi dữ liệu không đủ:
 
@@ -137,7 +137,7 @@ Mặc định mỗi kỹ năng 4 option: Option 1 từ 0, Option 2 từ 6, Optio
 **Sửa câu chữ ở đây là mọi báo cáo — cũ lẫn mới — đổi theo ngay**, vì `KetQua` chỉ lưu tên
 option chứ không lưu nguyên văn. Thêm option thứ 5 cũng chỉ cần thêm một dòng.
 
-### Tab `ThangLevel` — tổng điểm từ bao nhiêu thì đạt Level nào
+### Tab `ThangLevel` — các lớp từ thấp tới cao
 
 > **Cột `level` là trình độ ĐẦU RA của lớp, không phải trình độ hiện tại của học sinh.**
 > Báo cáo hiển thị `lop_xep` làm kết quả chính, `level` ở chip "Mục tiêu đầu ra", còn `mo_ta`
@@ -150,13 +150,8 @@ option chứ không lưu nguyên văn. Thêm option thứ 5 cũng chỉ cần th
 | A2 | 50 | … |
 | Pre-B1 | 70 | … |
 
-Mỗi Level áp dụng **từ `diem_tu` trở lên cho tới mốc của Level kế tiếp**. Chỉ cần mốc dưới nên
-không bao giờ có khe hở giữa hai khoảng, và điểm lẻ như 24,5 vẫn rơi đúng một Level.
-
-Mốc được chia để khớp với 4 dòng mẫu ban đầu của trung tâm khi quy từ thang 60 lên thang 80
-(17/60 → Pre-A1, 36/60 → A1, 52/60 → A2, 60/60 → Pre-B1). **Muốn đổi thì sửa thẳng cột
-`diem_tu` trên sheet** — không cần sửa code, không cần deploy lại. Thêm Level mới (ví dụ B1)
-cũng chỉ là thêm một dòng.
+`diem_tu` chỉ còn dùng để **sắp thứ tự lớp**. Muốn đổi mốc xếp lớp thì sửa `diem_tu` của kỹ năng ở tab
+`MoTaKyNang`: khoảng thứ mấy ứng với lớp thứ mấy.
 
 ### Ràng buộc nhập liệu ngay trên sheet
 

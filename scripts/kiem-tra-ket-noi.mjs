@@ -282,10 +282,14 @@ const mocLevel = lv.dong.map((r) => ({ level: r.level, tu: docSo(r.diem_tu) })).
 const mocSai = mocLevel.filter((m) => m.tu === null || !Number.isFinite(m.tu));
 if (mocSai.length) canhBao(`ThangLevel: ${mocSai.length} mức có diem_tu không phải số`, mocSai.map((m) => m.level));
 const mocHopLe = mocLevel.filter((m) => Number.isFinite(m.tu)).sort((a, b) => a.tu - b.tu);
-if (mocHopLe.length && mocHopLe[0].tu > 0) {
-  canhBao(`ThangLevel: mức thấp nhất bắt đầu từ ${mocHopLe[0].tu} — học sinh dưới ${mocHopLe[0].tu} điểm sẽ không có Level`);
+console.log(`${OK} ThangLevel: ${mocHopLe.map((m) => m.level).join(" · ")}`);
+// Lớp gợi ý = khoảng điểm thứ mấy của kỹ năng thấp nhất → mỗi kỹ năng phải có đủ khoảng, bắt đầu từ 0.
+for (const kn of KY_NANG) {
+  const moc = new Set(mt.dong.filter((r) => cung(r.ky_nang, kn)).map((r) => docSo(r.diem_tu)).filter(Number.isFinite));
+  if (moc.size !== mocHopLe.length || !moc.has(0)) {
+    canhBao(`MoTaKyNang: ${kn} có ${moc.size} khoảng điểm, cần ${mocHopLe.length} khoảng bắt đầu từ 0 để gợi ý lớp đúng`);
+  }
 }
-console.log(`${OK} ThangLevel: ${mocHopLe.map((m) => `${m.level} từ ${m.tu}`).join(" · ")}`);
 
 // MoTaKyNang
 for (const kn of KY_NANG) {

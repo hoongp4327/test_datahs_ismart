@@ -75,7 +75,7 @@ const moTaRows = KHUNG.kyNang.flatMap((kn) =>
 const TOI_DA = Object.fromEntries(KHUNG.kyNang.map((k) => [k.ten.toLowerCase(), k.toiDa]));
 
 /* ------------------------------------------------------------------ *
- * Tab ThangLevel — tổng điểm (0–${KHUNG.tong}) từ bao nhiêu thì đạt Level nào, xếp lớp nào.
+ * Tab ThangLevel — các lớp từ thấp tới cao. diem_tu (theo tổng điểm cũ) chỉ còn để sắp thứ tự.
  * Tên Level theo tab Template của file Excel (Pre-A1 / A1 / A2 / Pre-B1); CEFR đầy đủ
  * của mức 4 trong file là "A2+ / tiệm cận B1". mo_ta = mô tả năng lực đầu vào.
  * ------------------------------------------------------------------ */

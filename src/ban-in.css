@@ -65,8 +65,6 @@
 .bi-o-rong { flex: 1; }
 .bi-nhan { font-size: 7.5pt; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--bi-xam); }
 .bi-lop { font-size: 22pt; font-weight: 800; line-height: 1.1; white-space: nowrap; }
-.bi-tong { font-size: 22pt; font-weight: 800; line-height: 1.1; white-space: nowrap; }
-.bi-tong small { font-size: 11pt; font-weight: 600; color: var(--bi-xam); }
 .bi-muc-tieu { font-size: 10.5pt; font-weight: 800; }
 .bi-mo-ta { margin-top: 1mm !important; font-size: 9pt; color: #222; }
 
@@ -82,7 +80,6 @@
   border: 0.5pt solid var(--bi-ke-nhat);
   border-radius: 1.5mm;
 }
-.bi-thang small { display: block; font-size: 7pt; font-weight: 400; }
 .bi-thang span.is-dat { color: var(--bi-den); font-weight: 800; border: 1.5pt solid var(--bi-den); }
 
 /* Tiêu đề mục */

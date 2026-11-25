@@ -1,10 +1,10 @@
 /**
- * Chụp lại ảnh cho trang hướng dẫn GIÁO VIÊN (huong-dan/hinh/gv-*.webp) và xuất PDF.
+ * Chụp lại ảnh cho trang hướng dẫn GIÁO VIÊN (huong-dan/hinh/gv-*.webp, kèm ph-03 của trang học sinh) và xuất PDF.
  *
  *   npm run dev:mau -- --port 5181        (cửa sổ khác — chạy MỚI, vì script thêm học sinh thử)
  *   node scripts/chup-huong-dan.mjs       chụp ảnh từ dữ liệu mẫu
  *   node scripts/xuat-huong-dan.mjs       chép sang public/
- *   node scripts/chup-huong-dan.mjs pdf   xuất huong-dan/Huong-dan-giao-vien.pdf
+ *   node scripts/chup-huong-dan.mjs pdf   xuất huong-dan/Huong-dan-giao-vien.pdf và -hoc-sinh.pdf
  *
  * Cần Chrome và ffmpeg trên máy, không cần cài thêm gói npm. Đề thi (tranh, câu hỏi, câu trả
  * lời, gợi ý của Writing Part 2) luôn được làm mờ vì trang hướng dẫn là công khai.
@@ -119,7 +119,7 @@ async function chupAnh() {
     document.querySelector(".qt-ds-muc .qt-hs").click();await cho(400);document.activeElement.blur()`);
   await chup("gv-05-mo-ma-chua-lam");
 
-  // Học sinh nộp bài: L 14 · R 12,5 · W-P1 2 (tổng sau khi chấm 49,5 → gợi ý iLEAD 3).
+  // Học sinh nộp bài: L 14 · R 12,5 · W-P1 2. Chấm xong Writing 12 · Speaking 11 → thấp nhất là Speaking, gợi ý iLEAD 2.
   const traLoi = {
     "L1-1": "D", "L1-2": "A", "L1-3": "E", "L2-1": "C", "L2-2": "A", "L2-3": "C", "L2-4": "C",
     "R1-1": "E", "R1-2": "B", "R2-1": "No", "R2-2": "No", "R2-3": "No", "R3-1": "A", "W1-1": "elephant", "W1-2": "tram",
@@ -154,23 +154,24 @@ async function chupAnh() {
   await js(`scrollTo(0,document.body.scrollHeight)`);
   await chup("gv-14-xac-nhan-ket-qua");
 
-  await js(`nut("iLEAD 2").click();document.activeElement.blur();await cho(300)`);
+  await js(`nut("iLEAD 3").click();document.activeElement.blur();await cho(300)`);
   await chup("gv-17-doi-lop", khung("Xếp lớp"));
 
   await js(`nut("Xác nhận kết quả").click();await cho(1500);nhap(document.querySelector(".qt-tim input"),"Khánh An");await cho(300);scrollTo(0,0);document.activeElement.blur()`);
   await chup("gv-15-mo-hoc-sinh-sau-cham");
   await chup("gv-16-form-1", khung("Điểm 4 kỹ năng"));
-  await js(`nhap(o("Nhận xét lộ trình"),"Con nên bắt đầu ở lớp iLEAD 2 để củng cố phản xạ nói, sau đó chuyển lên iLEAD 3.");document.activeElement.blur();await cho(200)`);
+  await js(`nhap(o("Nhận xét lộ trình"),"Con học lớp iLEAD 3. Phần nói còn yếu hơn ba kỹ năng kia nên cần luyện nói thêm mỗi tuần.");document.activeElement.blur();await cho(200)`);
   await chup("gv-16-form-2", khung("Lộ trình học tập"));
   await js(`nut("Lưu vào sheet").click();await cho(1200)`);
 
   await mo(`${WEB}/ket-qua?ma=${ma}`, 6000);
   await chup("gv-18-bao-cao");
+  await chup("ph-03-bao-cao"); // trang hướng dẫn học sinh
 }
 
-async function xuatPdf() {
+async function xuatPdf(ten) {
   await cdp("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: "light" }] });
-  await mo(pathToFileURL(path.resolve("huong-dan/giao-vien.html")).href, 3000);
+  await mo(pathToFileURL(path.resolve(`huong-dan/${ten}.html`)).href, 3000);
   await js(`document.querySelectorAll("details").forEach(d=>d.open=true);document.querySelectorAll("img").forEach(i=>i.loading="eager");
     const s=document.createElement("style");s.textContent="figure,.ghi-chu,details,tr{break-inside:avoid}h2,h3{break-after:avoid}.phan{margin-top:36px;display:block}.phan>*+*{margin-top:18px}.phan>h2{display:block}.phan>h2 .so{display:inline-block;margin-right:12px}.buoc{display:block}.buoc>*+*{margin-top:12px}body{background:#fff}.wrap{padding-block:0}figure img{max-height:225mm;width:auto;max-width:100%}";
     document.head.append(s);await document.fonts.ready;
@@ -178,13 +179,14 @@ async function xuatPdf() {
   const { data } = await cdp("Page.printToPDF", {
     printBackground: true, paperWidth: 8.27, paperHeight: 11.69, marginTop: 0.5, marginBottom: 0.5, marginLeft: 0.4, marginRight: 0.4, scale: 0.82,
   });
-  fs.writeFileSync("huong-dan/Huong-dan-giao-vien.pdf", Buffer.from(data, "base64"));
-  console.log("đã xuất huong-dan/Huong-dan-giao-vien.pdf");
+  fs.writeFileSync(`huong-dan/Huong-dan-${ten}.pdf`, Buffer.from(data, "base64"));
+  console.log(`đã xuất huong-dan/Huong-dan-${ten}.pdf`);
 }
 
 try {
   await cdp("Page.enable");
-  await (process.argv[2] === "pdf" ? xuatPdf() : chupAnh());
+  if (process.argv[2] === "pdf") for (const ten of ["giao-vien", "hoc-sinh"]) await xuatPdf(ten);
+  else await chupAnh();
 } finally {
   ws.close();
   chrome.kill();

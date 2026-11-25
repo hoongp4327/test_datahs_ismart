@@ -392,7 +392,7 @@
 .bc-hero-vong.is-3 { width: 410px; height: 410px; left: -300px; bottom: -310px; background: #479bff18; }
 
 /* Cột Level */
-.bc-level-col { position: relative; z-index: 1; padding: 40px 20px 36px 46px; }
+.bc-level-col { position: relative; z-index: 1; align-self: center; padding: 40px 20px 36px 46px; }
 .bc-eyebrow { font-size: 12px; letter-spacing: 0.24em; text-transform: uppercase; font-weight: 800; color: #d7e7ff; }
 .bc-level-visual { position: relative; height: 132px; max-width: 300px; margin-top: 10px; }
 .bc-big-level {
@@ -432,20 +432,6 @@
 }
 .bc-orbit-sao { position: absolute; z-index: 3; left: 193px; top: 5px; color: #ffed94; font-size: 24px; text-shadow: 0 0 14px #ffc74e; }
 
-.bc-points { display: flex; align-items: baseline; gap: 6px; margin-top: 3px; }
-.bc-points strong {
-  font-family: var(--display);
-  font-size: 49px;
-  line-height: 1;
-  letter-spacing: -0.035em;
-  background: linear-gradient(170deg, #ffc47b, #ff642f);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 2px 2px #f66a4559);
-  font-variant-numeric: tabular-nums;
-}
-.bc-points span { font-size: 15px; font-weight: 700; color: #e8f2ff; }
 /* Ô chung: mục tiêu đầu ra (đậm) + mô tả (thường). Rộng bằng thanh iLEAD bên dưới. */
 .bc-muc-tieu {
   width: min(100%, 344px); margin: 12px 0 20px; padding: 12px 16px 13px;
@@ -919,11 +905,10 @@
   .bc-hero { grid-template-columns: 1fr; border-radius: var(--r-lg); margin-top: 14px; }
   .bc-hero-vach { left: 10%; }
   .bc-hero-loe { left: 44%; }
-  .bc-level-col { padding: 31px 22px 28px; }
+  .bc-level-col { align-self: auto; padding: 31px 22px 28px; }
   .bc-level-visual { height: 117px; }
   .bc-big-level { font-size: 108px; }
   .bc-big-level.is-dai { font-size: 72px; }
-  .bc-points strong { font-size: 43px; }
   .bc-description { max-width: none; margin: 7px 0 22px; font-size: 13px; }
   .bc-meter { width: 100%; }
   .bc-radar-col { padding: 8px 6px 14px; border-top: 1px solid #badfff3d; }

@@ -97,13 +97,6 @@ export default function BanIn({ bc }: { bc: BaoCao }) {
           <span className="bi-nhan">Lớp phù hợp</span>
           <strong className="bi-lop">{level?.lop || level?.ten || "Chưa xếp"}</strong>
         </div>
-        <div className="bi-o">
-          <span className="bi-nhan">Tổng điểm</span>
-          <strong className="bi-tong">
-            {bc.tongDiem === null ? "—" : so(bc.tongDiem)}
-            <small> / {bc.tongToiDa}</small>
-          </strong>
-        </div>
         <div className="bi-o bi-o-rong">
           {level?.lop && level.ten ? (
             <p className="bi-muc-tieu">
@@ -111,31 +104,18 @@ export default function BanIn({ bc }: { bc: BaoCao }) {
             </p>
           ) : null}
           <p className="bi-mo-ta">
-            {level?.moTa ||
-              (bc.tongDiem === null
-                ? "Chưa đủ điểm cả 4 kỹ năng nên chưa xếp lớp."
-                : "")}
+            {level?.moTa || (bc.duDiem ? "" : "Chưa đủ điểm cả 4 kỹ năng nên chưa xếp lớp.")}
           </p>
         </div>
       </section>
 
       {bc.thangLevel.length ? (
         <div className="bi-thang" aria-hidden="true">
-          {bc.thangLevel.map((m, i) => {
-            const den = (bc.thangLevel[i + 1]?.tu ?? bc.tongToiDa + 1) - 1;
-            const dat = m.ten === level?.ten;
-            return (
-              <span key={m.ten} className={dat ? "is-dat" : ""}>
-                {m.lop || m.ten}
-                {/* Giáo viên xếp khác tổng điểm: ghi khoảng điểm cạnh lớp sẽ mâu thuẫn với tổng. */}
-                {bc.lopKhacGoiY ? null : (
-                  <small>
-                    {m.tu}–{Math.min(den, bc.tongToiDa)} điểm
-                  </small>
-                )}
-              </span>
-            );
-          })}
+          {bc.thangLevel.map((m) => (
+            <span key={m.ten} className={m.ten === level?.ten ? "is-dat" : ""}>
+              {m.lop || m.ten}
+            </span>
+          ))}
         </div>
       ) : null}
 
